@@ -23,14 +23,28 @@
             <!-- Navbar -->
             <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: rgb(41, 45, 44);">
                 <div class="container">
-                    <a class="navbar-brand" href="{{ url('/') }}">
-                        <i class="fas fa-cogs"></i> Apps 4.0
+                    <a class="navbar-brand" href="{{ route('dashboard') }}">
+                        <i class="fas fa-cogs"></i> Colegio San Luis
                     </a>
                     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                         <span class="navbar-toggler-icon"></span>
                     </button>
                     <div class="collapse navbar-collapse" id="navbarNav">
                         <ul class="navbar-nav ms-auto">
+
+                              <!-- Opción Buscar Alumnos (a la izquierda) -->
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ route('alumnos.index') }}">
+                                    <i class="fas fa-search"></i> Buscar Alumnos
+                                </a>
+                            </li>
+                            <!-- Opción Administrar Alumnos -->
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ route('alumnos.create') }}">
+                                    <i class="fas fa-users"></i> Dar de alta un alumno
+                                </a>
+                            </li>
+
                             <!-- User Profile and Logout -->
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -73,5 +87,8 @@
         <!-- Bootstrap JS -->
         <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+
+        <!-- Scripts adicionales -->
+        @stack('scripts') <!-- Esto es necesario para que los scripts adicionales se carguen -->
     </body>
 </html>
