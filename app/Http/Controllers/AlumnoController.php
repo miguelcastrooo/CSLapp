@@ -2,166 +2,162 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Alumno;
 use Illuminate\Http\Request;
+use App\Models\Alumno;
+use App\Models\NivelEducativo;
+use App\Models\Grado;
+use App\Models\AlumnoPlataforma;
+use App\Models\NivelPlataforma;
+use App\Models\Plataforma;
+use Barryvdh\DomPDF\Facade\Pdf;
+
 
 class AlumnoController extends Controller
 {
     public function index(Request $request)
     {
-        $search = $request->query('search');
-        $grado = $request->query('grado');
-        $nivel_educativo = $request->query('nivel_educativo');
+        $query = Alumno::query(); 
 
-        $alumnos = Alumno::query();
-
-        // Filtro por nombre o matrícula
-        if ($search) {
-            $alumnos->where('nombre', 'like', "%{$search}%")
-                    ->orWhere('matricula', 'like', "%{$search}%");
+        if ($request->has('search')) {
+            $search = $request->input('search');
+            $query->where('nombre', 'like', "%$search%")
+                  ->orWhere('matricula', 'like', "%$search%")
+                  ->orWhere('correo_familia', 'like', "%$search%");
         }
 
-        // Filtro por grado
-        if ($grado) {
-            $alumnos->where('grado', $grado);
-        }
-
-        // Filtro por nivel educativo
-        if ($nivel_educativo) {
-            $alumnos->where('nivel_educativo', $nivel_educativo);
-        }
-
-        // Paginación
-        $alumnos = $alumnos->paginate(10);
-
-        if ($request->ajax()) {
-            $alumnosHTML = view('partials.alumnos_table', compact('alumnos'))->render();
-            $paginationHTML = view('partials.pagination', compact('alumnos'))->render();
-
-            return response()->json([
-                'alumnosHTML' => $alumnosHTML,
-                'paginationHTML' => $paginationHTML
-            ]);
-        }
-
-        // Recoger todos los grados y niveles para mostrarlos en los filtros
-        $grados = Alumno::distinct()->pluck('grado');
-        $niveles = Alumno::distinct()->pluck('nivel_educativo');
-
-        return view('capturista.index', compact('alumnos', 'grados', 'niveles'));
+        $alumnos = $query->orderBy('created_at', 'desc')->paginate(10);
+        return view('capturista.index', compact('alumnos'));
     }
 
     public function search(Request $request)
     {
-        $query = $request->input('search');
-        $alumnos = Alumno::where('matricula', 'like', "%$query%")
-            ->orWhere('nombre', 'like', "%$query%")
-            ->orWhere('apellidopaterno', 'like', "%$query%")
-            ->orWhere('apellidomaterno', 'like', "%$query%")
-            ->get();
-    
+        // Obtiene el término de búsqueda
+        $search = $request->input('search');
+
+        // Realiza la consulta de búsqueda en los campos deseados
+        $alumnos = Alumno::where('nombre', 'like', "%$search%")
+                        ->orWhere('matricula', 'like', "%$search%")
+                        ->orWhere('apellidopaterno', 'like', "%$search%")
+                        ->orWhere('apellidomaterno', 'like', "%$search%")
+                        ->get();
+
+        // Retorna los resultados en formato JSON
         return response()->json($alumnos);
     }
-    
+
 
     public function create()
     {
-        $nivelesEducativos = [
-            'preescolar' => ['BabiesRoom', 'Primero de Kinder', 'Segundo de Kinder', 'Tercero de Kinder'],
-            'primaria_baja' => ['1° Primaria', '2° Primaria', '3° Primaria'],
-            'primaria_alta' => ['4° Primaria', '5° Primaria', '6° Primaria'],
-            'secundaria' => ['1° Secundaria', '2° Secundaria', '3° Secundaria'],
-        ];
+        $niveles = NivelEducativo::all(); // Asegúrate de importar el modelo adecuado
+        $grados = Grado::all(); // Asegúrate de importar el modelo adecuado
 
-        return view('capturista.create', compact('nivelesEducativos'));
+        return view('capturista.create',compact('niveles','grados'));
     }
 
     public function store(Request $request)
     {
-        // Validación de los datos
+        // Validación de los datos del formulario
         $request->validate([
-            'matricula' => 'required|numeric|unique:alumnos|digits:10',
-            'nombre' => 'required',
-            'apellidopaterno' => 'required',
-            'apellidomaterno' => 'required',
-            'correo_familia' => 'required|email',
-            'contacto1nombre' => 'required',
-            'telefono1' => 'required|numeric|digits:10',
-            'nivel_educativo' => 'required',
-            'grado' => 'required',
+            'matricula' => 'required|numeric|unique:alumnos',
+            'nombre' => 'required|string|max:255',
+            'apellidopaterno' => 'required|string|max:255',
+            'apellidomaterno' => 'required|string|max:255',
+            'contacto1nombre' => 'required|string|max:255',
+            'telefono1' => 'required|digits:10',
+            'correo_familia' => 'required|email|unique:alumnos',
+            'contacto2nombre' => 'nullable|string|max:255',
+            'telefono2' => 'nullable|digits:10',
+            'nivel_educativo_id' => 'required|exists:nivel_educativo,id',
+            'grado_id' => 'required|exists:grados,id',
             'fecha_inscripcion' => 'required|date',
         ]);
+    
+        // Crear el nuevo alumno
+        $alumno = Alumno::create($request->all());
+    
+        if (!$alumno) {
+            return redirect()->back()->with('error', 'Error al crear el alumno.');
+        }
+    
+        // Obtener el nivel educativo del alumno
+        $nivelEducativo = $alumno->nivelEducativo;
+    
+        // Obtener plataformas asociadas al nivel educativo
+        $plataformas = $nivelEducativo->plataformas ?? [];
+    
+        if ($plataformas->isEmpty()) {
+            return redirect()->route('alumnos.index')->with('error', 'No se encontraron plataformas asociadas al nivel educativo.');
+        }
+    
+        // Generar credenciales automáticamente
+        $primerNombre = explode(' ', $alumno->nombre)[0];
+        $anioInscripcion = date('y', strtotime($alumno->fecha_inscripcion));
+    
+        $alumno->contraseña_classroom = 'Csl$' . $primerNombre . $anioInscripcion;
+        $alumno->usuario_moodle = 'Csl-' . $alumno->matricula;
+        $alumno->contraseña_moodle = $alumno->matricula;
+        $alumno->save();
+    
+        // Asociar plataformas sin duplicar credenciales
+        foreach ($plataformas as $plataforma) {
+            $alumno->plataformas()->attach($plataforma->id, [
+                'nivel_educativo_id' => $alumno->nivel_educativo_id,
+            ]);
+        }
+    
+        return redirect()->route('alumnos.index')->with('success', 'Alumno registrado exitosamente.');
+    }
+    
+    
 
-        $primerNombre = explode(' ', $request->nombre)[0];
-        $anioActual = date('Y');
-        $contraseñaClassroom = 'Csl$' . ucfirst(strtolower($primerNombre)) . $anioActual;
-
-        Alumno::create([
-            'matricula' => $request->matricula,
-            'nombre' => $request->nombre,
-            'apellidopaterno' => $request->apellidopaterno,
-            'apellidomaterno' => $request->apellidomaterno,
-            'correo_familia' => $request->correo_familia,
-            'contacto1nombre' => $request->contacto1nombre,
-            'telefono1' => $request->telefono1,
-            'usuario_classroom' => null,
-            'contraseña_classroom' => $contraseñaClassroom,
-            'usuario_moodle' => 'Csl-' . $request->matricula,
-            'contraseña_moodle' => $request->matricula,
-            'nivel_educativo' => $request->nivel_educativo,
-            'grado' => $request->grado,
-            'fecha_inscripcion' => $request->fecha_inscripcion,
-        ]);
-
-        return redirect()->route('capturista.index')->with('success', 'Alumno registrado correctamente');
+    public function show(Alumno $alumno)
+    {
+        return view('alumnos.show', compact('alumno'));
     }
 
     public function edit($id)
     {
+        // Encuentra al alumno por su id
         $alumno = Alumno::findOrFail($id);
-        return view('capturista.edit', compact('alumno'));
+        
+        // Obtén los niveles educativos
+        $niveles = NivelEducativo::all();
+        
+        // También puedes pasar los grados relacionados con el nivel del alumno, si es necesario
+        $grados = Grado::where('nivel_educativo_id', $alumno->nivel_educativo_id)->get();
+        
+        // Retorna la vista y pasa los datos
+        return view('capturista.edit', compact('alumno', 'niveles', 'grados'));
     }
+    
 
-    public function update(Request $request, $id)
+    public function update(Request $request, Alumno $alumno)
     {
-        // Validación de los datos
         $request->validate([
-            'matricula' => 'required|unique:alumnos,matricula,' . $id,
-            'nombre' => 'required',
-            'apellidopaterno' => 'required',
-            'apellidomaterno' => 'required',
-            'correo_familia' => 'required|email',
-            'contacto1nombre' => 'required',
-            'telefono1' => 'required',
-            'nivel_educativo' => 'required',
-            'grado' => 'required',
+            'matricula' => 'required|numeric|unique:alumnos,matricula,' . $alumno->id,
+            'nombre' => 'required|string|max:255',
+            'apellidopaterno' => 'required|string|max:255',
+            'apellidomaterno' => 'required|string|max:255',
+            'contacto1nombre' => 'required|string|max:255',
+            'telefono1' => 'required|digits:10',
+            'correo_familia' => 'required|email|unique:alumnos,correo_familia,' . $alumno->id,
+            'contacto2nombre' => 'nullable|string|max:255',
+            'telefono2' => 'nullable|digits:10',
+            'nivel_educativo_id' => 'required|exists:nivel_educativo,id',
+            'grado_id' => 'required|exists:grados,id',
             'fecha_inscripcion' => 'required|date',
         ]);
 
-        $alumno = Alumno::findOrFail($id);
-        $alumno->update([
-            'matricula' => $request->matricula,
-            'nombre' => $request->nombre,
-            'apellidopaterno' => $request->apellidopaterno,
-            'apellidomaterno' => $request->apellidomaterno,
-            'correo_familia' => $request->correo_familia,
-            'contacto1nombre' => $request->contacto1nombre,
-            'telefono1' => $request->telefono1,
-            'contacto2nombre' => $request->contacto2nombre,
-            'telefono2' => $request->telefono2,
-            'nivel_educativo' => $request->nivel_educativo,
-            'grado' => $request->grado,
-            'fecha_inscripcion' => $request->fecha_inscripcion,
-        ]);
+        $alumno->update($request->all());
 
-        return redirect()->route('alumnos.index')->with('success', 'Alumno actualizado correctamente');
+        return redirect()->route('alumnos.index')->with('success', 'Alumno actualizado exitosamente.');
     }
 
-    public function destroy($id)
+    public function destroy(Alumno $alumno)
     {
-        $alumno = Alumno::findOrFail($id);
         $alumno->delete();
-
-        return redirect()->route('alumnos.index')->with('success', 'Alumno eliminado correctamente');
+        return redirect()->route('alumnos.index')->with('success', 'Alumno eliminado correctamente.');
     }
-}
+
+  
+}    

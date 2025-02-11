@@ -2,8 +2,8 @@
 
 @section('content')
 <div class="container">
-    <h1>Editar Alumno</h1>
-    <p>Actualiza los datos del alumno a continuación:</p>
+    <h1>{{ isset($alumno) ? 'Editar Alumno' : 'Agregar Alumno' }}</h1>
+    <p>Ingresa los datos del alumno a continuación:</p>
 
     @if ($errors->any())
         <div class="alert alert-danger">
@@ -15,132 +15,138 @@
         </div>
     @endif
 
-    <form action="{{ route('alumnos.update', $alumno->id) }}" method="POST">
+    <!-- Si estamos editando, la acción del formulario será a la ruta de actualización -->
+    <form action="{{ isset($alumno) ? route('alumnos.update', $alumno->id) : route('alumnos.store') }}" method="POST">
         @csrf
-        @method('PUT')
+        @if (isset($alumno))
+            @method('PUT') <!-- Indica que es una actualización -->
+        @endif
+
         <div class="row">
+            <!-- Los campos del formulario se mantienen iguales, pero con valores prellenados si estamos editando -->
             <div class="col-md-6 mb-3">
                 <label for="matricula">Matrícula</label>
-                <input type="number" class="form-control" id="matricula" name="matricula" value="{{ old('matricula', $alumno->matricula) }}" maxlength="10" required>
+                <input type="number" class="form-control" id="matricula" name="matricula" value="{{ old('matricula', isset($alumno) ? $alumno->matricula : '') }}" required min="1">
             </div>
 
             <div class="col-md-6 mb-3">
                 <label for="nombre">Nombre</label>
-                <input type="text" class="form-control" id="nombre" name="nombre" value="{{ old('nombre', $alumno->nombre) }}" required>
+                <input type="text" class="form-control" id="nombre" name="nombre" value="{{ old('nombre', isset($alumno) ? $alumno->nombre : '') }}" required pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" title="Solo letras y espacios">
             </div>
 
             <div class="col-md-6 mb-3">
                 <label for="apellidopaterno">Apellido Paterno</label>
-                <input type="text" class="form-control" id="apellidopaterno" name="apellidopaterno" value="{{ old('apellidopaterno', $alumno->apellidopaterno) }}" required>
+                <input type="text" class="form-control" id="apellidopaterno" name="apellidopaterno" value="{{ old('apellidopaterno', isset($alumno) ? $alumno->apellidopaterno : '') }}" required pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+">
             </div>
 
             <div class="col-md-6 mb-3">
                 <label for="apellidomaterno">Apellido Materno</label>
-                <input type="text" class="form-control" id="apellidomaterno" name="apellidomaterno" value="{{ old('apellidomaterno', $alumno->apellidomaterno) }}" required>
+                <input type="text" class="form-control" id="apellidomaterno" name="apellidomaterno" value="{{ old('apellidomaterno', isset($alumno) ? $alumno->apellidomaterno : '') }}" required pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+">
             </div>
 
             <div class="col-md-6 mb-3">
                 <label for="contacto1nombre">Nombre del Primer Contacto</label>
-                <input type="text" class="form-control" id="contacto1nombre" name="contacto1nombre" value="{{ old('contacto1nombre', $alumno->contacto1nombre) }}" required>
+                <input type="text" class="form-control" id="contacto1nombre" name="contacto1nombre" value="{{ old('contacto1nombre', isset($alumno) ? $alumno->contacto1nombre : '') }}" required pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+">
             </div>
 
             <div class="col-md-6 mb-3">
                 <label for="telefono1">Teléfono del Primer Contacto</label>
-                <input type="number" class="form-control" id="telefono1" name="telefono1" value="{{ old('telefono1', $alumno->telefono1) }}" maxlength="10" required>
+                <input type="text" class="form-control" id="telefono1" name="telefono1" value="{{ old('telefono1', isset($alumno) ? $alumno->telefono1 : '') }}" maxlength="10" required pattern="\d{10}" title="Debe ser un número de 10 dígitos">
             </div>
 
             <div class="col-md-6 mb-3">
                 <label for="correo_familia">Correo del Familiar</label>
-                <input type="email" class="form-control" id="correo_familia" name="correo_familia" value="{{ old('correo_familia', $alumno->correo_familia) }}" required>
+                <input type="email" class="form-control" id="correo_familia" name="correo_familia" value="{{ old('correo_familia', isset($alumno) ? $alumno->correo_familia : '') }}" required>
             </div>
 
             <div class="col-md-6 mb-3">
                 <label for="contacto2nombre">Nombre del Segundo Contacto (Opcional)</label>
-                <input type="text" class="form-control" id="contacto2nombre" name="contacto2nombre" value="{{ old('contacto2nombre', $alumno->contacto2nombre) }}">
+                <input type="text" class="form-control" id="contacto2nombre" name="contacto2nombre" value="{{ old('contacto2nombre', isset($alumno) ? $alumno->contacto2nombre : '') }}" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+">
             </div>
 
             <div class="col-md-6 mb-3">
                 <label for="telefono2">Teléfono del Segundo Contacto (Opcional)</label>
-                <input type="number" class="form-control" id="telefono2" name="telefono2" value="{{ old('telefono2', $alumno->telefono2) }}" maxlength="10">
+                <input type="text" class="form-control" id="telefono2" name="telefono2" value="{{ old('telefono2', isset($alumno) ? $alumno->telefono2 : '') }}" maxlength="10" pattern="\d{10}">
             </div>
 
             <div class="col-md-6 mb-3">
-                <label for="nivel_educativo" class="form-label">Nivel Educativo</label>
-                <select class="form-control" id="nivel_educativo" name="nivel_educativo" required>
+                <label for="nivel_educativo_id" class="form-label">Nivel Educativo</label>
+                <select class="form-control" id="nivel_educativo_id" name="nivel_educativo_id" onchange="actualizarGrados()" required>
                     <option value="">Selecciona un nivel educativo</option>
-                    <option value="Preescolar" {{ old('nivel_educativo', $alumno->nivel_educativo) == 'Preescolar' ? 'selected' : '' }}>Preescolar</option>
-                    <option value="Primaria Baja" {{ old('nivel_educativo', $alumno->nivel_educativo) == 'Primaria Baja' ? 'selected' : '' }}>Primaria Baja</option>
-                    <option value="Primaria Alta" {{ old('nivel_educativo', $alumno->nivel_educativo) == 'Primaria Alta' ? 'selected' : '' }}>Primaria Alta</option>
-                    <option value="Secundaria" {{ old('nivel_educativo', $alumno->nivel_educativo) == 'Secundaria' ? 'selected' : '' }}>Secundaria</option>
+                    @foreach ($niveles as $nivel)
+                        <option value="{{ $nivel->id }}" {{ old('nivel_educativo_id', isset($alumno) ? $alumno->nivel_educativo_id : '') == $nivel->id ? 'selected' : '' }}>
+                            {{ $nivel->nombre }}
+                        </option>
+                    @endforeach
                 </select>
             </div>
 
             <div class="col-md-6 mb-3">
-                <label for="grado" class="form-label">Grado</label>
-                <select class="form-control" id="grado" name="grado" required>
+                <label for="grado_id" class="form-label">Grado</label>
+                <select class="form-control" id="grado_id" name="grado_id" required>
                     <option value="">Selecciona un grado</option>
-                    @foreach($gradosPorNivel[old('nivel_educativo', $alumno->nivel_educativo)] ?? [] as $gradoItem)
-                        <option value="{{ $gradoItem }}" {{ old('grado', $alumno->grado) == $gradoItem ? 'selected' : '' }}>{{ $gradoItem }}</option>
+                    @foreach ($grados as $grado)
+                        <option value="{{ $grado->id }}" {{ old('grado_id', isset($alumno) ? $alumno->grado_id : '') == $grado->id ? 'selected' : '' }}>
+                            {{ $grado->nombre }}
+                        </option>
                     @endforeach
                 </select>
             </div>
 
             <div class="col-md-6 mb-3">
                 <label for="fecha_inscripcion">Fecha de Inscripción</label>
-                <input type="date" class="form-control" id="fecha_inscripcion" name="fecha_inscripcion" value="{{ old('fecha_inscripcion', $alumno->fecha_inscripcion) }}" required>
+                <input type="date" class="form-control" id="fecha_inscripcion" name="fecha_inscripcion" value="{{ old('fecha_inscripcion', isset($alumno) ? $alumno->fecha_inscripcion : '') }}" required>
+            </div>
+
+            <div class="col-md-12 mb-3">
+                <button type="submit" class="btn btn-primary">{{ isset($alumno) ? 'Actualizar Alumno' : 'Registrar Alumno' }}</button>
             </div>
         </div>
-
-        <button type="submit" class="btn btn-primary mt-3">Actualizar Alumno</button>
     </form>
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const nivelEducativo = document.getElementById('nivel_educativo');
-    const grado = document.getElementById('grado');
-
-    const gradosPorNivel = {
-        'Preescolar': ['Babies Room', '1° Kínder', '2° Kínder', '3° Kínder'],
-        'Primaria Baja': ['1°', '2°', '3°'],
-        'Primaria Alta': ['4°', '5°', '6°'],
-        'Secundaria': ['1°', '2°', '3°']
+function actualizarGrados() {
+    var nivel = document.getElementById('nivel_educativo_id').value;
+    var gradoSelect = document.getElementById('grado_id');
+    var grados = {
+        '1': [
+            { id: 1, nombre: 'BabiesRoom' },
+            { id: 2, nombre: 'Primero de Kinder' },
+            { id: 3, nombre: 'Segundo de Kinder' },
+            { id: 4, nombre: 'Tercero de Kinder' }
+        ],
+        '2': [
+            { id: 5, nombre: '1° Primaria' },
+            { id: 6, nombre: '2° Primaria' },
+            { id: 7, nombre: '3° Primaria' }
+        ],
+        '3': [
+            { id: 8, nombre: '4° Primaria' },
+            { id: 9, nombre: '5° Primaria' },
+            { id: 10, nombre: '6° Primaria' }
+        ],
+        '4': [
+            { id: 11, nombre: '1° Secundaria' },
+            { id: 12, nombre: '2° Secundaria' },
+            { id: 13, nombre: '3° Secundaria' }
+        ]
     };
 
-    const oldGrado = "{{ old('grado', $alumno->grado) }}";
+    gradoSelect.innerHTML = '<option value="">Selecciona un grado</option>'; // Reset opciones
 
-    nivelEducativo.addEventListener('change', function() {
-        const nivelSeleccionado = nivelEducativo.value;
-        grado.innerHTML = '<option value="">Selecciona un grado</option>';
-
-        if (gradosPorNivel[nivelSeleccionado]) {
-            gradosPorNivel[nivelSeleccionado].forEach(function(gradoItem) {
-                const option = document.createElement('option');
-                option.value = gradoItem;
-                option.textContent = gradoItem;
-                if (gradoItem === oldGrado) {
-                    option.selected = true;
-                }
-                grado.appendChild(option);
-            });
-        }
-    });
-
-    if (nivelEducativo.value) {
-        nivelEducativo.dispatchEvent(new Event('change'));
-    }
-
-    const limitarLongitud = (campo) => {
-        campo.addEventListener('input', function() {
-            if (campo.value.length > 10) {
-                campo.value = campo.value.slice(0, 10);
+    if (nivel in grados) {
+        grados[nivel].forEach(function(grado) {
+            var option = document.createElement('option');
+            option.value = grado.id;  // Usar el ID del grado
+            option.text = grado.nombre;
+            if ("{{ old('grado_id', isset($alumno) ? $alumno->grado_id : '') }}" == grado.id) {
+                option.selected = true;
             }
+            gradoSelect.appendChild(option);
         });
-    };
-
-    limitarLongitud(document.getElementById('matricula'));
-    limitarLongitud(document.getElementById('telefono1'));
-    limitarLongitud(document.getElementById('telefono2'));
-});
+    }
+}
 </script>
+
 @endsection

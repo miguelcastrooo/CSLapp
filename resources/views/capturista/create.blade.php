@@ -5,6 +5,12 @@
     <h1>Agregar Alumno</h1>
     <p>Ingresa los datos del alumno a continuación:</p>
 
+    @if(session('success'))
+        <div class="alert alert-success">
+            {{ session('success') }}
+        </div>
+    @endif
+
     @if ($errors->any())
         <div class="alert alert-danger">
             <ul>
@@ -20,32 +26,32 @@
         <div class="row">
             <div class="col-md-6 mb-3">
                 <label for="matricula">Matrícula</label>
-                <input type="number" class="form-control" id="matricula" name="matricula" value="{{ old('matricula') }}" maxlength="10" required>
+                <input type="number" class="form-control" id="matricula" name="matricula" value="{{ old('matricula') }}" required min="1">
             </div>
 
             <div class="col-md-6 mb-3">
                 <label for="nombre">Nombre</label>
-                <input type="text" class="form-control" id="nombre" name="nombre" value="{{ old('nombre') }}" required>
+                <input type="text" class="form-control" id="nombre" name="nombre" value="{{ old('nombre') }}" required pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" title="Solo letras y espacios">
             </div>
 
             <div class="col-md-6 mb-3">
                 <label for="apellidopaterno">Apellido Paterno</label>
-                <input type="text" class="form-control" id="apellidopaterno" name="apellidopaterno" value="{{ old('apellidopaterno') }}" required>
+                <input type="text" class="form-control" id="apellidopaterno" name="apellidopaterno" value="{{ old('apellidopaterno') }}" required pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+">
             </div>
 
             <div class="col-md-6 mb-3">
                 <label for="apellidomaterno">Apellido Materno</label>
-                <input type="text" class="form-control" id="apellidomaterno" name="apellidomaterno" value="{{ old('apellidomaterno') }}" required>
+                <input type="text" class="form-control" id="apellidomaterno" name="apellidomaterno" value="{{ old('apellidomaterno') }}" required pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+">
             </div>
 
             <div class="col-md-6 mb-3">
                 <label for="contacto1nombre">Nombre del Primer Contacto</label>
-                <input type="text" class="form-control" id="contacto1nombre" name="contacto1nombre" value="{{ old('contacto1nombre') }}" required>
+                <input type="text" class="form-control" id="contacto1nombre" name="contacto1nombre" value="{{ old('contacto1nombre') }}" required pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+">
             </div>
 
             <div class="col-md-6 mb-3">
                 <label for="telefono1">Teléfono del Primer Contacto</label>
-                <input type="number" class="form-control" id="telefono1" name="telefono1" value="{{ old('telefono1') }}" maxlength="10" required>
+                <input type="text" class="form-control" id="telefono1" name="telefono1" value="{{ old('telefono1') }}" maxlength="10" required pattern="\d{10}" title="Debe ser un número de 10 dígitos">
             </div>
 
             <div class="col-md-6 mb-3">
@@ -55,33 +61,43 @@
 
             <div class="col-md-6 mb-3">
                 <label for="contacto2nombre">Nombre del Segundo Contacto (Opcional)</label>
-                <input type="text" class="form-control" id="contacto2nombre" name="contacto2nombre" value="{{ old('contacto2nombre') }}">
+                <input type="text" class="form-control" id="contacto2nombre" name="contacto2nombre" value="{{ old('contacto2nombre') }}" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+">
             </div>
 
             <div class="col-md-6 mb-3">
                 <label for="telefono2">Teléfono del Segundo Contacto (Opcional)</label>
-                <input type="number" class="form-control" id="telefono2" name="telefono2" value="{{ old('telefono2') }}" maxlength="10">
+                <input type="text" class="form-control" id="telefono2" name="telefono2" value="{{ old('telefono2') }}" maxlength="10" pattern="\d{10}">
             </div>
 
             <div class="col-md-6 mb-3">
-                <label for="nivel_educativo" class="form-label">Nivel Educativo</label>
-                <select class="form-control" id="nivel_educativo" name="nivel_educativo" required>
+                <label for="nivel_educativo_id" class="form-label">Nivel Educativo</label>
+                <select class="form-control" id="nivel_educativo_id" name="nivel_educativo_id" onchange="actualizarGrados()" required>
                     <option value="">Selecciona un nivel educativo</option>
-                    <option value="Preescolar" {{ old('nivel_educativo') == 'Preescolar' ? 'selected' : '' }}>Preescolar</option>
-                    <option value="Primaria Baja" {{ old('nivel_educativo') == 'Primaria Baja' ? 'selected' : '' }}>Primaria Baja</option>
-                    <option value="Primaria Alta" {{ old('nivel_educativo') == 'Primaria Alta' ? 'selected' : '' }}>Primaria Alta</option>
-                    <option value="Secundaria" {{ old('nivel_educativo') == 'Secundaria' ? 'selected' : '' }}>Secundaria</option>
+                    @if($niveles && $niveles->isNotEmpty())
+                        @foreach ($niveles as $nivel)
+                            <option value="{{ $nivel->id }}" {{ old('nivel_educativo_id') == $nivel->id ? 'selected' : '' }}>
+                                {{ $nivel->nombre }}
+                            </option>
+                        @endforeach
+                    @else
+                        <option value="">No hay niveles disponibles</option>
+                    @endif
                 </select>
-
             </div>
 
             <div class="col-md-6 mb-3">
-                <label for="grado" class="form-label">Grado</label>
-                <select class="form-control" id="grado" name="grado" required>
+                <label for="grado_id" class="form-label">Grado</label>
+                <select class="form-control" id="grado_id" name="grado_id" required>
                     <option value="">Selecciona un grado</option>
-                    @foreach($gradosPorNivel[old('nivel_educativo')] ?? [] as $gradoItem)
-                        <option value="{{ $gradoItem }}" {{ old('grado') == $gradoItem ? 'selected' : '' }}>{{ $gradoItem }}</option>
-                    @endforeach
+                    @if($grados && $grados->isNotEmpty())
+                        @foreach ($grados as $grado)
+                            <option value="{{ $grado->id }}" {{ old('grado_id') == $grado->id ? 'selected' : '' }}>
+                                {{ $grado->nombre }}
+                            </option>
+                        @endforeach
+                    @else
+                        <option value="">No hay grados disponibles</option>
+                    @endif
                 </select>
             </div>
 
@@ -89,67 +105,65 @@
                 <label for="fecha_inscripcion">Fecha de Inscripción</label>
                 <input type="date" class="form-control" id="fecha_inscripcion" name="fecha_inscripcion" value="{{ old('fecha_inscripcion') }}" required>
             </div>
-        </div>
 
-        <button type="submit" class="btn btn-primary mt-3">Guardar Alumno</button>
+            <div class="col-md-12 mb-3">
+                <button type="submit" class="btn btn-primary">Registrar Alumno</button>
+            </div>
+
+        </div>
     </form>
 </div>
 
-<!-- Script para la selección en cascada -->
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const nivelEducativo = document.getElementById('nivel_educativo');
-    const grado = document.getElementById('grado');
-
-    const gradosPorNivel = {
-        'Preescolar': ['Babies Room', '1° Kínder', '2° Kínder', '3° Kínder'],
-        'Primaria Baja': ['1°', '2°', '3°'],
-        'Primaria Alta': ['4°', '5°', '6°'],
-        'Secundaria': ['1°', '2°', '3°']
+function actualizarGrados() {
+    var nivel = document.getElementById('nivel_educativo_id').value;
+    var gradoSelect = document.getElementById('grado_id');
+    var grados = {
+        '1': [
+            { id: 1, nombre: 'BabiesRoom' },
+            { id: 2, nombre: 'Primero de Kinder' },
+            { id: 3, nombre: 'Segundo de Kinder' },
+            { id: 4, nombre: 'Tercero de Kinder' }
+        ],
+        '2': [
+            { id: 5, nombre: '1° Primaria' },
+            { id: 6, nombre: '2° Primaria' },
+            { id: 7, nombre: '3° Primaria' }
+        ],
+        '3': [
+            { id: 8, nombre: '4° Primaria' },
+            { id: 9, nombre: '5° Primaria' },
+            { id: 10, nombre: '6° Primaria' }
+        ],
+        '4': [
+            { id: 11, nombre: '1° Secundaria' },
+            { id: 12, nombre: '2° Secundaria' },
+            { id: 13, nombre: '3° Secundaria' }
+        ]
     };
 
-    nivelEducativo.addEventListener('change', function() {
-        const nivelSeleccionado = nivelEducativo.value;
-        grado.innerHTML = '<option value="">Selecciona un grado</option>'; // Limpiar grados anteriores
+    gradoSelect.innerHTML = '<option value="">Selecciona un grado</option>'; // Reset opciones
 
-        if (gradosPorNivel[nivelSeleccionado]) {
-            gradosPorNivel[nivelSeleccionado].forEach(function(gradoItem) {
-                const option = document.createElement('option');
-                option.value = gradoItem; // Usamos el valor exacto para el ENUM
-                option.textContent = gradoItem;
-                grado.appendChild(option);
-            });
-        }
+    if (nivel in grados) {
+        grados[nivel].forEach(function(grado) {
+            var option = document.createElement('option');
+            option.value = grado.id;
+            option.text = grado.nombre;
 
-        // Mantener el valor de grado después de cambiar el nivel
-        if (oldGrado) {
-            grado.value = oldGrado;
-        }
-    });
-
-    // Al cargar la página, agregar el grado correspondiente si ya se había seleccionado un nivel
-    const oldGrado = "{{ old('grado') }}";
-    const nivelSeleccionado = "{{ old('nivel_educativo') }}";
-
-    if (nivelSeleccionado) {
-        nivelEducativo.value = nivelSeleccionado;
-        nivelEducativo.dispatchEvent(new Event('change'));  // Dispara el cambio para cargar los grados correspondientes
-    }
-
-    // Limitar longitud de los campos
-    const limitarLongitud = (campo) => {
-        campo.addEventListener('input', function() {
-            if (campo.value.length > 10) {
-                campo.value = campo.value.slice(0, 10); // Limitar a 10 caracteres
+            if (grado.id == "{{ old('grado_id') }}") {
+                option.selected = true;
             }
+
+            gradoSelect.appendChild(option);
         });
-    };
+    }
+}
 
-    // Aplicar limitación de longitud a los campos de matrícula y teléfonos
-    limitarLongitud(document.getElementById('matricula'));
-    limitarLongitud(document.getElementById('telefono1'));
-    limitarLongitud(document.getElementById('telefono2'));
-});
-
+window.onload = function() {
+    if ("{{ old('nivel_educativo_id') }}") {
+        actualizarGrados();
+    }
+};
 </script>
+
 @endsection

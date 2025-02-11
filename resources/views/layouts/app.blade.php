@@ -32,13 +32,28 @@
                     <div class="collapse navbar-collapse" id="navbarNav">
                         <ul class="navbar-nav ms-auto">
 
-                              <!-- Opción Buscar Alumnos (a la izquierda) -->
+                            <!-- Plataformas -->
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ route('admin.niveles') }}">
+                                    <i class="fas fa-cogs"></i> Plataformas
+                                </a>
+                            </li>
+
+                            <!-- Admin -->
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ route('admin.index') }}">
+                                    <i class="fas fa-user"></i> Admin
+                                </a>
+                            </li>
+
+                            <!-- Buscar Alumnos -->
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ route('alumnos.index') }}">
                                     <i class="fas fa-search"></i> Buscar Alumnos
                                 </a>
                             </li>
-                            <!-- Opción Administrar Alumnos -->
+
+                            <!-- Dar de alta un alumno -->
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ route('alumnos.create') }}">
                                     <i class="fas fa-users"></i> Dar de alta un alumno
@@ -89,6 +104,6 @@
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
 
         <!-- Scripts adicionales -->
-        @stack('scripts') <!-- Esto es necesario para que los scripts adicionales se carguen -->
+        @stack('scripts')
     </body>
 </html>

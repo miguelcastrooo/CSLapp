@@ -4,15 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Alumno extends Model
 {
     use HasFactory;
 
-    // Especifica el nombre de la tabla si es diferente a 'alumnos' (en este caso no es necesario porque Laravel usa plural por defecto)
-    protected $table = 'alumnos';
-
-    // Los atributos que son asignables de forma masiva
     protected $fillable = [
         'matricula',
         'nombre',
@@ -34,21 +31,36 @@ class Alumno extends Model
         'contraseña_hmh',
         'usuario_progrentis',
         'contraseña_progrentis',
-        'nivel_educativo',
-        'grado',
+        'nivel_educativo_id',
+        'grado_id',
+        'plataforma_id',
         'seccion',
         'fecha_inscripcion',
     ];
 
-    // Los atributos que no deben ser asignados de forma masiva
-    protected $guarded = [];
+    public $timestamps = true; 
 
-    // Indicar los tipos de datos para la fecha de creación y actualización (si es necesario)
-    protected $dates = [
-        'fecha_inscripcion',
-        'created_at',
-        'updated_at',
-    ];
+
+
+    public function nivelEducativo()
+    {
+        return $this->belongsTo(NivelEducativo::class, 'nivel_educativo_id');
+    }
+
+    public function grado()
+    {
+        return $this->belongsTo(Grado::class, 'grado_id');
+    }
+
+
+    public function plataformas()
+    {
+        return $this->belongsToMany(Plataforma::class, 'alumno_plataforma')
+                    ->withPivot('usuario', 'contraseña')
+                    ->withTimestamps();
+    }
     
-    // Definir relaciones si existen (por ejemplo, si hay relación con otros modelos como 'Contacto', etc.)
+
+
 }
+
