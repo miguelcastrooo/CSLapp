@@ -134,10 +134,7 @@
         </div>
     </div>
 
-        <div class="col-md-4">
-            <label class="form-label">Plataforma</label>
-            <input type="text" name="plataforma_id" value="{{ $alumno->plataforma_id }}" class="form-control">
-        </div>
+        
         <div class="col-md-4">
             <label class="form-label">Sección</label>
             <input type="text" name="seccion" value="{{ $alumno->seccion }}" class="form-control">

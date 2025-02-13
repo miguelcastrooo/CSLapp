@@ -3,10 +3,7 @@
 @section('content')
     <h1>Gestión de Alumnos</h1>
 
-  
-
-
-    <!-- El resto del contenido de la vista permanece igual -->
+    <!-- Tabla de alumnos -->
     <div class="table-responsive mt-4">
         <table class="table table-bordered table-striped table-sm">
             <thead>
@@ -32,7 +29,7 @@
                     <th>Contraseña HMH</th>
                     <th>Usuario Progrentis</th>
                     <th>Contraseña Progrentis</th>
-                    <th>NivelEducativo</th>
+                    <th>Nivel Educativo</th>
                     <th>Grado</th>
                     <th>Sección</th>
                     <th>Fecha de Inscripción</th>
@@ -68,16 +65,9 @@
                         <td>{{ $alumno->seccion ?? 'N/A' }}</td>
                         <td>{{ $alumno->fecha_inscripcion }}</td>
                         <td>
-                            <!-- Botón de acciones -->
                             <div class="btn-group">
-                                <!-- Botón de Editar -->
-                                <a href="{{ route('admin.adminedit', $alumno->id) }}" class="btn btn-warning btn-sm">Editar</a>       
-                                <!-- Botón de Dar Baja (cambiar estatus a 0) -->
-                                <form action="#" method="POST" style="display: inline;">
-                                    @csrf
-                                    @method('PUT')
-                                    <button type="submit" class="btn btn-danger btn-sm">Dar Baja</button>
-                                </form>
+                                <a href="{{ route('admin.adminedit', $alumno->id) }}" class="btn btn-warning btn-sm">Editar</a>
+                                <button type="button" class="btn btn-danger btn-sm" data-toggle="modal" data-target="#modalBaja" data-id="{{ $alumno->id }}">Dar Baja</button>
                             </div>
                         </td>
                     </tr>
@@ -90,4 +80,44 @@
     <div class="d-flex justify-content-center">
         {{ $alumnos->links('pagination::bootstrap-4') }}
     </div>
+
+  <!-- Modal de Confirmación -->
+<div class="modal fade" id="modalBaja" tabindex="-1" role="dialog" aria-labelledby="modalBajaLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalBajaLabel">Confirmar Baja</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+            <form id="formBaja" action="{{ route('admin.confirmarBaja', $alumno->id) }}" method="POST">
+                @csrf
+                @method('PUT')
+                <div class="form-group">
+                    <label for="motivo_baja">Motivo de la Baja:</label>
+                    <textarea id="motivo_baja" name="motivo_baja" class="form-control" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-danger">Confirmar Baja</button>
+            </form>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@endsection
+
+@section('scripts')
+<script>
+    $(document).ready(function() {
+        $('#modalBaja').on('show.bs.modal', function(event) {
+            var button = $(event.relatedTarget); // El botón que abrió el modal
+            var id = button.data('id'); // El ID del alumno
+            var form = $('#formBaja'); // El formulario del modal
+            form.attr('action', '/admin/alumnos/confirmarBaja/' + id); // Asignar la URL correcta con el ID
+        });
+    });
+</script>
 @endsection

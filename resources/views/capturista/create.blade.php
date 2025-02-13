@@ -51,7 +51,7 @@
 
             <div class="col-md-6 mb-3">
                 <label for="telefono1">Teléfono del Primer Contacto</label>
-                <input type="text" class="form-control" id="telefono1" name="telefono1" value="{{ old('telefono1') }}" maxlength="10" required pattern="\d{10}" title="Debe ser un número de 10 dígitos">
+                <input type="number" class="form-control" id="telefono1" name="telefono1" value="{{ old('telefono1') }}" maxlength="10" required pattern="\d{10}" title="Debe ser un número de 10 dígitos">
             </div>
 
             <div class="col-md-6 mb-3">
@@ -66,24 +66,12 @@
 
             <div class="col-md-6 mb-3">
                 <label for="telefono2">Teléfono del Segundo Contacto (Opcional)</label>
-                <input type="text" class="form-control" id="telefono2" name="telefono2" value="{{ old('telefono2') }}" maxlength="10" pattern="\d{10}">
+                <input type="number" class="form-control" id="telefono2" name="telefono2" value="{{ old('telefono2') }}" maxlength="10" pattern="\d{10}">
             </div>
 
-            <div class="col-md-6 mb-3">
-                <label for="nivel_educativo_id" class="form-label">Nivel Educativo</label>
-                <select class="form-control" id="nivel_educativo_id" name="nivel_educativo_id" onchange="actualizarGrados()" required>
-                    <option value="">Selecciona un nivel educativo</option>
-                    @if($niveles && $niveles->isNotEmpty())
-                        @foreach ($niveles as $nivel)
-                            <option value="{{ $nivel->id }}" {{ old('nivel_educativo_id') == $nivel->id ? 'selected' : '' }}>
-                                {{ $nivel->nombre }}
-                            </option>
-                        @endforeach
-                    @else
-                        <option value="">No hay niveles disponibles</option>
-                    @endif
-                </select>
-            </div>
+              <!-- Campo oculto para nivel educativo -->
+              <input type="hidden" name="nivel_educativo_id" value="{{ $nivel->id }}">
+
 
             <div class="col-md-6 mb-3">
                 <label for="grado_id" class="form-label">Grado</label>
@@ -150,6 +138,7 @@ function actualizarGrados() {
             option.value = grado.id;
             option.text = grado.nombre;
 
+            // Verifica si el grado coincide con el valor antiguo (seleccionado previamente)
             if (grado.id == "{{ old('grado_id') }}") {
                 option.selected = true;
             }
@@ -159,11 +148,15 @@ function actualizarGrados() {
     }
 }
 
-window.onload = function() {
-    if ("{{ old('nivel_educativo_id') }}") {
-        actualizarGrados();
-    }
-};
+// Cuando el usuario selecciona una tarjeta de nivel educativo
+document.querySelectorAll('.card-nivel-educativo').forEach(function(card) {
+    card.addEventListener('click', function() {
+        var nivelId = card.getAttribute('data-id'); // Asumiendo que cada tarjeta tiene un 'data-id' con el ID del nivel
+        document.getElementById('nivel_educativo_id').value = nivelId;
+        actualizarGrados(); // Llamas a la función que actualiza los grados
+    });
+});
+
 </script>
 
 @endsection

@@ -9,7 +9,7 @@
         }
 
         .main-section {
-            background-color: #f8f9fa; /* Fondo suave debajo de la navbar */
+            background-color:rgb(255, 255, 255); /* Fondo suave debajo de la navbar */
             padding: 40px 0; /* Espaciado para que el contenido no quede pegado al borde */
             border-radius: 8px; /* Bordes redondeados */
         }

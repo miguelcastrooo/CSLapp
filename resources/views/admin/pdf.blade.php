@@ -21,12 +21,13 @@
     </div>
 
     <div class="section">
-        @foreach($plataformas as $plataforma)
-            <p><strong>Plataforma:</strong> {{ $plataforma }}</p>
-            <p><strong>Usuario:</strong> {{ $alumno->plataformas->where('nombre', $plataforma)->first()->pivot->usuario ?? 'N/A' }}</p>
-            <p><strong>Contraseña:</strong> {{ $alumno->plataformas->where('nombre', $plataforma)->first()->pivot->contraseña ?? 'N/A' }}</p>
-            <div class="divider"></div>
-        @endforeach
-    </div>
+    @foreach($alumno->plataformas as $plataforma)
+        <p><strong>Plataforma:</strong> {{ $plataforma->nombre }}</p>
+        <p><strong>Usuario:</strong> {{ $plataforma->pivot->usuario ?? 'N/A' }}</p>
+        <p><strong>Contraseña:</strong> {{ $plataforma->pivot->contraseña ?? 'N/A' }}</p>
+        <div class="divider"></div>
+    @endforeach
+</div>
+
 </body>
 </html>

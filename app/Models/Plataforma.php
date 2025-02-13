@@ -14,12 +14,13 @@ class Plataforma extends Model
     protected $fillable = ['nombre'];
 
     // Relación muchos a muchos con Alumno
-    public function alumnos()
-    {
-        return $this->belongsToMany(Alumno::class, 'alumno_plataforma')
-                    ->withPivot('usuario', 'contraseña')
-                    ->withTimestamps();
-    }
+  // En Plataforma.php
+public function alumnos()
+{
+    return $this->belongsToMany(Alumno::class, 'alumno_plataforma', 'plataforma_id', 'alumno_id')
+                ->withPivot('nivel_educativo_id');  // Si necesitas almacenar el nivel_educativo_id en la tabla pivot
+}
+
 
     public function nivelEducativo()
     {

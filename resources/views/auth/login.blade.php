@@ -12,7 +12,7 @@
         }
 
         .card-header {
-            background-color:rgb(41, 45, 44);
+            background-color:rgb(0, 0, 0);
             color: white;
             border-radius: 15px 15px 0 0;
         }
@@ -31,7 +31,7 @@
         }
 
         .btn-primary {
-            background-color:rgb(41, 45, 44);
+            background-color:rgb(0, 0, 0);
             border-color: #3E8E7E;
         }
 

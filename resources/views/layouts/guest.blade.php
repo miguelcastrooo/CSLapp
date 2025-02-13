@@ -9,11 +9,11 @@
     @yield('styles')
     <style>
         body {
-            background-color: rgb(199, 199, 199);
+            background-color: rgb(255, 255, 255);
             color: #FFFFFF;
         }
         .navbar {
-            background-color: rgb(70, 67, 67);
+            background-color: rgb(0, 0, 0);
         }
         .navbar-brand, .nav-link {
             color: #FFFFFF !important;
@@ -34,19 +34,21 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-cogs"></i> Acciones
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('login') }}">
+                            <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
                         </a>
-                        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                            <li><a class="dropdown-item" href="{{ route('login') }}"><i class="fas fa-sign-in-alt"></i> Iniciar Sesión</a></li>
-                            <li><a class="dropdown-item" href="{{ route('register') }}"><i class="fas fa-user-plus"></i> Registrarse</a></li>
-                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('register') }}">
+                            <i class="fas fa-user-plus"></i> Registrarse
+                        </a>
                     </li>
                 </ul>
             </div>
         </div>
     </nav>
+    
     <main class="container py-5">
         @yield('content')
     </main>

@@ -4,11 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
 
-class Alumno extends Model
+class Egresado extends Model
 {
     use HasFactory;
+
+    protected $table = 'egresados'; // Nombre de la tabla en la BD
 
     protected $fillable = [
         'matricula',
@@ -36,31 +37,6 @@ class Alumno extends Model
         'plataforma_id',
         'seccion',
         'fecha_inscripcion',
+        'motivo_baja'
     ];
-
-    public $timestamps = true; 
-
-
-
-    public function nivelEducativo()
-    {
-        return $this->belongsTo(NivelEducativo::class, 'nivel_educativo_id');
-    }
-
-    public function grado()
-    {
-        return $this->belongsTo(Grado::class, 'grado_id');
-    }
-
-
-    public function plataformas()
-    {
-        return $this->belongsToMany(Plataforma::class, 'alumno_plataforma', 'alumno_id', 'plataforma_id')
-                    ->withPivot('usuario', 'contraseña')  // Cualquier otro campo en la tabla pivot
-                    ->withTimestamps();
-    }
-    
-
-
 }
-
