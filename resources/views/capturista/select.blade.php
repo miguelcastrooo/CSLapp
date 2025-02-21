@@ -12,7 +12,7 @@
                     'Preescolar' => '#FF5733',
                     'Primaria Baja' => '#FFC300',
                     'Primaria Alta' => '#28B463',
-                    'Secundaria' => '#1F618D'
+                    'Secundaria' => '#1976D2'
                 ];
                 $color = $nivel->color ?? ($colores[$nivel->nombre] ?? '#007bff');
 

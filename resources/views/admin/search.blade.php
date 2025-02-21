@@ -1,108 +1,82 @@
-<!-- Partial de Búsqueda -->
-<div class="mb-3">
-    <input type="text" id="search" class="form-control" placeholder="Buscar alumnos...">
-</div>
+@extends('layouts.app')
 
-<!-- Tabla de alumnos -->
-<div class="table-responsive mt-4">
-    <table class="table table-bordered table-striped table-sm">
+@section('content')
+
+   <!-- Mostrar mensaje flash de éxito -->
+   @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+<div class="container">
+    <h1>Lista de Alumnos</h1>
+    <p>Escribe en el campo de búsqueda para filtrar alumnos por matrícula, nombre o apellidos:</p>
+
+    <input type="text" id="search" class="form-control mb-3" placeholder="Buscar alumnos...">
+
+    <table class="table table-striped mt-4">
         <thead>
             <tr>
-                <th>ID</th>
-                <th>Matrícula</th>
+                <th>Matricula</th>
                 <th>Nombre</th>
                 <th>Apellido Paterno</th>
                 <th>Apellido Materno</th>
-                <th>Correo</th>
-                <th>Contacto 1 (Nombre)</th>
-                <th>Teléfono 1</th>
-                <th>Correo Familiar</th>
-                <th>Contacto 2 (Nombre)</th>
-                <th>Teléfono 2</th>
-                <th>Usuario Classroom</th>
-                <th>Contraseña Classroom</th>
-                <th>Usuario Moodle</th>
-                <th>Contraseña Moodle</th>
-                <th>Usuario Mathletics</th>
-                <th>Contraseña Mathletics</th>
-                <th>Usuario HMH</th>
-                <th>Contraseña HMH</th>
-                <th>Usuario Progrentis</th>
-                <th>Contraseña Progrentis</th>
-                <th>Nivel Educativo</th>
-                <th>Grado</th>
-                <th>Sección</th>
-                <th>Fecha de Inscripción</th>
-                <th class="text-center" style="min-width: 180px;">Acciones</th>
+                <th>Acciones</th>
             </tr>
         </thead>
         <tbody id="alumnos-list">
-            @foreach ($alumnos as $alumno)
-                <tr>
-                    <td>{{ $alumno->id }}</td>
-                    <td>{{ $alumno->matricula }}</td>
-                    <td>{{ $alumno->nombre }}</td>
-                    <td>{{ $alumno->apellidopaterno }}</td>
-                    <td>{{ $alumno->apellidomaterno }}</td>
-                    <td>{{ $alumno->correo ?? 'N/A' }}</td>
-                    <td>{{ $alumno->contacto1nombre ?? 'N/A' }}</td>
-                    <td>{{ $alumno->telefono1 ?? 'N/A' }}</td>
-                    <td>{{ $alumno->correo_familia ?? 'N/A' }}</td>
-                    <td>{{ $alumno->contacto2nombre ?? 'N/A' }}</td>
-                    <td>{{ $alumno->telefono2 ?? 'N/A' }}</td>
-                    <td>{{ $alumno->usuario_classroom ?? 'N/A' }}</td>
-                    <td>{{ $alumno->contraseña_classroom ?? 'N/A' }}</td>
-                    <td>{{ $alumno->usuario_moodle ?? 'N/A' }}</td>
-                    <td>{{ $alumno->contraseña_moodle ?? 'N/A' }}</td>
-                    <td>{{ $alumno->usuario_mathletics ?? 'N/A' }}</td>
-                    <td>{{ $alumno->contraseña_mathletics ?? 'N/A' }}</td>
-                    <td>{{ $alumno->usuario_hmh ?? 'N/A' }}</td>
-                    <td>{{ $alumno->contraseña_hmh ?? 'N/A' }}</td>
-                    <td>{{ $alumno->usuario_progrentis ?? 'N/A' }}</td>
-                    <td>{{ $alumno->contraseña_progrentis ?? 'N/A' }}</td>
-                    <td>{{ $alumno->nivelEducativo->nombre ?? 'N/A' }}</td>
-                    <td>{{ $alumno->grado->nombre ?? 'N/A' }}</td>
-                    <td>{{ $alumno->seccion ?? 'N/A' }}</td>
-                    <td>{{ $alumno->fecha_inscripcion }}</td>
-                    <td>
-                        <div class="btn-group">
-                            <a href="{{ route('admin.adminedit', $alumno->id) }}" class="btn btn-warning btn-sm">Editar</a>
-                            <button type="button" class="btn btn-danger btn-sm" data-toggle="modal" data-target="#modalBaja" data-id="{{ $alumno->id }}">Dar Baja</button>
-                        </div>
-                    </td>
-                </tr>
-            @endforeach
+            <!-- Los alumnos se mostrarán aquí después de la búsqueda -->
         </tbody>
     </table>
 </div>
 
-<!-- Paginación -->
-<div class="d-flex justify-content-center">
-    {{ $alumnos->links('pagination::bootstrap-4') }}
-</div>
+<script>
+    document.getElementById('search').addEventListener('input', function() {
+        let query = this.value;
 
-<!-- Modal de Confirmación -->
-<div class="modal fade" id="modalBaja" tabindex="-1" role="dialog" aria-labelledby="modalBajaLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalBajaLabel">Confirmar Baja</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form id="formBaja" action="{{ route('admin.confirmarBaja', $alumno->id) }}" method="POST">
-                    @csrf
-                    @method('PUT')
-                    <div class="form-group">
-                        <label for="motivo_baja">Motivo de la Baja:</label>
-                        <textarea id="motivo_baja" name="motivo_baja" class="form-control" required></textarea>
-                    </div>
-                    <button type="submit" class="btn btn-danger">Confirmar Baja</button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
+        if (query.length >= 1) {
+            // Realizar la petición AJAX
+            fetch(`{{ route('alumnos.search') }}?search=${query}`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                let resultsHTML = '';
+                if (data.length > 0) {
+                    data.forEach(alumno => {
+                        resultsHTML += `
+                            <tr>
+                                <td>${alumno.matricula}</td>
+                                <td>${alumno.nombre}</td>
+                                <td>${alumno.apellidopaterno}</td>
+                                <td>${alumno.apellidomaterno}</td>
+                                <td>
+                                    <a href="/admin/${alumno.id}/edit" class="btn btn-primary">Editar</a>
+                                </td>
+                                <td>
+                                    <a href="/admin/alumnos/pdf/${alumno.id}" class="btn btn-danger">Generar PDF</a>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    document.getElementById('alumnos-list').innerHTML = resultsHTML;
+                } else {
+                    document.getElementById('alumnos-list').innerHTML = '<tr><td colspan="5">No se encontraron resultados.</td></tr>';
+                }
+            })
+            .catch(error => {
+                console.error('Error al realizar la búsqueda:', error);
+                document.getElementById('alumnos-list').innerHTML = '<tr><td colspan="5">Error al buscar alumnos.</td></tr>';
+            });
+        } else {
+            // Si no hay texto en el campo de búsqueda, no hacer nada o puedes mostrar un mensaje
+            document.getElementById('alumnos-list').innerHTML = '';
+        }
+    });
+</script>
 
+@endsection

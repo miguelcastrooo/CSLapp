@@ -13,7 +13,7 @@
             color: #FFFFFF;
         }
         .navbar {
-            background-color: rgb(0, 0, 0);
+            background-color: rgb(54, 52, 52);
         }
         .navbar-brand, .nav-link {
             color: #FFFFFF !important;

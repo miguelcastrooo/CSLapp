@@ -33,7 +33,6 @@ class Alumno extends Model
         'contraseña_progrentis',
         'nivel_educativo_id',
         'grado_id',
-        'plataforma_id',
         'seccion',
         'fecha_inscripcion',
     ];
@@ -41,26 +40,19 @@ class Alumno extends Model
     public $timestamps = true; 
 
 
+    public function plataformas()
+    {
+        return $this->belongsToMany(Plataforma::class, 'alumno_plataforma', 'alumno_id', 'plataforma_id');
+    }
 
     public function nivelEducativo()
     {
-        return $this->belongsTo(NivelEducativo::class, 'nivel_educativo_id');
+        return $this->belongsTo(NivelEducativo::class, 'nivel_educativo_id'); // Ajusta el nombre de la clave foránea
     }
 
     public function grado()
     {
-        return $this->belongsTo(Grado::class, 'grado_id');
+        return $this->belongsTo(Grado::class, 'grado_id'); // Ajusta el nombre de la clave foránea
     }
-
-
-    public function plataformas()
-    {
-        return $this->belongsToMany(Plataforma::class, 'alumno_plataforma', 'alumno_id', 'plataforma_id')
-                    ->withPivot('usuario', 'contraseña')  // Cualquier otro campo en la tabla pivot
-                    ->withTimestamps();
-    }
-    
-
-
 }
 

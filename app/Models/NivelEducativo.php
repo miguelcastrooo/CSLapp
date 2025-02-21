@@ -27,6 +27,7 @@ class NivelEducativo extends Model
 
     public function plataformas()
     {
-        return $this->hasMany(Plataforma::class);
+        return $this->belongsToMany(Plataforma::class, 'nivel_plataforma', 'nivel_educativo_id', 'plataforma_id');
     }
+    
 }

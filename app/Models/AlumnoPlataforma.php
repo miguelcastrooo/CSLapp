@@ -11,15 +11,5 @@ class AlumnoPlataforma extends Model
 
     protected $table = 'alumno_plataforma';
 
-    protected $fillable = ['alumno_id', 'plataforma_id', 'usuario', 'contraseña'];
-
-    public function alumno()
-    {
-        return $this->belongsTo(Alumno::class);
-    }
-
-    public function plataforma()
-    {
-        return $this->belongsTo(Plataforma::class);
-    }
+    protected $fillable = ['alumno_id', 'plataforma_id'];
 }

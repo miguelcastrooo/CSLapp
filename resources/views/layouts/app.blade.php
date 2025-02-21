@@ -7,16 +7,12 @@
 
     <title>{{ config('app.name', 'Laravel') }}</title>
 
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
-    
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome CSS -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <!-- Carga de estilos con Vite -->
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     @yield('styles')
+    <link href="{{ asset('fontawesome/css/all.min.css') }}" rel="stylesheet">
+
 </head>
 <body class="font-sans antialiased">
     <div class="d-flex">
@@ -32,9 +28,8 @@
                     </h3>
                 </div>
 
-
-                 <!-- Profile Section -->
-                 <div class="mt-5">
+                <!-- Profile Section -->
+                <div class="mt-5">
                     <h6 class="text-center text-white">Bienvenido, {{ Auth::user()->name }}</h6>
                     <div class="d-flex justify-content-center">
                         <a href="{{ route('profile.edit') }}" class="btn btn-light btn-sm">
@@ -44,41 +39,66 @@
                 </div>
             </div>
 
-
-                <ul class="nav flex-column">
-                    @if (Auth::user()->role === 'super_admin')
-                        <li class="nav-item">
-                            <a class="nav-link text-white" href="{{ route('admin.select') }}">
-                                <i class="fas fa-cogs"></i> Plataformas
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-white" href="{{ route('admin.index') }}">
-                                <i class="fas fa-user"></i> Admin
-                            </a>
-                        </li>
-                    @endif
-
-                    @if (Auth::user()->role === 'super_admin' || Auth::user()->role === 'control_escolar')
-                        <li class="nav-item">
-                            <a class="nav-link text-white" href="{{ route('alumnos.index') }}">
-                                <i class="fas fa-search"></i> Buscar Alumnos
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-white" href="{{ route('alumnos.select') }}">
-                                <i class="fas fa-users"></i> Dar de alta un alumno
-                            </a>
-                        </li>
-                    @endif
-                </ul>
-                <div class="d-flex justify-content-center mt-2">
-                        <a class="btn btn-danger btn-sm" href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                            <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+            <ul class="nav flex-column">
+                @if (Auth::user()->hasRole('SuperAdmin'))
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="{{ route('admin.select') }}">
+                            <i class="fas fa-cogs"></i> Credenciales de Alumno
                         </a>
-                    </div>
-                
-               
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="{{ route('admin.selectadmin') }}">
+                            <i class="fas fa-user"></i> Administrar Alumnos
+                        </a>
+                    </li>
+                @endif
+
+                @if(Auth::user()->hasRole('admin') || Auth::user()->hasRole('AdministracionPreescolar') || Auth::user()->hasRole('AdministracionPrimariaBaja') || Auth::user()->hasRole('AdministracionPrimariaAlta') || Auth::user()->hasRole('AdministracionSecundaria'))
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="{{ route('coordinacion.index') }}">
+                            <i class="fas fa-cogs"></i> Administrar por Nivel
+                        </a>
+                    </li>
+                @endif
+
+                @if (Auth::user()->hasRole('ControlEscolar'))
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="{{ route('capturista.index') }}">
+                            <i class="fas fa-search"></i> Buscar Alumnos
+                        </a>
+                    </li>
+                @endif
+
+                @if (Auth::user()->hasRole('SuperAdmin') || Auth::user()->hasRole('ControlEscolar'))
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="{{ route('alumnos.select') }}">
+                            <i class="fas fa-user-plus"></i> Registrar Alumno
+                        </a>
+                    </li>
+                @endif
+
+                @if (Auth::user()->hasRole('SuperAdmin'))
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="{{ route('admin.search') }}">
+                            <i class="fas fa-search"></i> Buscar Alumno 
+                        </a>
+                    </li>
+                @endif
+
+                @if (Auth::user()->hasRole('SuperAdmin'))
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="#">
+                            <i class="fas fa-cogs"></i> Dar Rol
+                        </a>
+                    </li>
+                @endif
+            </ul>
+
+            <div class="d-flex justify-content-center mt-2">
+                <a class="btn btn-danger btn-sm" href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+                </a>
+            </div>
         </div>
 
         <!-- Main Content -->
@@ -103,17 +123,6 @@
     <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
         @csrf
     </form>
-
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
-
-    <!-- Scripts adicionales -->
-    <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-    <!-- Bootstrap JS (asegúrate de que sea la versión correcta para tu proyecto) -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
 
     @stack('scripts')
 </body>

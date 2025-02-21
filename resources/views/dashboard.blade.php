@@ -11,21 +11,21 @@
                 <div id="welcomeCarousel" class="carousel slide" data-bs-ride="carousel">
                     <div class="carousel-inner">
                         <div class="carousel-item active">
-                            <img src="{{ asset('img/1.jpg') }}" class="d-block w-100" alt="Imagen 1">
+                            <img src="{{ asset('img/4.jpg') }}" class="d-block w-100" alt="Imagen 1">
                             <div class="carousel-caption d-none d-md-block">
                                 <h5>Bienvenido a tu Dashboard</h5>
                                 <p>Explora tus configuraciones y herramientas personalizadas.</p>
                             </div>
                         </div>
                         <div class="carousel-item">
-                            <img src="{{ asset('img/2.jpg') }}" class="d-block w-100" alt="Imagen 2">
-                            <div class="carousel-caption d-none d-md-block">
+                        <img src="{{ asset('img/escuela-1.webp') }}" class="d-block w-100" alt="Imagen 2">
+                        <div class="carousel-caption d-none d-md-block">
                                 <h5>Inicia tu día con éxito</h5>
                                 <p>Todo lo que necesitas está aquí para ti.</p>
                             </div>
                         </div>
                         <div class="carousel-item">
-                            <img src="{{ asset('img/3.jpg') }}" class="d-block w-100" alt="Imagen 3">
+                            <img src="{{ asset('img/escuela-og.webp') }}" class="d-block w-100" alt="Imagen 3">
                             <div class="carousel-caption d-none d-md-block">
                                 <h5>Personaliza tu experiencia</h5>
                                 <p>Haz que tu panel de control sea tuyo.</p>
@@ -56,24 +56,11 @@
 
 @push('styles')
     <style>
-        /* Ajuste para el carrusel */
-        .carousel-inner img {
-            max-height: 250px; /* Reducir la altura máxima de las imágenes */
-            object-fit: cover; /* Asegura que la imagen cubra el área sin distorsionarse */
-            width: 100%; /* Asegura que la imagen ocupe todo el ancho disponible */
-        }
-
-        /* Estilo para el contenedor del carrusel */
-        .carousel {
-            max-width: 800px; /* Limitar el ancho máximo del carrusel */
-            margin: 0 auto; /* Centrar el carrusel */
-        }
-
-        /* Estilo para las leyendas en el carrusel */
-        .carousel-caption {
-            background-color: rgba(0, 0, 0, 0.5); /* Fondo semitransparente para mejorar la visibilidad del texto */
-            border-radius: 5px;
-            padding: 10px;
-        }
+    /* Aseguramos que las imágenes tengan el 100% de ancho y 400px de altura */
+    .carousel-inner img {
+        width: 100% !important; /* Asegura que las imágenes ocupen el 100% del ancho disponible */
+        height: 400px !important; /* Establece una altura fija de 400px */
+        object-fit: cover !important; /* Hace que las imágenes cubran el área sin distorsionarse */
+    }
     </style>
 @endpush

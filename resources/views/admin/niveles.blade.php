@@ -37,35 +37,55 @@
                     </thead>
                     <tbody>
                         @foreach ($alumnos as $alumno)
-                            <tr>
-                                <td>{{ $alumno->nombre }} {{ $alumno->apellidopaterno }}</td>
-                                <td>{{ $alumno->usuario_classroom ?? 'N/A' }}</td>
-                                <td>{{ $alumno->contraseña_classroom ?? 'N/A' }}</td>
-                                <td>{{ $alumno->usuario_moodle ?? 'N/A' }}</td>
-                                <td>{{ $alumno->contraseña_moodle ?? 'N/A' }}</td>
+                            <!-- Verificar si todos los campos están completos antes de mostrar el alumno -->
+                            @if (
+                                $alumno->usuario_classroom && 
+                                $alumno->contraseña_classroom && 
+                                $alumno->usuario_moodle && 
+                                $alumno->contraseña_moodle && 
+                                (
+                                    !in_array($nivelEducativo->nombre, ['Primaria Baja', 'Primaria Alta']) || 
+                                    ($alumno->usuario_hmh && $alumno->contraseña_hmh)
+                                ) && 
+                                (
+                                    !in_array($nivelEducativo->nombre, ['Primaria Alta', 'Secundaria']) || 
+                                    ($alumno->usuario_mathletics && $alumno->contraseña_mathletics)
+                                ) && 
+                                (
+                                    $nivelEducativo->nombre != 'Primaria Alta' || 
+                                    ($alumno->usuario_progrentis && $alumno->contraseña_progrentis)
+                                )
+                            )
+                                <tr>
+                                    <td>{{ $alumno->nombre }} {{ $alumno->apellidopaterno }}</td>
+                                    <td>{{ $alumno->usuario_classroom ?? 'N/A' }}</td>
+                                    <td>{{ $alumno->contraseña_classroom ?? 'N/A' }}</td>
+                                    <td>{{ $alumno->usuario_moodle ?? 'N/A' }}</td>
+                                    <td>{{ $alumno->contraseña_moodle ?? 'N/A' }}</td>
 
-                                @if (in_array($nivelEducativo->nombre, ['Primaria Baja', 'Primaria Alta']))
-                                    <td>{{ $alumno->usuario_hmh ?? 'N/A' }}</td>
-                                    <td>{{ $alumno->contraseña_hmh ?? 'N/A' }}</td>
-                                @endif
+                                    @if (in_array($nivelEducativo->nombre, ['Primaria Baja', 'Primaria Alta']))
+                                        <td>{{ $alumno->usuario_hmh ?? 'N/A' }}</td>
+                                        <td>{{ $alumno->contraseña_hmh ?? 'N/A' }}</td>
+                                    @endif
 
-                                @if (in_array($nivelEducativo->nombre, ['Primaria Alta', 'Secundaria']))
-                                    <td>{{ $alumno->usuario_mathletics ?? 'N/A' }}</td>
-                                    <td>{{ $alumno->contraseña_mathletics ?? 'N/A' }}</td>
-                                @endif
+                                    @if (in_array($nivelEducativo->nombre, ['Primaria Alta', 'Secundaria']))
+                                        <td>{{ $alumno->usuario_mathletics ?? 'N/A' }}</td>
+                                        <td>{{ $alumno->contraseña_mathletics ?? 'N/A' }}</td>
+                                    @endif
 
-                                @if ($nivelEducativo->nombre == 'Primaria Alta')
-                                    <td>{{ $alumno->usuario_progrentis ?? 'N/A' }}</td>
-                                    <td>{{ $alumno->contraseña_progrentis ?? 'N/A' }}</td>
-                                @endif
+                                    @if ($nivelEducativo->nombre == 'Primaria Alta')
+                                        <td>{{ $alumno->usuario_progrentis ?? 'N/A' }}</td>
+                                        <td>{{ $alumno->contraseña_progrentis ?? 'N/A' }}</td>
+                                    @endif
 
-                                <!-- Columna de acciones -->
-                                <td class="text-center">
-                                    <a href="{{ route('admin.alumnos.pdf.individual', ['nivel' => $alumno->nivelEducativo->nombre, 'id' => $alumno->id]) }}" 
-                                    class="btn btn-danger btn-sm">Generar PDF</a>
-                                    <a href="#" class="btn btn-info btn-sm">Enviar Correo</a>
-                                </td>
-                            </tr>
+                                    <!-- Columna de acciones -->
+                                    <td class="text-center">
+                                        <a href="{{ route('admin.alumnos.pdf.individual', ['nivel' => $alumno->nivelEducativo->nombre, 'id' => $alumno->id]) }}" 
+                                        class="btn btn-danger btn-sm">Generar PDF</a>
+                                        <a href="#" class="btn btn-info btn-sm">Enviar Correo</a>
+                                    </td>
+                                </tr>
+                            @endif
                         @endforeach
                     </tbody>
                 </table>

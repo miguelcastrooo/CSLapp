@@ -101,6 +101,10 @@
             <div class="col-md-12 mb-3">
                 <button type="submit" class="btn btn-primary">{{ isset($alumno) ? 'Actualizar Alumno' : 'Registrar Alumno' }}</button>
             </div>
+
+            <div class="col-md-12 mb-3">
+            <a href="{{ route('capturista.index') }}" class="btn btn-primary mt-3">Volver</a>
+            </div>
         </div>
     </form>
 </div>

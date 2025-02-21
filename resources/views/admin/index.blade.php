@@ -1,7 +1,8 @@
 @extends('layouts.app')
 
 @section('content')
-    <h1>Gestión de Alumnos</h1>
+
+    <h1>Alumnos del Nivel: {{ $nivel->nombre }}</h1> <!-- Mostramos el nombre del nivel -->
 
     <!-- Tabla de alumnos -->
     <div class="table-responsive mt-4">
@@ -13,7 +14,6 @@
                     <th>Nombre</th>
                     <th>Apellido Paterno</th>
                     <th>Apellido Materno</th>
-                    <th>Correo</th>
                     <th>Contacto 1 (Nombre)</th>
                     <th>Teléfono 1</th>
                     <th>Correo Familiar</th>
@@ -29,7 +29,6 @@
                     <th>Contraseña HMH</th>
                     <th>Usuario Progrentis</th>
                     <th>Contraseña Progrentis</th>
-                    <th>Nivel Educativo</th>
                     <th>Grado</th>
                     <th>Sección</th>
                     <th>Fecha de Inscripción</th>
@@ -44,13 +43,12 @@
                         <td>{{ $alumno->nombre }}</td>
                         <td>{{ $alumno->apellidopaterno }}</td>
                         <td>{{ $alumno->apellidomaterno }}</td>
-                        <td>{{ $alumno->correo ?? 'N/A' }}</td>
                         <td>{{ $alumno->contacto1nombre ?? 'N/A' }}</td>
                         <td>{{ $alumno->telefono1 ?? 'N/A' }}</td>
                         <td>{{ $alumno->correo_familia ?? 'N/A' }}</td>
                         <td>{{ $alumno->contacto2nombre ?? 'N/A' }}</td>
                         <td>{{ $alumno->telefono2 ?? 'N/A' }}</td>
-                        <td>{{ $alumno->usuario_classroom ?? 'N/A' }}</td>
+                        <td>{{ $alumno->correo ?? 'N/A' }}</td>
                         <td>{{ $alumno->contraseña_classroom ?? 'N/A' }}</td>
                         <td>{{ $alumno->usuario_moodle ?? 'N/A' }}</td>
                         <td>{{ $alumno->contraseña_moodle ?? 'N/A' }}</td>
@@ -60,7 +58,6 @@
                         <td>{{ $alumno->contraseña_hmh ?? 'N/A' }}</td>
                         <td>{{ $alumno->usuario_progrentis ?? 'N/A' }}</td>
                         <td>{{ $alumno->contraseña_progrentis ?? 'N/A' }}</td>
-                        <td>{{ $alumno->nivelEducativo->nombre ?? 'N/A' }}</td>
                         <td>{{ $alumno->grado->nombre ?? 'N/A' }}</td>
                         <td>{{ $alumno->seccion ?? 'N/A' }}</td>
                         <td>{{ $alumno->fecha_inscripcion }}</td>
@@ -75,49 +72,11 @@
             </tbody>
         </table>
     </div>
+    <a href="{{ route('admin.selectadmin') }}" class="btn btn-primary mt-3">Volver</a>
+
 
     <!-- Paginación -->
     <div class="d-flex justify-content-center">
         {{ $alumnos->links('pagination::bootstrap-4') }}
     </div>
-
-  <!-- Modal de Confirmación -->
-<div class="modal fade" id="modalBaja" tabindex="-1" role="dialog" aria-labelledby="modalBajaLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalBajaLabel">Confirmar Baja</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-            <form id="formBaja" action="{{ route('admin.confirmarBaja', $alumno->id) }}" method="POST">
-                @csrf
-                @method('PUT')
-                <div class="form-group">
-                    <label for="motivo_baja">Motivo de la Baja:</label>
-                    <textarea id="motivo_baja" name="motivo_baja" class="form-control" required></textarea>
-                </div>
-                <button type="submit" class="btn btn-danger">Confirmar Baja</button>
-            </form>
-
-            </div>
-        </div>
-    </div>
-</div>
-
-@endsection
-
-@section('scripts')
-<script>
-    $(document).ready(function() {
-        $('#modalBaja').on('show.bs.modal', function(event) {
-            var button = $(event.relatedTarget); // El botón que abrió el modal
-            var id = button.data('id'); // El ID del alumno
-            var form = $('#formBaja'); // El formulario del modal
-            form.attr('action', '/admin/alumnos/confirmarBaja/' + id); // Asignar la URL correcta con el ID
-        });
-    });
-</script>
 @endsection

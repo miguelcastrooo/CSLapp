@@ -12,46 +12,61 @@ use App\Models\NivelPlataforma;
 use App\Models\Plataforma;
 use App\Models\Egresado;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Spatie\Permission\Models\Role;
 
 
 class AdminController extends Controller
 {
-        // Función para mostrar los alumnos para la vista de admin (capturista)
-        public function index(Request $request)
-        {
-            $query = Alumno::query(); // Crea la consulta para los alumnos
-        
-            // Verifica si hay un término de búsqueda en la solicitud
-            if ($request->has('search')) {
-                $search = $request->input('search');
-        
-                // Aplica el filtro de búsqueda en los campos relevantes
-                $query->where('nombre', 'like', "%$search%")
-                      ->orWhere('matricula', 'like', "%$search%")
-                      ->orWhere('correo_familia', 'like', "%$search%");
-            }
-        
-            // Realiza la consulta con paginación
-            $alumnos = $query->paginate(10); // Ajusta la cantidad de alumnos por página
-        
-            // Retorna la vista con los alumnos filtrados
-            return view('admin.index', compact('alumnos'));
-        }
-        
-        public function search(Request $request)
-        {
+
+    public function __construct()
+    {
+        // Middleware para verificar roles
+    }
+    public function index(Request $request)
+    {
+        $nivel = NivelEducativo::first(); // Solo un nivel
+    
+        $query = Alumno::query(); // Crea la consulta para los alumnos
+    
+        // Verifica si hay un término de búsqueda en la solicitud
+        if ($request->has('search')) {
             $search = $request->input('search');
-        
-            $alumnos = Alumno::where('nombre', 'like', "%$search%")
-                             ->orWhere('matricula', 'like', "%$search%")
-                             ->orWhere('apellidopaterno', 'like', "%$search%")
-                             ->orWhere('apellidomaterno', 'like', "%$search%")
-                             ->get();
-        
-            // Retorna los resultados en formato JSON, asegurándote de incluir todos los campos que se están usando en la vista
-            return response()->json($alumnos);
+    
+            // Aplica el filtro de búsqueda en los campos relevantes
+            $query->where('nombre', 'like', "%$search%")
+                  ->orWhere('matricula', 'like', "%$search%")
+                  ->orWhere('correo_familia', 'like', "%$search%");
         }
-  
+    
+        // Realiza la consulta con paginación
+        $alumnos = $query->paginate(10); // Ajusta la cantidad de alumnos por página
+    
+        // Retorna la vista con los alumnos filtrados
+        return view('admin.index', compact('alumnos', 'nivel'));
+    }
+    
+    
+        
+    public function search(Request $request)
+    {
+        $search = $request->get('search');
+
+        // Realizar la búsqueda
+        $alumnos = Alumno::where('matricula', 'LIKE', "%{$search}%")
+                        ->orWhere('nombre', 'LIKE', "%{$search}%")
+                        ->orWhere('apellidopaterno', 'LIKE', "%{$search}%")
+                        ->orWhere('apellidomaterno', 'LIKE', "%{$search}%")
+                        ->get(); // Obtener todos los resultados sin paginación
+
+        // Si la petición es Ajax (por ejemplo, cuando usas JavaScript para actualizar el contenido dinámicamente)
+        if ($request->ajax()) {
+            return response()->json($alumnos);  // Retornar los resultados en formato JSON si la petición es Ajax
+        }
+
+        // Si no es una petición Ajax, devolver los resultados a la vista 'admin.search'
+        return view('admin.search', compact('alumnos'));
+    }
+
     // Función para crear un nuevo alumno (admin)
     public function create()
     {
@@ -125,24 +140,21 @@ class AdminController extends Controller
     {
         // Obtener al alumno con las relaciones necesarias
         $alumno = Alumno::with(['nivelEducativo', 'grado', 'plataformas'])->findOrFail($id);
-        $alumno->load('plataformas');
-
+    
         // Validar que el nivel proporcionado coincide con el nivel del alumno
         if ($alumno->nivelEducativo->nombre !== $nivel) {
             abort(404, 'El nivel educativo del alumno no coincide con el nivel proporcionado.');
         }
-
-        $nivelEducativo = $alumno->nivelEducativo->nombre;
-
-        // Obtener plataformas según el nivel educativo
-        $plataformas = $this->obtenerPlataformasPorNivel($nivelEducativo);
-
+    
+        // Si no hay plataformas, devolver colección vacía en lugar de null
+        $plataformasAlumno = $alumno->plataformas ?? collect();
+    
         // Generar el PDF
-        $pdf = Pdf::loadView('admin.pdf', compact('alumno', 'plataformas'));
+        $pdf = Pdf::loadView('admin.pdf', compact('alumno', 'plataformasAlumno'));
         
         return $pdf->stream("credenciales_alumno_{$alumno->matricula}.pdf");
     }
-
+        
     // Función privada para obtener las plataformas según el nivel educativo
     private function obtenerPlataformasPorNivel($nivelEducativo)
     {
@@ -163,6 +175,22 @@ class AdminController extends Controller
 
         return collect(); // Si no hay plataformas, devolver una colección vacía
     }
+
+    public function generarPdfPorId($id)
+    {
+        // Obtener al alumno con las relaciones necesarias
+        $alumno = Alumno::with(['nivelEducativo', 'grado', 'plataformas'])->findOrFail($id);
+
+        // Si no hay plataformas, devolver colección vacía en lugar de null
+        $plataformasAlumno = $alumno->plataformas ?? collect();
+
+        // Generar el PDF
+        $pdf = Pdf::loadView('admin.pdf', compact('alumno', 'plataformasAlumno'));
+        
+        // Descargar el PDF generado
+        return $pdf->stream("credenciales_alumno_{$alumno->matricula}.pdf");
+    }
+
 
     public function select()
     {
@@ -260,5 +288,33 @@ class AdminController extends Controller
     
         return redirect()->route('admin.index')->with('success', 'El alumno ha sido dado de baja y movido a egresados.');
     }
+
+    public function selectAdmin()
+    {
+
+        // Obtener los niveles educativos desde la base de datos
+        $niveles = NivelEducativo::all();  // Esto obtiene todos los niveles educativos
+        
+        // Devolver la vista con los niveles
+        return view('admin.selectadmin', compact('niveles'));
+    }
+    
+
+    public function showNivelAlumnos($nivelId)
+    {
+        // Buscar el nivel específico
+        $nivel = NivelEducativo::findOrFail($nivelId);
+        
+        // Filtrar los alumnos del nivel seleccionado
+        $alumnos = Alumno::where('nivel_educativo_id', $nivelId)->paginate(10);
+    
+        // Devolver la vista con el nivel y los alumnos filtrados
+        return view('admin.index', compact('nivel', 'alumnos'));
+    }
+    
+
+    
+
+    
     
 }
