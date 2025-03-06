@@ -97,11 +97,13 @@ class AdminController extends Controller
     public function edit($id)
     {
         $alumno = Alumno::findOrFail($id);
-        $niveles = NivelEducativo::all(); // Aquí recuperas todos los niveles educativos
-        $grados = Grado::all(); // También puedes cargar los grados de la base de datos si es necesario
+        $niveles = NivelEducativo::all();
+        $grados = Grado::all();
+        $contactos = $alumno->contactos; // Recuperas los contactos asociados al alumno
     
-        return view('admin.adminedit', compact('alumno', 'niveles', 'grados'));
+        return view('admin.adminedit', compact('alumno', 'niveles', 'grados', 'contactos'));
     }
+    
 
     // Función para actualizar la información de un alumno (admin)
     public function update(Request $request, $id)

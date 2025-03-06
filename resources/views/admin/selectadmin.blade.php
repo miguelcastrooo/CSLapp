@@ -1,6 +1,8 @@
 @extends('layouts.app')
 
 @section('content')
+
+
 <br><br><br><br>
     <div class="container">
         <h1 class="text-center mb-4">Selecciona el Nivel Educativo</h1>
@@ -39,4 +41,7 @@
             @endforeach
         </div>
     </div>
+
+    @component('components.searchadmin')
+@endcomponent
 @endsection

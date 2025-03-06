@@ -20,6 +20,8 @@ Route::get('/dashboard', function () {
 // Rutas para los alumnos
 Route::get('/alumnos', [AlumnoController::class, 'index'])->name('capturista.index');
 Route::get('/alumnos/search', [AlumnoController::class, 'search'])->name('alumnos.search');
+Route::get('/alumnos/selectsearch', [AlumnoController::class, 'selectSearch'])->name('capturista.selectsearch');
+Route::get('/alumnos/search/{nivel?}', [AlumnoController::class, 'search'])->name('alumnos.searchnivel');
 Route::get('/alumnos/select', [AlumnoController::class, 'select'])->name('alumnos.select');
 Route::get('alumnos/create/{nivel}', [AlumnoController::class, 'create'])->name('alumnos.create');
 Route::post('/alumnos', [AlumnoController::class, 'store'])->name('alumnos.store');
@@ -28,8 +30,14 @@ Route::get('/alumnos/{alumno}/edit', [AlumnoController::class, 'edit'])->name('a
 Route::put('/alumnos/{alumno}', [AlumnoController::class, 'update'])->name('alumnos.update');
 Route::delete('/alumnos/{alumno}', [AlumnoController::class, 'destroy'])->name('alumnos.destroy');
 
+Route::get('/send-email/{id}', [AlumnoController::class, 'sendAlumnoEmail']);
+
+Route::get('/grados/{nivel_id}', [AlumnoController::class, 'getGrados'])->name('grados.nivel');
+
+
+
 // Admin (Middleware: role:SuperAdmin)
-Route::middleware(['auth', 'role:SuperAdmin'])->group(function () {
+Route::middleware(['auth', 'role:SuperAdmin|CoordinacionPreescolar|CoordinacionPrimaria|CoordinacionSecundaria'])->group(function () {
     Route::get('/admin', [AdminController::class, 'index'])->name('admin.index');
     Route::get('/admin/create', [AdminController::class, 'create'])->name('admin.admincreate');
     Route::post('/admin', [AdminController::class, 'store'])->name('admin.storeAdmin');
@@ -42,7 +50,6 @@ Route::middleware(['auth', 'role:SuperAdmin'])->group(function () {
     Route::get('/admin/alumnos/pdf/{nivel}/{id}', [AdminController::class, 'generarPdf'])->name('admin.alumnos.pdf.individual');
     Route::get('/admin/alumnos/pdf/{id}', [AdminController::class, 'generarPdfPorId'])->name('admin.alumnos.pdf.id');
 
-
     // Niveles
     Route::get('/admin/niveles', [AdminController::class, 'nivelesIndex'])->name('admin.niveles');
     Route::get('/admin/select', [AdminController::class, 'select'])->name('admin.select');
@@ -53,6 +60,24 @@ Route::middleware(['auth', 'role:SuperAdmin'])->group(function () {
 
     // Dar de baja a un alumno
     Route::put('/admin/alumnos/confirmarBaja/{id}', [AdminController::class, 'confirmarBaja'])->name('admin.confirmarBaja');
+});
+
+Route::middleware(['auth', 'role:CoordinacionPreescolar|CoordinacionPrimaria|CoordinacionSecundaria'])->group(function () {
+    // Rutas para el coordinador, dependiendo del rol
+    Route::prefix('coordinador')->name('coordinador.')->group(function () {
+        
+        // Página principal donde se muestran los alumnos según el nivel educativo
+        Route::get('/', [CoordinacionController::class, 'index'])->name('index');
+
+        Route::get('coordinacion/alumnos/{id}', [CoordinacionController::class, 'show'])->name('coordinacion.alumnos.show');
+        
+        // Ruta para editar la información de un alumno
+        Route::get('/alumno/{alumno}/edit', [CoordinacionController::class, 'edit'])->name('edit');
+        Route::put('/alumno/{alumno}', [CoordinacionController::class, 'update'])->name('update');
+        
+        // Ruta para generar un PDF de un alumno
+        Route::get('/alumno/{alumno}/pdf', [CoordinacionController::class, 'generatePdf'])->name('generatePdf');
+    });
 });
 
 

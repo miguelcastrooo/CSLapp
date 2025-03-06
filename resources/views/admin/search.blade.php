@@ -19,6 +19,7 @@
         <thead>
             <tr>
                 <th>Matricula</th>
+                <th>Nivel Educativo</th>
                 <th>Nombre</th>
                 <th>Apellido Paterno</th>
                 <th>Apellido Materno</th>
@@ -51,6 +52,7 @@
                         resultsHTML += `
                             <tr>
                                 <td>${alumno.matricula}</td>
+                                <td>${alumno.nivel_educativo ? alumno.nivel_educativo.nombre : 'Sin Nivel'}</td>
                                 <td>${alumno.nombre}</td>
                                 <td>${alumno.apellidopaterno}</td>
                                 <td>${alumno.apellidomaterno}</td>

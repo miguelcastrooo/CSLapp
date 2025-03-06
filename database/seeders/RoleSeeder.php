@@ -14,12 +14,9 @@ class RoleSeeder extends Seeder
      */
     public function run()
     {
-        // Crear roles
-        Role::create(['name' => 'ControlEscolar']);
-        Role::create(['name' => 'SuperAdmin']);
-        Role::create(['name' => 'AdministracionPreescolar']);
-        Role::create(['name' => 'AdministracionPrimariaBaja']);
-        Role::create(['name' => 'AdministracionPrimariaAlta']);
-        Role::create(['name' => 'AdministracionSecundaria']);
+       
+        Role::create(['name' => 'CoordinacionPreescolar']);
+        Role::create(['name' => 'CoordinacionPrimaria']);
+        Role::create(['name' => 'CoordinacionSecundaria']);
     }
 }

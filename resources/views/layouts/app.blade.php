@@ -53,17 +53,33 @@
                     </li>
                 @endif
 
-                @if(Auth::user()->hasRole('admin') || Auth::user()->hasRole('AdministracionPreescolar') || Auth::user()->hasRole('AdministracionPrimariaBaja') || Auth::user()->hasRole('AdministracionPrimariaAlta') || Auth::user()->hasRole('AdministracionSecundaria'))
+                @if(Auth::user()->hasRole('CoordinacionPreescolar'))
                     <li class="nav-item">
-                        <a class="nav-link text-white" href="{{ route('coordinacion.index') }}">
-                            <i class="fas fa-cogs"></i> Administrar por Nivel
+                        <a class="nav-link text-white" href="#">
+                            <i class="fas fa-cogs"></i> Credenciales Preescolar
+                        </a>
+                    </li>
+                @endif
+
+                @if(Auth::user()->hasRole('CoordinacionPrimaria'))
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="#">
+                            <i class="fas fa-cogs"></i> Credenciales Primaria
+                        </a>
+                    </li>
+                @endif
+
+                @if(Auth::user()->hasRole('CoordinacionSecundaria'))
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="#">
+                            <i class="fas fa-cogs"></i> Credenciales Secundaria
                         </a>
                     </li>
                 @endif
 
                 @if (Auth::user()->hasRole('ControlEscolar'))
                     <li class="nav-item">
-                        <a class="nav-link text-white" href="{{ route('capturista.index') }}">
+                        <a class="nav-link text-white" href="{{ route('capturista.selectsearch') }}">
                             <i class="fas fa-search"></i> Buscar Alumnos
                         </a>
                     </li>
@@ -77,21 +93,9 @@
                     </li>
                 @endif
 
-                @if (Auth::user()->hasRole('SuperAdmin'))
-                    <li class="nav-item">
-                        <a class="nav-link text-white" href="{{ route('admin.search') }}">
-                            <i class="fas fa-search"></i> Buscar Alumno 
-                        </a>
-                    </li>
-                @endif
+           
 
-                @if (Auth::user()->hasRole('SuperAdmin'))
-                    <li class="nav-item">
-                        <a class="nav-link text-white" href="#">
-                            <i class="fas fa-cogs"></i> Dar Rol
-                        </a>
-                    </li>
-                @endif
+               
             </ul>
 
             <div class="d-flex justify-content-center mt-2">

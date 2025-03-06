@@ -13,80 +13,86 @@ use App\Models\Plataforma;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Spatie\Permission\Models\Role;
+use App\Models\Contacto;
+use App\Mail\AlumnoRegistered;
+use App\Mail\AlumnoUpdate;
+use Illuminate\Support\Facades\Mail;
+use App\Models\Parentesco;
 
 
 class AlumnoController extends Controller
 {
-
-    public function __construct()
-    {
-    }
-
-    // Método index
     public function index(Request $request)
     {
         $user = auth()->user(); // Obtener el usuario autenticado
-        
-            $query = Alumno::query(); // Crear una consulta base para obtener alumnos
-        
-            // Si hay un parámetro de búsqueda, aplicarlo a la consulta
-            if ($request->has('search')) {
-                $search = $request->input('search');
-                $query->where('nombre', 'like', "%$search%")
-                      ->orWhere('matricula', 'like', "%$search%")
-                      ->orWhere('correo_familia', 'like', "%$search%");
-            }
-        
-            // Realizar la consulta y obtener los alumnos
-            $alumnos = $query->orderBy('created_at', 'desc')->paginate(10);
-        
-            // Redirigir según el rol
-            if ($user->hasRole('SuperAdmin')) {
-                return view('admin.index', compact('alumnos')); // Vista para SuperAdmin
-            }
-        
-            if ($user->hasRole('ControlEscolar')) {
-                return view('capturista.index', compact('alumnos')); // Vista para ControlEscolar
-            }
-        
-            // Si no tiene el rol adecuado, redirigir o abortar
-            abort(403, 'No tienes permiso para acceder a esta página.');
-        }
-        
-        public function search(Request $request)
-        {
+        $query = Alumno::query()->with('nivelEducativo'); // Incluir la relación con NivelEducativo
+    
+        // Si hay un parámetro de búsqueda, aplicarlo a la consulta
+        if ($request->has('search')) {
             $search = $request->input('search');
-            
-            // Realiza la consulta de búsqueda
-            $alumno = Alumno::where('matricula', $search) 
-                            ->orWhere('nombre', 'like', "%$search%")
-                            ->orWhere('apellidopaterno', 'like', "%$search%")
-                            ->orWhere('apellidomaterno', 'like', "%$search%")
-                            ->first(); // Tomar solo el primer alumno que coincida
-            
-            // Si se encuentra el alumno, devolver los datos con las relaciones
-            if ($alumno) {
-                return response()->json([
-                    'matricula' => $alumno->matricula,
-                    'nombre' => $alumno->nombre,
-                    'apellidopaterno'=> $alumno->apellidopaterno,
-                    'apellidomaterno'=> $alumno->apellidomaterno,
-                    'contacto1nombre' => $alumno->contacto1nombre,
-                    'telefono1' => $alumno->telefono1,
-                    'correo_familia' => $alumno->correo_familia,
-                    'contacto2nombre' => $alumno->contacto2nombre,
-                    'telefono2' => $alumno->telefono2,
-                    'fecha_inscripcion' => $alumno->fecha_inscripcion,
-                    // Otros datos que desees incluir
-                    'nivel_educativo_nombre' => $alumno->nivelEducativo ? $alumno->nivelEducativo->nombre : '',
-                    'grado_nombre' => $alumno->grado ? $alumno->grado->nombre : ''
-                ]);
-            } else {
-                // Si no se encuentra el alumno, devolver null
-                return response()->json(null);
-            }
+            $query->where(function ($q) use ($search) {
+                $q->where('nombre', 'like', "%$search%")
+                  ->orWhere('matricula', 'like', "%$search%")
+                  ->orWhere('correo_familia', 'like', "%$search%");
+            });
         }
+    
+        // Aplicar filtro por nivel educativo si se seleccionó uno
+        if ($request->has('nivel')) {
+            $nivelId = $request->input('nivel');
+            $query->where('nivel_educativo_id', $nivelId);
+        }
+    
+        // Obtener los alumnos paginados
+        $alumnos = $query->orderBy('created_at', 'desc')->paginate(10);
+    
+        // Obtener todos los niveles educativos para los botones de filtro
+        $niveles = NivelEducativo::all();
+    
+        // Redirigir según el rol
+        if ($user->hasRole('SuperAdmin')) {
+            return view('admin.index', compact('alumnos', 'niveles'));
+        }
+    
+        if ($user->hasRole('ControlEscolar')) {
+            return view('capturista.index', compact('alumnos', 'niveles'));
+        }
+    
+        // Si no tiene el rol adecuado, redirigir o abortar
+        abort(403, 'No tienes permiso para acceder a esta página.');
+    }
+
+    public function search(Request $request)
+    {
+        $query = $request->get('search');
+        $nivel = $request->get('nivel');  // Obtener el nivel desde el query
+        $orderBy = $request->get('orderBy', 'desc');  // Obtener el orden (por defecto es descendente)
+
+        $alumnos = Alumno::with('nivelEducativo')  // Cargar relación
+            ->when($nivel, function ($q) use ($nivel) {
+                return $q->where('nivel_educativo_id', $nivel);  // Filtrar por nivel
+            })
+            ->when($query, function ($q) use ($query) {
+                return $q->where('matricula', 'like', "%{$query}%")
+                        ->orWhere('nombre', 'like', "%{$query}%")
+                        ->orWhere('apellidopaterno', 'like', "%{$query}%")
+                        ->orWhere('apellidomaterno', 'like', "%{$query}%");
+            })
+            ->orderBy('created_at', $orderBy)  // Ordenar por la fecha de creación
+            ->get();
+
+        return response()->json($alumnos);
+    }
+
+
+
         
+    public function selectSearch()
+    {
+        $niveles = NivelEducativo::all();
+        return view('capturista.selectsearch', compact('niveles'));
+    }
+
         
     public function select()
     {
@@ -99,17 +105,20 @@ class AlumnoController extends Controller
     
         return view('capturista.select', compact('niveles'));
     }
-    
+
     public function create($nivel_id)
     {
-        // Verificar que se está recibiendo el $nivel_id
+        // Obtener el nivel educativo con su ID
         $nivel = NivelEducativo::findOrFail($nivel_id);
+    
+        // Obtener los parentescos y grados relacionados
+        $parentescos = Parentesco::all();
         $grados = Grado::where('nivel_educativo_id', $nivel->id)->get();
         
-        return view('capturista.create', compact('nivel', 'grados'));
+        // Pasar las variables a la vista, incluyendo el id del nivel educativo
+        return view('capturista.create', compact('nivel', 'grados', 'parentescos', 'nivel_id'));
     }
-
-
+    
     public function store(Request $request)
     {
         // Validación de los datos del formulario
@@ -120,68 +129,127 @@ class AlumnoController extends Controller
             'apellidomaterno' => 'required|string|max:255',
             'contacto1nombre' => 'required|string|max:255',
             'telefono1' => 'required|digits:10',
-            'correo_familia' => 'required|email',
+            'contacto1tipo' => 'required|string|max:255',
+            'correo1' => 'required|email', // Validar el correo del primer contacto
             'contacto2nombre' => 'nullable|string|max:255',
             'telefono2' => 'nullable|digits:10',
+            'contacto2tipo' => 'nullable|string|max:255',
+            'correo2' => 'nullable|email', // Validar el correo del segundo contacto
+            'contacto3nombre' => 'nullable|string|max:255',
+            'telefono3' => 'nullable|digits:10',
+            'contacto3tipo' => 'nullable|string|max:255',
+            'correo3' => 'nullable|email', // Validar el correo del tercer contacto
             'nivel_educativo_id' => 'required|exists:nivel_educativo,id',
             'grado_id' => 'required|exists:grados,id',
             'fecha_inscripcion' => 'required|date',
-        ]);
-
-        // Llamamos a la función para generar las credenciales
+            'fecha_inicio' => 'nullable|date',
+        ]);        
+    
+        // Asignación de fecha_inicio: si no se recibe, se asigna la fecha actual
+        $fecha_inicio = $request->fecha_inicio ?? now()->toDateString(); // Usa la fecha actual si es nula
+    
+        // Generar credenciales solo para Classroom y Moodle
         $credenciales = $this->generarCredenciales(
             $request->nombre,
             $request->apellidopaterno,
             $request->matricula,
             $request->fecha_inscripcion
         );
-
-        // Crear el nuevo alumno con los datos del formulario y las credenciales generadas
+    
+        // Crear el alumno
         $alumno = Alumno::create([
             'matricula' => $request->matricula,
             'nombre' => $request->nombre,
             'apellidopaterno' => $request->apellidopaterno,
             'apellidomaterno' => $request->apellidomaterno,
-            'contacto1nombre' => $request->contacto1nombre,
-            'telefono1' => $request->telefono1,
-            'correo_familia' => $request->correo_familia,
-            'contacto2nombre' => $request->contacto2nombre,
-            'telefono2' => $request->telefono2,
-            'nivel_educativo_id' => $request->nivel_educativo_id,
-            'grado_id' => $request->grado_id,
-            'fecha_inscripcion' => $request->fecha_inscripcion,
             'usuario_classroom' => $credenciales['usuario_classroom'],
             'contraseña_classroom' => $credenciales['contraseña_classroom'],
             'usuario_moodle' => $credenciales['usuario_moodle'],
             'contraseña_moodle' => $credenciales['contraseña_moodle'],
-            'correo' => $credenciales['correo'],
+            'nivel_educativo_id' => $request->nivel_educativo_id,
+            'grado_id' => $request->grado_id,
+            'fecha_inscripcion' => $request->fecha_inscripcion,
+            'fecha_inicio' => $fecha_inicio,
         ]);
-
-        // Verificar si se ha creado correctamente el alumno
+    
         if (!$alumno) {
             return redirect()->back()->with('error', 'Error al crear el alumno.');
         }
+    
+        // Relacionar los contactos
+        $this->relacionarContactos($request, $alumno);
 
-        // Obtener el nivel educativo del alumno
-        $nivelEducativo = $alumno->nivelEducativo;
+        $contactos = Contacto::where('alumno_id', $alumno->id)->get();
 
-        // Obtener las plataformas asociadas al nivel educativo
-        $plataformas = $nivelEducativo->plataformas;
-
-        // Asociar las plataformas al alumno
-        $alumno->plataformas()->sync($plataformas->pluck('id')->toArray());
-
-             // Verificar el rol del usuario y redirigir en consecuencia
-    if (auth()->user()->hasRole('SuperAdmin')) {
-        // Si es un administrador, redirige al index de admin
-        return redirect()->route('admin.search')->with('success', 'Alumno registrado correctamente.');
-    } elseif (auth()->user()->hasRole('ControlEscolar')) {
-        // Si es de control escolar, redirige a la vista correspondiente
-        return redirect()->route('capturista.index')->with('success', 'Alumno registrado correctamente.');
+    
+        // Lógica para agregar los destinatarios del correo
+        $destinatarios = [
+            'coordinador_tecnologia@colegiosanluis.com',
+            'coordinadora_academica@colegiosanluis.com',
+        ];
+    
+        // Agregar al coordinador del nivel educativo
+        switch ($request->nivel_educativo_id) {
+            case 1:
+                $destinatarios[] = 'coordinador.preescolar@colegiosanluis.com';
+                break;
+            case 2:
+                $destinatarios[] = 'coordinador.primaria@colegiosanluis.com';
+                break;
+            case 3:
+                $destinatarios[] = 'coordinador.secundaria@colegiosanluis.com';
+                break;
+        }
+    
+        // Enviar el correo de notificación a los destinatarios
+        Mail::to($destinatarios)->send(new AlumnoRegistered($alumno, $contactos));
+    
+        return redirect()->route('capturista.selectsearch')->with('success', 'Alumno registrado correctamente.');
     }
+    
+    // Función para guardar los contactos
+    public function relacionarContactos(Request $request, Alumno $alumno)
+    {
+        // Crear los datos de los contactos
+        $contactos = [];
 
-        // Redirigir con mensaje de éxito
-        return redirect()->route('capturista.index')->with('success', 'Alumno registrado exitosamente.');
+        // Primer contacto
+        if ($request->contacto1nombre && $request->correo1) {
+            $contactos[] = [
+                'nombre' => $request->contacto1nombre,
+                'telefono' => $request->telefono1,
+                'correo' => $request->correo1, // Correo del primer contacto
+                'tipo_contacto' => $request->contacto1tipo,
+                'alumno_id' => $alumno->id,
+            ];
+        }
+
+        // Segundo contacto
+        if ($request->contacto2nombre && $request->correo2) {
+            $contactos[] = [
+                'nombre' => $request->contacto2nombre,
+                'telefono' => $request->telefono2,
+                'correo' => $request->correo2, // Correo del segundo contacto
+                'tipo_contacto' => $request->contacto2tipo,
+                'alumno_id' => $alumno->id,
+            ];
+        }
+
+        // Tercer contacto
+        if ($request->contacto3nombre && $request->correo3) {
+            $contactos[] = [
+                'nombre' => $request->contacto3nombre,
+                'telefono' => $request->telefono3,
+                'correo' => $request->correo3, // Correo del tercer contacto
+                'tipo_contacto' => $request->contacto3tipo,
+                'alumno_id' => $alumno->id,
+            ];
+        }
+
+        // Guardar los contactos en la base de datos
+        if (count($contactos) > 0) {
+            Contacto::insert($contactos);
+        }
     }
 
     protected function generarCredenciales($nombre, $apellido, $matricula, $fechaInscripcion)
@@ -195,7 +263,7 @@ class AlumnoController extends Controller
     
         // Comprobamos si el correo ya existe y agregamos un número si es necesario
         $contador = 1;
-        while (Alumno::where('correo', $emailClassroom)->exists()) {
+        while (Alumno::where('usuario_classroom', $emailClassroom)->exists()) {
             $emailClassroom = $primerNombre . $primerApellido . $contador . '@colegiosanluis.com.mx';
             $contador++;
         }
@@ -208,59 +276,210 @@ class AlumnoController extends Controller
         $usuarioMoodle = 'Csl-' . $matricula;
         $contraseñaMoodle = $matricula;
     
-        // Devolvemos todas las credenciales generadas
+        // Devolvemos las credenciales generadas
         return [
-            'usuario_classroom' => $emailClassroom, // Usamos el correo completo
+            'usuario_classroom' => $emailClassroom, // Solo guardamos el correo para usuario_classroom
             'contraseña_classroom' => $contraseñaClassroom,
             'usuario_moodle' => $usuarioMoodle,
             'contraseña_moodle' => $contraseñaMoodle,
-            'correo' => $emailClassroom, // También guardamos el correo completo
         ];
     }
     
-                
-    public function show(Alumno $alumno)
-    {
-        return view('alumnos.show', compact('alumno'));
-    }
 
     public function edit($id)
     {
-        // Encuentra al alumno por su id
         $alumno = Alumno::findOrFail($id);
-        
-        // Obtén los niveles educativos
-        $niveles = NivelEducativo::all();
-        
-        // También puedes pasar los grados relacionados con el nivel del alumno, si es necesario
+        $contactos = Contacto::where('alumno_id', $alumno->id)->get();
         $grados = Grado::where('nivel_educativo_id', $alumno->nivel_educativo_id)->get();
-        
-        // Retorna la vista y pasa los datos
-        return view('capturista.edit', compact('alumno', 'niveles', 'grados'));
+        $nivel_id = NivelEducativo::all();  // O como se recupere el nivel
+    
+        return view('capturista.edit', compact('alumno', 'contactos', 'grados', 'nivel_id'));
     }
     
-
-    public function update(Request $request, Alumno $alumno)
+    public function getGrados($nivel_id)
     {
-        $request->validate([
-            'matricula' => 'required|numeric|unique:alumnos,matricula,' . $alumno->id,
-            'nombre' => 'required|string|max:255',
-            'apellidopaterno' => 'required|string|max:255',
-            'apellidomaterno' => 'required|string|max:255',
-            'contacto1nombre' => 'required|string|max:255',
-            'telefono1' => 'required|digits:10',
-            'correo_familia' => 'required|email|unique:alumnos,correo_familia,' . $alumno->id,
-            'contacto2nombre' => 'nullable|string|max:255',
-            'telefono2' => 'nullable|digits:10',
-            'nivel_educativo_id' => 'required|exists:nivel_educativo,id',
-            'grado_id' => 'required|exists:grados,id',
-            'fecha_inscripcion' => 'required|date',
-        ]);
+        // Obtener los grados correspondientes al nivel educativo seleccionado
+        $grados = Grado::where('nivel_educativo_id', $nivel_id)->get();
 
-        $alumno->update($request->all());
+        // Devolver los grados como JSON
+        return response()->json($grados);
+    }   
 
-        return redirect()->route('capturista.index')->with('success', 'Alumno actualizado exitosamente.');
+    public function update(Request $request, $id)
+{
+    // Obtener el alumno a actualizar
+    $alumno = Alumno::find($id);
+    
+    if (!$alumno) {
+        return redirect()->back()->with('error', 'Alumno no encontrado.');
     }
+
+    // Validación de los campos, solo para los campos que estás actualizando
+    $validationRules = [
+        'matricula' => 'nullable|numeric|unique:alumnos,matricula,' . $id,
+        'nombre' => 'nullable|string|max:255',
+        'apellidopaterno' => 'nullable|string|max:255',
+        'apellidomaterno' => 'nullable|string|max:255',
+        'contacto1nombre' => 'nullable|string|max:255',
+        'telefono1' => 'nullable|digits:10',
+        'contacto1tipo_contacto' => 'nullable|string|max:255',
+        'correo1' => 'nullable|email',
+        'contacto2nombre' => 'nullable|string|max:255',
+        'telefono2' => 'nullable|digits:10',
+        'contacto2tipo_contacto' => 'nullable|string|max:255',
+        'correo2' => 'nullable|email',
+        'contacto3nombre' => 'nullable|string|max:255',
+        'telefono3' => 'nullable|digits:10',
+        'contacto3tipo_contacto' => 'nullable|string|max:255',
+        'correo3' => 'nullable|email',
+        'nivel_educativo_id' => 'nullable|exists:nivel_educativo,id',
+        'grado_id' => 'nullable|exists:grados,id',
+        'fecha_inscripcion' => 'nullable|date',
+        'fecha_inicio' => 'nullable|date',
+    ];
+
+    $request->validate($validationRules);
+
+    // Asignación de fecha_inicio: si no se recibe, se asigna la fecha actual
+    $fecha_inicio = $request->fecha_inicio ?? now()->toDateString();
+
+    // Generar las credenciales
+    $credenciales = $this->generarCredenciales(
+        $request->nombre ?? $alumno->nombre,
+        $request->apellidopaterno ?? $alumno->apellidopaterno,
+        $request->matricula ?? $alumno->matricula,
+        $request->fecha_inscripcion ?? $alumno->fecha_inscripcion
+    );
+
+    // Verificar si los valores de nivel_educativo_id y grado_id han cambiado
+    $nivel_educativo_id = $request->nivel_educativo_id ?? $alumno->nivel_educativo_id;
+    $grado_id = $request->grado_id ?? $alumno->grado_id;
+
+    // Actualizar solo los campos que han sido modificados
+    $alumno->update([
+        'matricula' => $request->matricula ?? $alumno->matricula,
+        'nombre' => $request->nombre ?? $alumno->nombre,
+        'apellidopaterno' => $request->apellidopaterno ?? $alumno->apellidopaterno,
+        'apellidomaterno' => $request->apellidomaterno ?? $alumno->apellidomaterno,
+        'usuario_classroom' => $credenciales['usuario_classroom'],
+        'contraseña_classroom' => $credenciales['contraseña_classroom'],
+        'usuario_moodle' => $credenciales['usuario_moodle'],
+        'contraseña_moodle' => $credenciales['contraseña_moodle'],
+        'nivel_educativo_id' => $nivel_educativo_id, // Solo actualizamos si se cambió
+        'grado_id' => $grado_id, // Solo actualizamos si se cambió
+        'fecha_inscripcion' => $request->fecha_inscripcion ?? $alumno->fecha_inscripcion,
+        'fecha_inicio' => $fecha_inicio,
+    ]);
+
+    // Actualizar los contactos solo si se ha modificado el nombre o cualquier otro campo relacionado
+    $contactos = Contacto::where('alumno_id', $alumno->id)->get();
+
+    foreach ($contactos as $contacto) {
+        $contactoData = [
+            'nombre' => $request->{'contacto' . $contacto->tipo_contacto . 'nombre'} ?? $contacto->nombre,
+            'telefono' => $request->{'telefono' . $contacto->tipo_contacto} ?? $contacto->telefono,
+            'tipo_contacto' => $request->{'contacto' . $contacto->tipo_contacto . 'tipo_contacto'} ?? $contacto->tipo_contacto,
+            'correo' => $request->{'correo' . $contacto->tipo_contacto} ?? $contacto->correo,
+        ];
+
+        // Verificamos si se modificaron los datos del contacto
+        if ($contacto->nombre !== $contactoData['nombre'] || 
+            $contacto->telefono !== $contactoData['telefono'] ||
+            $contacto->tipo_contacto !== $contactoData['tipo_contacto'] ||
+            $contacto->correo !== $contactoData['correo']) {
+            
+            // Si algún campo fue modificado, actualizamos ese contacto
+            $contacto->update($contactoData);
+        }
+    }
+
+    // Lógica para agregar los destinatarios del correo
+    $destinatarios = [
+        'coordinador_tecnologia@colegiosanluis.com',
+        'coordinadora_academica@colegiosanluis.com',
+    ];
+
+    // Agregar al coordinador del nivel educativo
+    switch ($nivel_educativo_id) {
+        case 1:
+            $destinatarios[] = 'coordinador.preescolar@colegiosanluis.com';
+            break;
+        case 2:
+            $destinatarios[] = 'coordinador.primaria@colegiosanluis.com';
+            break;
+        case 3:
+            $destinatarios[] = 'coordinador.secundaria@colegiosanluis.com';
+            break;
+    }
+
+    // Enviar el correo de notificación a los destinatarios
+    Mail::to($destinatarios)->send(new AlumnoUpdate($alumno, $contactos));
+
+
+    // Verificar el rol del usuario para redirigir al lugar adecuado
+    if (auth()->user()->hasRole('SuperAdmin')) {
+        // Si el usuario es SuperAdmin, redirigir a selectadmin
+        return redirect()->route('admin.selectadmin')->with('success', 'Alumno actualizado correctamente.');
+    }
+
+    // Si no es SuperAdmin, redirigir a la ruta de capturista (o ControlEscolar)
+    return redirect()->route('capturista.selectsearch')->with('success', 'Alumno actualizado correctamente.');}
+        
+    private function eliminarContactosDuplicados(Alumno $alumno)
+    {
+        // Obtener todos los contactos del alumno
+        $contactos = Contacto::where('alumno_id', $alumno->id)->get();
+    
+        // Comprobar si hay contactos duplicados por el mismo nombre, teléfono o correo
+        $contactosUnicos = $contactos->unique(function ($contacto) {
+            return $contacto->nombre . $contacto->telefono . $contacto->correo;
+        });
+    
+        // Eliminar los contactos duplicados
+        $duplicados = $contactos->diff($contactosUnicos);
+        foreach ($duplicados as $duplicado) {
+            $duplicado->delete();
+        }
+    }
+    
+    private function actualizarContactos(Request $request, Alumno $alumno)
+    {
+        // Aquí solo actualizamos los contactos que hayan cambiado (si es que hay cambios)
+        $contactos = ['contacto1', 'contacto2', 'contacto3'];
+    
+        foreach ($contactos as $contacto) {
+            $contactoNombre = $contacto . 'nombre';
+            $contactoTelefono = $contacto . 'telefono';
+            $contactoTipo = $contacto . 'tipo';
+            $contactoCorreo = $contacto . 'correo';
+    
+            $contactoExistente = Contacto::where('alumno_id', $alumno->id)
+                ->where('tipo', $request->$contactoTipo)
+                ->first();
+    
+            // Si existe, solo actualizamos los campos modificados
+            if ($contactoExistente) {
+                $contactoExistente->update([
+                    'nombre' => $request->$contactoNombre ?? $contactoExistente->nombre,
+                    'telefono' => $request->$contactoTelefono ?? $contactoExistente->telefono,
+                    'correo' => $request->$contactoCorreo ?? $contactoExistente->correo,
+                ]);
+            } else {
+                // Si no existe, solo actualizamos los datos de los contactos que sí se envían
+                if ($request->$contactoNombre || $request->$contactoTelefono || $request->$contactoCorreo) {
+                    Contacto::create([
+                        'alumno_id' => $alumno->id,
+                        'nombre' => $request->$contactoNombre,
+                        'telefono' => $request->$contactoTelefono,
+                        'correo' => $request->$contactoCorreo,
+                        'tipo' => $request->$contactoTipo,
+                    ]);
+                }
+            }
+        }
+    }
+    
+    
 
     public function destroy(Alumno $alumno)
     {

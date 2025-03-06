@@ -1,9 +1,11 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container">
-    <h1>Agregar Alumno</h1>
-    <p>Ingresa los datos del alumno a continuación:</p>
+<div class="container mt-5">
+    <div class="text-center mb-4">
+        <h1 class="display-4 text-primary">Registro de Alumno</h1>
+        <p class="lead">Ingresa los datos del alumno a continuación:</p>
+    </div>
 
     @if(session('success'))
         <div class="alert alert-success">
@@ -24,139 +26,173 @@
     <form action="{{ route('alumnos.store') }}" method="POST">
         @csrf
         <div class="row">
-            <div class="col-md-6 mb-3">
-                <label for="matricula">Matrícula</label>
-                <input type="number" class="form-control" id="matricula" name="matricula" value="{{ old('matricula') }}" required min="1">
+            <!-- Información del Alumno en columnas -->
+            <div class="col-md-12">
+                <div class="card shadow-sm mb-4" style="background-color: #f8f9fa;">
+                    <div class="card-body">
+                        <h5 class="card-title text-primary">Datos del Alumno</h5>
+
+                        <!-- Matrícula en su propia fila centrado -->
+                        <div class="row mb-3 justify-content-center">
+                            <div class="col-md-6">
+                                <label for="matricula" class="form-label text-center d-block"><strong>Matrícula</strong></label>
+                                <input type="number" class="form-control" id="matricula" name="matricula" value="{{ old('matricula') }}" required min="1" placeholder="Ej. 123456">
+                            </div>
+                        </div>
+
+                        <!-- Los demás campos en una sola fila -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="nombre" class="form-label"><strong>Nombre</strong></label>
+                                <input type="text" class="form-control" id="nombre" name="nombre" value="{{ old('nombre') }}" required pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" title="Solo letras y espacios" placeholder="Ej. Juan">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="apellidopaterno" class="form-label"><strong>Apellido Paterno</strong></label>
+                                <input type="text" class="form-control" id="apellidopaterno" name="apellidopaterno" value="{{ old('apellidopaterno') }}" required pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" placeholder="Ej. Pérez">
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="apellidomaterno" class="form-label"><strong>Apellido Materno</strong></label>
+                                <input type="text" class="form-control" id="apellidomaterno" name="apellidomaterno" value="{{ old('apellidomaterno') }}" required pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" placeholder="Ej. Gómez">
+                            </div>
+
+                            <input type="hidden" name="nivel_educativo_id" value="{{ $nivel_id }}">
+
+                            <div class="col-md-6">
+                                <label for="grado_id" class="form-label"><strong>Grado</strong></label>
+                                <select class="form-select" id="grado_id" name="grado_id" required>
+                                    <option value="">Selecciona un grado</option>
+                                    @if($grados && $grados->isNotEmpty())
+                                        @foreach ($grados as $grado)
+                                            <option value="{{ $grado->id }}" {{ old('grado_id') == $grado->id ? 'selected' : '' }}>{{ $grado->nombre }}</option>
+                                        @endforeach
+                                    @else
+                                        <option value="">No hay grados disponibles</option>
+                                    @endif
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="fecha_inscripcion" class="form-label"><strong>Fecha de Inscripción</strong></label>
+                                <input type="date" class="form-control" id="fecha_inscripcion" name="fecha_inscripcion" value="{{ old('fecha_inscripcion') }}" required placeholder="Ej. 2025-03-01">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="fecha_inicio" class="form-label"><strong>Fecha de Inicio</strong></label>
+                                <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" value="{{ old('fecha_inicio') }}" required placeholder="Ej. 2025-08-15">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información de Contactos -->
+                <div class="card shadow-sm mb-4" style="background-color: #f8f9fa;">
+                    <div class="card-body">
+                        <h5 class="card-title text-primary">Información de Contactos</h5>
+
+                        <!-- Primer Contacto -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="contacto1nombre" class="form-label"><strong>Nombre del Primer Contacto</strong></label>
+                                <input type="text" class="form-control" id="contacto1nombre" name="contacto1nombre" value="{{ old('contacto1nombre') }}" required pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" placeholder="Ej. María Pérez">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="telefono1" class="form-label"><strong>Teléfono del Primer Contacto</strong></label>
+                                <input type="number" class="form-control" id="telefono1" name="telefono1" value="{{ old('telefono1') }}" maxlength="12" required pattern="\d{12}" title="Debe ser un número de 12 dígitos" placeholder="Ej. 551234567890">
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="correo1" class="form-label"><strong>Correo del Primer Contacto</strong></label>
+                                <input type="email" class="form-control" id="correo1" name="correo1" value="{{ old('correo1') }}" required placeholder="Ej. contacto@correo.com">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label for="contacto1tipo" class="form-label"><strong>Tipo de Contacto</strong></label>
+                                <select class="form-select" id="contacto1tipo" name="contacto1tipo" required>
+                                    <option value="">Selecciona tipo</option>
+                                    <option value="madre" {{ old('contacto1tipo') == 'madre' ? 'selected' : '' }}>Madre</option>
+                                    <option value="padre" {{ old('contacto1tipo') == 'padre' ? 'selected' : '' }}>Padre</option>
+                                    <option value="tutor" {{ old('contacto1tipo') == 'tutor' ? 'selected' : '' }}>Tutor</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Agregar Contactos Adicionales -->
+                        <div id="contactos-adicionales"></div>
+
+                        <div class="d-flex justify-content-center">
+                            <button type="button" class="btn btn-info" id="agregar-contacto">Agregar otro contacto</button>
+                        </div>
+
+                        <p class="text-muted mt-2">Puedes agregar hasta 3 contactos. Los campos de contacto son opcionales.</p>
+                    </div>
+                </div>
             </div>
+        </div>
 
-            <div class="col-md-6 mb-3">
-                <label for="nombre">Nombre</label>
-                <input type="text" class="form-control" id="nombre" name="nombre" value="{{ old('nombre') }}" required pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" title="Solo letras y espacios">
-            </div>
-
-            <div class="col-md-6 mb-3">
-                <label for="apellidopaterno">Apellido Paterno</label>
-                <input type="text" class="form-control" id="apellidopaterno" name="apellidopaterno" value="{{ old('apellidopaterno') }}" required pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+">
-            </div>
-
-            <div class="col-md-6 mb-3">
-                <label for="apellidomaterno">Apellido Materno</label>
-                <input type="text" class="form-control" id="apellidomaterno" name="apellidomaterno" value="{{ old('apellidomaterno') }}" required pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+">
-            </div>
-
-            <div class="col-md-6 mb-3">
-                <label for="contacto1nombre">Nombre del Primer Contacto</label>
-                <input type="text" class="form-control" id="contacto1nombre" name="contacto1nombre" value="{{ old('contacto1nombre') }}" required pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+">
-            </div>
-
-            <div class="col-md-6 mb-3">
-                <label for="telefono1">Teléfono del Primer Contacto</label>
-                <input type="number" class="form-control" id="telefono1" name="telefono1" value="{{ old('telefono1') }}" maxlength="10" required pattern="\d{10}" title="Debe ser un número de 10 dígitos">
-            </div>
-
-            <div class="col-md-6 mb-3">
-                <label for="correo_familia">Correo del Familiar</label>
-                <input type="email" class="form-control" id="correo_familia" name="correo_familia" value="{{ old('correo_familia') }}" required>
-            </div>
-
-            <div class="col-md-6 mb-3">
-                <label for="contacto2nombre">Nombre del Segundo Contacto (Opcional)</label>
-                <input type="text" class="form-control" id="contacto2nombre" name="contacto2nombre" value="{{ old('contacto2nombre') }}" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+">
-            </div>
-
-            <div class="col-md-6 mb-3">
-                <label for="telefono2">Teléfono del Segundo Contacto (Opcional)</label>
-                <input type="number" class="form-control" id="telefono2" name="telefono2" value="{{ old('telefono2') }}" maxlength="10" pattern="\d{10}">
-            </div>
-
-              <!-- Campo oculto para nivel educativo -->
-              <input type="hidden" name="nivel_educativo_id" value="{{ $nivel->id }}">
-
-
-            <div class="col-md-6 mb-3">
-                <label for="grado_id" class="form-label">Grado</label>
-                <select class="form-control" id="grado_id" name="grado_id" required>
-                    <option value="">Selecciona un grado</option>
-                    @if($grados && $grados->isNotEmpty())
-                        @foreach ($grados as $grado)
-                            <option value="{{ $grado->id }}" {{ old('grado_id') == $grado->id ? 'selected' : '' }}>
-                                {{ $grado->nombre }}
-                            </option>
-                        @endforeach
-                    @else
-                        <option value="">No hay grados disponibles</option>
-                    @endif
-                </select>
-            </div>
-
-            <div class="col-md-6 mb-3">
-                <label for="fecha_inscripcion">Fecha de Inscripción</label>
-                <input type="date" class="form-control" id="fecha_inscripcion" name="fecha_inscripcion" value="{{ old('fecha_inscripcion') }}" required>
-            </div>
-
-            <div class="col-md-12 mb-3">
-                <button type="submit" class="btn btn-primary">Registrar Alumno</button>
-            </div>
-
+        <div class="d-flex justify-content-center">
+            <button type="submit" class="btn btn-success btn-lg">Registrar Alumno</button>
         </div>
     </form>
 </div>
 
 <script>
-function actualizarGrados() {
-    var nivel = document.getElementById('nivel_educativo_id').value;
-    var gradoSelect = document.getElementById('grado_id');
-    var grados = {
-        '1': [
-            { id: 1, nombre: 'BabiesRoom' },
-            { id: 2, nombre: 'Primero de Kinder' },
-            { id: 3, nombre: 'Segundo de Kinder' },
-            { id: 4, nombre: 'Tercero de Kinder' }
-        ],
-        '2': [
-            { id: 5, nombre: '1° Primaria' },
-            { id: 6, nombre: '2° Primaria' },
-            { id: 7, nombre: '3° Primaria' }
-        ],
-        '3': [
-            { id: 8, nombre: '4° Primaria' },
-            { id: 9, nombre: '5° Primaria' },
-            { id: 10, nombre: '6° Primaria' }
-        ],
-        '4': [
-            { id: 11, nombre: '1° Secundaria' },
-            { id: 12, nombre: '2° Secundaria' },
-            { id: 13, nombre: '3° Secundaria' }
-        ]
-    };
+    let contactoCount = 1;
+    const maxContactos = 3;
+    const agregarContactoButton = document.getElementById('agregar-contacto');
+    const contactosAdicionales = document.getElementById('contactos-adicionales');
 
-    gradoSelect.innerHTML = '<option value="">Selecciona un grado</option>'; // Reset opciones
+    agregarContactoButton.addEventListener('click', function() {
+        if (contactoCount < maxContactos) {
+            contactoCount++;
+            const contactoDiv = document.createElement('div');
+            contactoDiv.classList.add('card', 'shadow-sm', 'mb-4');
+            contactoDiv.style.backgroundColor = '#f8f9fa';
+            contactoDiv.innerHTML = `
+                <div class="card-body">
+                    <h5 class="card-title text-primary">Contacto ${contactoCount}</h5>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="contacto${contactoCount}nombre" class="form-label"><strong>Nombre del Contacto ${contactoCount}</strong></label>
+                            <input type="text" class="form-control" id="contacto${contactoCount}nombre" name="contacto${contactoCount}nombre" placeholder="Ej. Juan Pérez">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="telefono${contactoCount}" class="form-label"><strong>Teléfono del Contacto ${contactoCount}</strong></label>
+                            <input type="number" class="form-control" id="telefono${contactoCount}" name="telefono${contactoCount}" maxlength="12" placeholder="Ej. 551234567890">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="correo${contactoCount}" class="form-label"><strong>Correo del Contacto ${contactoCount}</strong></label>
+                            <input type="email" class="form-control" id="correo${contactoCount}" name="correo${contactoCount}" placeholder="Ej. contacto${contactoCount}@correo.com">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="contacto${contactoCount}tipo" class="form-label"><strong>Tipo de Contacto</strong></label>
+                            <select class="form-select" id="contacto${contactoCount}tipo" name="contacto${contactoCount}tipo">
+                                <option value="">Selecciona tipo</option>
+                                <option value="madre">Madre</option>
+                                <option value="padre">Padre</option>
+                                <option value="tutor">Tutor</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+            contactosAdicionales.appendChild(contactoDiv);
 
-    if (nivel in grados) {
-        grados[nivel].forEach(function(grado) {
-            var option = document.createElement('option');
-            option.value = grado.id;
-            option.text = grado.nombre;
-
-            // Verifica si el grado coincide con el valor antiguo (seleccionado previamente)
-            if (grado.id == "{{ old('grado_id') }}") {
-                option.selected = true;
+            // Si se alcanzan los 3 contactos, ocultamos el botón
+            if (contactoCount === maxContactos) {
+                agregarContactoButton.classList.add('d-none');
             }
-
-            gradoSelect.appendChild(option);
-        });
-    }
-}
-
-// Cuando el usuario selecciona una tarjeta de nivel educativo
-document.querySelectorAll('.card-nivel-educativo').forEach(function(card) {
-    card.addEventListener('click', function() {
-        var nivelId = card.getAttribute('data-id'); // Asumiendo que cada tarjeta tiene un 'data-id' con el ID del nivel
-        document.getElementById('nivel_educativo_id').value = nivelId;
-        actualizarGrados(); // Llamas a la función que actualiza los grados
+        }
     });
-});
-
 </script>
-
 @endsection

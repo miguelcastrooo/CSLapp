@@ -5,7 +5,7 @@
     <h1>Editar Grado</h1>
 
     <form action="{{ route('coordinacion.update', $grado->id) }}" method="POST">
-        @csrf
+        @csrfz
         @method('PUT')
 
         <div class="form-group">

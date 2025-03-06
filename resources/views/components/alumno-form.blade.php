@@ -1,6 +1,8 @@
 @extends('layouts.app')
 
 @section('content')
+
+
 <div class="container">
     <h1>{{ isset($alumno) ? 'Editar Alumno' : 'Agregar Alumno' }}</h1>
     <p>Ingresa los datos del alumno a continuación:</p>
@@ -20,12 +22,6 @@
                         <i class="bi bi-pencil-square"></i> Editar
                     </button>
                 </li>
-                <!-- Botón de Guardar -->
-                <li class="mb-3">
-                    <button id="guardarBtn" class="btn btn-success w-100" disabled>
-                        <i class="bi bi-save"></i> Guardar
-                    </button>
-                </li>
                 <!-- Botón de Bloquear Campos -->
                 <li class="mb-3">
                     <button id="bloquearBtn" class="btn btn-danger w-100" onclick="bloquearCampos()">
@@ -42,7 +38,7 @@
                     {{ session('status') }}
                 </div>
             @endif
-            <form id="formulario" action="{{ isset($alumno) ? route('alumnos.update', $alumno->id) : '#' }}" method="PUT">
+            <form id="formulario" action="{{ isset($alumno) ? route('alumnos.update', $alumno->id) : '#' }}" method="POST">
             @csrf
                 @if (isset($alumno))
                     @method('PUT')
@@ -111,11 +107,19 @@
                     </div>
 
                 </div>
+                
+                <!-- Botón de Guardar -->
+                <div class="row mb-3">
+                    <div class="col">
+                        <button type="submit" id="guardarBtn" class="btn btn-success w-100" disabled>
+                            <i class="bi bi-save"></i> Guardar
+                        </button>
+                    </div>
+                </div>
             </form>
         </div>
     </div>
 </div>
-
 <script>
     // Función para habilitar los campos
     function habilitarCampos() {
@@ -187,35 +191,61 @@
         document.getElementById('fecha_inscripcion').value = '';
     }
 
-   // Función para guardar los datos con AJAX
-function guardarDatos(event) {
-    event.preventDefault(); // Prevenir el envío normal del formulario
+    // Función para guardar o actualizar los datos
+    function guardarActualizarAlumno(event) {
+        event.preventDefault(); // Prevenir el comportamiento por defecto del formulario
 
-    let formData = new FormData(document.getElementById('formulario')); // Crear un objeto FormData con los datos del formulario
+        // Crear un objeto con los datos del formulario
+        const formData = new FormData(document.getElementById('student-form'));
 
-    fetch("{{ isset($alumno) ? route('alumnos.update', $alumno->id) : route('alumnos.store') }}", {
-        method: "POST", // O PUT si es una actualización
-        body: formData, // Enviar los datos del formulario
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert("¡Datos guardados con éxito!");
-            limpiarCampos(); // Limpiar los campos después de guardar
-            bloquearCampos(); // Bloquear los campos después de guardar
-        } else {
-            alert("Hubo un error al guardar los datos.");
-        }
-    })
-    .catch(error => {
-        console.error("Error al guardar:", error);
-        alert("Hubo un error con la solicitud.");
-    });
-}
+        // Verificar si estamos actualizando (es decir, si ya hay un ID de matrícula)
+        const alumnoId = document.getElementById('matricula').value;
 
-// Asignar el evento de click al botón de guardar
-document.getElementById('guardarBtn').addEventListener('click', guardarDatos);
+        const url = alumnoId ? `{{ route('alumnos.update', ['alumno' => ':id']) }}`.replace(':id', alumnoId) : "{{ route('alumnos.store') }}";
+        const method = alumnoId ? 'PUT' : 'POST'; // Usamos PUT si existe un ID, de lo contrario usamos POST
 
+        // Enviar los datos a través de AJAX (Fetch API)
+        fetch(url, {
+            method: method,
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Mostrar mensaje de éxito
+                mostrarMensajeExito();
+
+                // Limpiar los campos después de guardar o actualizar
+                limpiarCampos();
+
+                // Volver a bloquear los campos
+                bloquearCampos();
+            } else {
+                alert("Hubo un error al guardar los datos.");
+            }
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            alert("Hubo un error con la solicitud.");
+        });
+    }
+
+    // Función para mostrar el mensaje de éxito
+    function mostrarMensajeExito() {
+        const successMessage = document.getElementById('success-message');
+        successMessage.style.display = 'block'; // Mostrar el mensaje
+        setTimeout(() => {
+            successMessage.style.display = 'none'; // Ocultar el mensaje después de 3 segundos
+        }, 3000);
+    }
+
+    // Asignamos el evento de submit al formulario
+    document.getElementById('student-form').addEventListener('submit', guardarActualizarAlumno);
 </script>
+
+<!-- Mensaje de éxito -->
+<div id="success-message" style="display:none; color: green; font-weight: bold;">
+    ¡Datos guardados o actualizados correctamente!
+</div>
 
 @endsection
