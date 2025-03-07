@@ -26,91 +26,117 @@
     <form action="{{ route('alumnos.update', $alumno->id) }}" method="POST">
         @csrf
         @method('PUT')
-        <!-- Botones de acción -->
-        <div class="d-flex justify-content-between">
-                    <button type="submit" class="btn btn-primary" id="updateBtn" style="display:none;"><i class="fas fa-save"></i> Actualizar Alumno</button>
-                    <a href="{{ route('capturista.selectsearch') }}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Volver</a>
-                    <button type="button" class="btn btn-warning" id="editBtn"><i class="fas fa-pencil-alt"></i> Editar</button>
-                </div><br><br>
         <div class="row">
+
+            <!-- Botones de acción -->
+            <div class="d-flex justify-content-between">
+                <button type="submit" class="btn btn-primary" id="updateBtn" style="display:none;"><i class="fas fa-save"></i> Actualizar Alumno</button>
+                <a href="{{ route(auth()->user()->hasRole('ControlEscolar') ? 'capturista.selectsearch' : 'admin.selectadmin') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Volver
+                </a>
+
+                <button type="button" class="btn btn-warning" id="editBtn"><i class="fas fa-pencil-alt"></i> Editar</button>
+            </div>
+
             <!-- Información del Alumno en columnas -->
-            <div class="col-md-12">
-                <div class="card shadow-sm mb-4" style="background-color: #f8f9fa;">
-                    <div class="card-body">
-                        <h5 class="card-title text-primary">Datos del Alumno</h5>
+<div class="col-md-12">
+<br><br>
+    <div class="card shadow-sm mb-4" style="background-color: #f8f9fa;">
+        <div class="card-body">
+            <h5 class="card-title text-primary">Datos del Alumno</h5>
 
-                        <!-- Matrícula en su propia fila centrado -->
-                        <div class="row mb-3 justify-content-center">
-                            <div class="col-md-6">
-                                <label for="matricula" class="form-label text-center d-block">Matrícula</label>
-                                <input type="number" class="form-control" id="matricula" name="matricula" value="{{ old('matricula', $alumno->matricula) }}" required min="1" readonly>
-                            </div>
-                        </div>
+            <!-- Los campos en una sola fila -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="matricula" class="form-label">Matrícula</label>
+                    <input type="number" class="form-control" id="matricula" name="matricula" value="{{ old('matricula', $alumno->matricula) }}" required min="1" readonly>
+                </div>
 
-                        <!-- Los demás campos en una sola fila -->
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="nombre" class="form-label">Nombre</label>
-                                <input type="text" class="form-control" id="nombre" name="nombre" value="{{ old('nombre', $alumno->nombre) }}" required pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" title="Solo letras y espacios" readonly>
-                            </div>
+                <div class="col-md-6">
+                    <label for="nombre" class="form-label">Nombre</label>
+                    <input type="text" class="form-control" id="nombre" name="nombre" value="{{ old('nombre', $alumno->nombre) }}" required pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" title="Solo letras y espacios" readonly>
+                </div>
+            </div>
 
-                            <div class="col-md-6">
-                                <label for="apellidopaterno" class="form-label">Apellido Paterno</label>
-                                <input type="text" class="form-control" id="apellidopaterno" name="apellidopaterno" value="{{ old('apellidopaterno', $alumno->apellidopaterno) }}" required pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" readonly>
-                            </div>
-                        </div>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="apellidopaterno" class="form-label">Apellido Paterno</label>
+                    <input type="text" class="form-control" id="apellidopaterno" name="apellidopaterno" value="{{ old('apellidopaterno', $alumno->apellidopaterno) }}" required pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" readonly>
+                </div>
 
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="apellidomaterno" class="form-label">Apellido Materno</label>
-                                <input type="text" class="form-control" id="apellidomaterno" name="apellidomaterno" value="{{ old('apellidomaterno', $alumno->apellidomaterno) }}" required pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" readonly>
-                            </div>
+                <div class="col-md-6">
+                    <label for="apellidomaterno" class="form-label">Apellido Materno</label>
+                    <input type="text" class="form-control" id="apellidomaterno" name="apellidomaterno" value="{{ old('apellidomaterno', $alumno->apellidomaterno) }}" required pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" readonly>
+                </div>
+            </div>
 
-                             <!-- Solo visible para SuperAdmin: Nivel Educativo y Grado -->
-                             @if(Auth::user()->hasRole('SuperAdmin'))
-                                <div class="row mb-3">
-                                    <div class="col-md-6">
-                                        <label for="nivel_educativo" class="form-label">Nivel Educativo</label>
-                                        <select class="form-select" id="nivel_educativo" name="nivel_educativo" required disabled>
-                                            <option value="">Selecciona un nivel educativo</option>
-                                            <!-- Aquí se mostrarían los niveles si hay disponibles en tu sistema -->
-                                            @foreach($nivel_id as $nivel)
-                                                <option value="{{ $nivel->id }}" {{ old('nivel_educativo', $alumno->nivel_educativo) == $nivel->id ? 'selected' : '' }}>
-                                                    {{ $nivel->nombre }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                </div>
-                            @endif
+            <div class="row mb-3">
 
-                            <div class="col-md-6">
-                                <label for="grado_id" class="form-label">Grado</label>
-                                <select class="form-select" id="grado_id" name="grado_id" required disabled>
-                                    <option value="">Selecciona un grado</option>
-                                    @if($grados && $grados->isNotEmpty())
-                                        @foreach ($grados as $grado)
-                                            <option value="{{ $grado->id }}" {{ old('grado_id', $alumno->grado_id) == $grado->id ? 'selected' : '' }}>{{ $grado->nombre }}</option>
-                                        @endforeach
-                                    @else
-                                        <option value="">No hay grados disponibles</option>
-                                    @endif
-                                </select>
-                            </div>
-                        </div>
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="fecha_inscripcion" class="form-label">Fecha de Inscripción</label>
-                                <input type="date" class="form-control" id="fecha_inscripcion" name="fecha_inscripcion" value="{{ old('fecha_inscripcion', $alumno->fecha_inscripcion) }}" required readonly>
-                            </div>
-
-                            <div class="col-md-6">
-                                <label for="fecha_inicio" class="form-label">Fecha de Inicio</label>
-                                <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" value="{{ old('fecha_inicio', $alumno->fecha_inicio) }}" required readonly>
-                            </div>
-                        </div>
+            @if(Auth::user()->hasRole('SuperAdmin'))
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="nivel_educativo_id" class="form-label">Nivel Educativo</label>
+                        <select class="form-select" id="nivel_educativo_id" name="nivel_educativo_id" required onchange="cargarGrados(this.value)">
+                            <option value="">Selecciona un nivel educativo</option>
+                            @foreach($nivel_id as $nivel)
+                                <option value="{{ $nivel->id }}" 
+                                    {{ old('nivel_educativo_id', $alumno->nivel_educativo_id) == $nivel->id ? 'selected' : '' }}>
+                                    {{ $nivel->nombre }}
+                                </option>
+                            @endforeach
+                        </select>
                     </div>
                 </div>
+
+                <!-- Campo de sección -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="seccion" class="form-label">Sección</label>
+                        <select class="form-select" id="seccion" name="seccion" required>
+                            <option value="">Selecciona una sección</option>
+                            <option value="A" {{ old('seccion', $alumno->seccion) == 'A' ? 'selected' : '' }}>A</option>
+                            <option value="B" {{ old('seccion', $alumno->seccion) == 'B' ? 'selected' : '' }}>B</option>
+                            <option value="C" {{ old('seccion', $alumno->seccion) == 'C' ? 'selected' : '' }}>C</option>
+                        </select>
+                    </div>
+                </div>
+            @endif
+
+            <!-- Campo de grado -->
+            <div class="col-md-6">
+                <label for="grado_id" class="form-label">Grado</label>
+                <select class="form-select" id="grado_id" name="grado_id" required disabled>
+                    <option value="">Selecciona un grado</option>
+                    @if($grados && $grados->isNotEmpty())
+                        @foreach ($grados as $grado)
+                            <option value="{{ $grado->id }}" {{ old('grado_id', $alumno->grado_id) == $grado->id ? 'selected' : '' }}>
+                                {{ $grado->nombre }}
+                            </option>
+                        @endforeach
+                    @else
+                        <option value="">No hay grados disponibles</option>
+                    @endif
+                </select>
+            </div>
+
+            <div class="row mb-3">
+                <!-- Fechas de inscripción e inicio, en la misma fila -->
+                <div class="col-md-6">
+                    <label for="fecha_inscripcion" class="form-label">Fecha de Inscripción</label>
+                    <input type="date" class="form-control" id="fecha_inscripcion" name="fecha_inscripcion" value="{{ old('fecha_inscripcion', $alumno->fecha_inscripcion) }}" required readonly>
+                </div>
+
+                <div class="col-md-6">
+                    <label for="fecha_inicio" class="form-label">Fecha de Inicio</label>
+                    <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" value="{{ old('fecha_inicio', $alumno->fecha_inicio) }}" required readonly>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
 
                 <!-- Información de Contactos dentro de una tarjeta -->
                 <div class="card shadow-sm mb-4" style="background-color: #f8f9fa;">
@@ -151,11 +177,8 @@
                 </div>
             </div>
         </div>
-    </form>
-</div>
-<br><br>
 
-@if(Auth::user()->hasRole('SuperAdmin'))
+        @if(Auth::user()->hasRole('SuperAdmin'))
     <div class="card shadow-sm mb-4" style="background-color: #f8f9fa;">
         <div class="card-body">
             <h5 class="card-title text-primary">Datos de Usuario</h5>
@@ -166,7 +189,7 @@
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label for="usuario_classroom" class="form-label">Usuario Classroom</label>
-                        <input type="text" class="form-control" id="usuario_classroom" name="usuario_classroom" value="{{ old('usuario_classroom', $alumno->usuario_classroom) }}" required>
+                        <input type="text" class="form-control" id="usuario_classroom" name="usuario_classroom" value="{{ old('usuario_classroom', $alumno->usuario_classroom) }}" >
                     </div>
 
                     <div class="col-md-6">
@@ -178,7 +201,7 @@
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label for="usuario_moodle" class="form-label">Usuario Moodle</label>
-                        <input type="text" class="form-control" id="usuario_moodle" name="usuario_moodle" value="{{ old('usuario_moodle', $alumno->usuario_moodle) }}" required>
+                        <input type="text" class="form-control" id="usuario_moodle" name="usuario_moodle" value="{{ old('usuario_moodle', $alumno->usuario_moodle) }}" >
                     </div>
 
                     <div class="col-md-6">
@@ -190,7 +213,7 @@
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label for="usuario_classroom" class="form-label">Usuario Classroom</label>
-                        <input type="text" class="form-control" id="usuario_classroom" name="usuario_classroom" value="{{ old('usuario_classroom', $alumno->usuario_classroom) }}" required>
+                        <input type="text" class="form-control" id="usuario_classroom" name="usuario_classroom" value="{{ old('usuario_classroom', $alumno->usuario_classroom) }}" >
                     </div>
 
                     <div class="col-md-6">
@@ -202,7 +225,7 @@
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label for="usuario_moodle" class="form-label">Usuario Moodle</label>
-                        <input type="text" class="form-control" id="usuario_moodle" name="usuario_moodle" value="{{ old('usuario_moodle', $alumno->usuario_moodle) }}" required>
+                        <input type="text" class="form-control" id="usuario_moodle" name="usuario_moodle" value="{{ old('usuario_moodle', $alumno->usuario_moodle) }}" >
                     </div>
 
                     <div class="col-md-6">
@@ -214,19 +237,19 @@
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label for="usuario_hmh" class="form-label">Usuario HMH</label>
-                        <input type="text" class="form-control" id="usuario_hmh" name="usuario_hmh" value="{{ old('usuario_hmh', $alumno->usuario_hmh) }}" required>
+                        <input type="text" class="form-control" id="usuario_hmh" name="usuario_hmh" value="{{ old('usuario_hmh', $alumno->usuario_hmh) }}" >
                     </div>
 
                     <div class="col-md-6">
                         <label for="contraseña_hmh" class="form-label">Contraseña HMH</label>
-                        <input type="text" class="form-control" id="contraseña_hmh" name="contraseña_hmh" required>
+                        <input type="text" class="form-control" id="contraseña_hmh" name="contraseña_hmh" value="{{ old('contraseña_hmh', $alumno->contraseña_hmh) }}" >
                     </div>
                 </div>
             @elseif($alumno->nivel_educativo_id == 3) <!-- Primaria Alta -->
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label for="usuario_classroom" class="form-label">Usuario Classroom</label>
-                        <input type="text" class="form-control" id="usuario_classroom" name="usuario_classroom" value="{{ old('usuario_classroom', $alumno->usuario_classroom) }}" required>
+                        <input type="text" class="form-control" id="usuario_classroom" name="usuario_classroom" value="{{ old('usuario_classroom', $alumno->usuario_classroom) }}" >
                     </div>
 
                     <div class="col-md-6">
@@ -238,7 +261,7 @@
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label for="usuario_moodle" class="form-label">Usuario Moodle</label>
-                        <input type="text" class="form-control" id="usuario_moodle" name="usuario_moodle" value="{{ old('usuario_moodle', $alumno->usuario_moodle) }}" required>
+                        <input type="text" class="form-control" id="usuario_moodle" name="usuario_moodle" value="{{ old('usuario_moodle', $alumno->usuario_moodle) }}" >
                     </div>
 
                     <div class="col-md-6">
@@ -250,43 +273,43 @@
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label for="usuario_hmh" class="form-label">Usuario HMH</label>
-                        <input type="text" class="form-control" id="usuario_hmh" name="usuario_hmh" value="{{ old('usuario_hmh', $alumno->usuario_hmh) }}" required>
+                        <input type="text" class="form-control" id="usuario_hmh" name="usuario_hmh" value="{{ old('usuario_hmh', $alumno->usuario_hmh) }}" >
                     </div>
 
                     <div class="col-md-6">
                         <label for="contraseña_hmh" class="form-label">Contraseña HMH</label>
-                        <input type="text" class="form-control" id="contraseña_hmh" name="contraseña_hmh" required>
+                        <input type="text" class="form-control" id="contraseña_hmh" name="contraseña_hmh" value="{{ old('contraseña_hmh', $alumno->contraseña_hmh) }}" >
                     </div>
                 </div>
 
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label for="usuario_mathletics" class="form-label">Usuario Mathletics</label>
-                        <input type="text" class="form-control" id="usuario_mathletics" name="usuario_mathletics" value="{{ old('usuario_mathletics', $alumno->usuario_mathletics) }}" required>
+                        <input type="text" class="form-control" id="usuario_mathletics" name="usuario_mathletics" value="{{ old('usuario_mathletics', $alumno->usuario_mathletics) }}" >
                     </div>
 
                     <div class="col-md-6">
                         <label for="contraseña_mathletics" class="form-label">Contraseña Mathletics</label>
-                        <input type="text" class="form-control" id="contraseña_mathletics" name="contraseña_mathletics" required>
+                        <input type="text" class="form-control" id="contraseña_mathletics" name="contraseña_mathletics" value="{{ old('contraseña_mathletics', $alumno->contraseña_mathletics) }}" >
                     </div>
                 </div>
 
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label for="usuario_progrentis" class="form-label">Usuario Progrentis</label>
-                        <input type="text" class="form-control" id="usuario_progrentis" name="usuario_progrentis" value="{{ old('usuario_progrentis', $alumno->usuario_progrentis) }}" required>
+                        <input type="text" class="form-control" id="usuario_progrentis" name="usuario_progrentis" value="{{ old('usuario_progrentis', $alumno->usuario_progrentis) }}" >
                     </div>
 
                     <div class="col-md-6">
                         <label for="contraseña_progrentis" class="form-label">Contraseña Progrentis</label>
-                        <input type="text" class="form-control" id="contraseña_progrentis" name="contraseña_progrentis" required>
+                        <input type="text" class="form-control" id="contraseña_progrentis" name="contraseña_progrentis" value="{{ old('contraseña_progrentis', $alumno->contraseña_progrentis) }}" >
                     </div>
                 </div>
             @elseif($alumno->nivel_educativo_id == 4) <!-- Secundaria -->
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label for="usuario_classroom" class="form-label">Usuario Classroom</label>
-                        <input type="text" class="form-control" id="usuario_classroom" name="usuario_classroom" value="{{ old('usuario_classroom', $alumno->usuario_classroom) }}" required>
+                        <input type="text" class="form-control" id="usuario_classroom" name="usuario_classroom" value="{{ old('usuario_classroom', $alumno->usuario_classroom) }}" >
                     </div>
 
                     <div class="col-md-6">
@@ -298,7 +321,7 @@
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label for="usuario_moodle" class="form-label">Usuario Moodle</label>
-                        <input type="text" class="form-control" id="usuario_moodle" name="usuario_moodle" value="{{ old('usuario_moodle', $alumno->usuario_moodle) }}" required>
+                        <input type="text" class="form-control" id="usuario_moodle" name="usuario_moodle" value="{{ old('usuario_moodle', $alumno->usuario_moodle) }}" >
                     </div>
 
                     <div class="col-md-6">
@@ -310,21 +333,27 @@
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label for="usuario_mathletics" class="form-label">Usuario Mathletics</label>
-                        <input type="text" class="form-control" id="usuario_mathletics" name="usuario_mathletics" value="{{ old('usuario_mathletics', $alumno->usuario_mathletics) }}" required>
+                        <input type="text" class="form-control" id="usuario_mathletics" name="usuario_mathletics" value="{{ old('usuario_mathletics', $alumno->usuario_mathletics) }}" >
                     </div>
 
                     <div class="col-md-6">
                         <label for="contraseña_mathletics" class="form-label">Contraseña Mathletics</label>
-                        <input type="password" class="form-control" id="contraseña_mathletics" name="contraseña_mathletics" required>
+                        <input type="text" class="form-control" id="contraseña_mathletics" name="contraseña_mathletics" value="{{ old('contraseña_mathletics', $alumno->contraseña_mathletics) }}" >
                     </div>
                 </div>
             @endif
+
         </div>
     </div>
-</div>
-
 @endif
 
+
+
+
+       
+    </form>
+</div>
+<br><br>
 <!-- Script para habilitar los campos y mostrar los botones correctos -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
@@ -359,45 +388,46 @@
         });
     @endif
 
-    // Función para cargar los grados dependiendo del nivel educativo seleccionado
-    function cargarGrados() {
-        let nivelEducativoId = document.getElementById('nivel_educativo').value;
-        let gradoSelect = document.getElementById('grado');
-        
-        // Limpiar las opciones previas
-        gradoSelect.innerHTML = '<option value="" disabled selected>Seleccione un Grado</option>';
+   // Función para cargar los grados dependiendo del nivel educativo seleccionado
+function cargarGrados(nivelEducativoId) {
+    let gradoSelect = document.getElementById('grado_id');
 
-        // Verifica si se ha seleccionado un nivel
-        if (nivelEducativoId) {
-            // Hacer una llamada AJAX para obtener los grados del nivel educativo seleccionado
-            fetch(`/grados/${nivelEducativoId}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data && data.length > 0) {
-                        // Agregar los grados a la lista
-                        data.forEach(grado => {
-                            let option = document.createElement('option');
-                            option.value = grado.id;
-                            option.textContent = grado.nombre;
-                            gradoSelect.appendChild(option);
-                        });
-                    } else {
-                        // Si no se encuentran grados, agregar un mensaje
+    // Limpiar las opciones previas
+    gradoSelect.innerHTML = '<option value="" disabled selected>Seleccione un Grado</option>';
+
+    // Verifica si se ha seleccionado un nivel educativo
+    if (nivelEducativoId) {
+        // Hacer una llamada AJAX para obtener los grados del nivel educativo seleccionado
+        fetch(`/grados/${nivelEducativoId}`)
+            .then(response => response.json())
+            .then(data => {
+                // Habilitar el select de grados
+                gradoSelect.removeAttribute('disabled');
+
+                // Si se obtienen grados, agregar las opciones al select
+                if (data && data.length > 0) {
+                    data.forEach(grado => {
                         let option = document.createElement('option');
-                        option.value = '';
-                        option.textContent = 'No se encontraron grados';
+                        option.value = grado.id;
+                        option.textContent = grado.nombre;
                         gradoSelect.appendChild(option);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error cargando los grados:', error);
-                });
-        } else {
-            // Si no hay nivel seleccionado, limpiar los grados
-            gradoSelect.innerHTML = '<option value="" disabled selected>Seleccione un Grado</option>';
-        }
+                    });
+                } else {
+                    // Si no se encuentran grados, agregar un mensaje
+                    let option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = 'No se encontraron grados';
+                    gradoSelect.appendChild(option);
+                }
+            })
+            .catch(error => {
+                console.error('Error cargando los grados:', error);
+            });
+    } else {
+        // Si no se selecciona un nivel, deshabilitar el select de grados y limpiarlo
+        gradoSelect.setAttribute('disabled', true);
+        gradoSelect.innerHTML = '<option value="" disabled selected>Seleccione un Grado</option>';
     }
+}
 </script>
-
-
 @endsection

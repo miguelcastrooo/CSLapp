@@ -50,6 +50,11 @@ Route::middleware(['auth', 'role:SuperAdmin|CoordinacionPreescolar|CoordinacionP
     Route::get('/admin/alumnos/pdf/{nivel}/{id}', [AdminController::class, 'generarPdf'])->name('admin.alumnos.pdf.individual');
     Route::get('/admin/alumnos/pdf/{id}', [AdminController::class, 'generarPdfPorId'])->name('admin.alumnos.pdf.id');
 
+    // Nueva ruta para generar PDF de plataformas según el nivel educativo
+    Route::get('/admin/alumnos/pdf/plataformas/{nivel}', [AdminController::class, 'generarPdfPlataformas'])->name('admin.alumnos.pdf.plataformas');
+
+
+
     // Niveles
     Route::get('/admin/niveles', [AdminController::class, 'nivelesIndex'])->name('admin.niveles');
     Route::get('/admin/select', [AdminController::class, 'select'])->name('admin.select');

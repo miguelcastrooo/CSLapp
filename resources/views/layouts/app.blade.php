@@ -43,7 +43,7 @@
                 @if (Auth::user()->hasRole('SuperAdmin'))
                     <li class="nav-item">
                         <a class="nav-link text-white" href="{{ route('admin.select') }}">
-                            <i class="fas fa-cogs"></i> Credenciales de Alumno
+                            <i class="fas fa-cogs"></i> Plataformas
                         </a>
                     </li>
                     <li class="nav-item">
@@ -80,7 +80,7 @@
                 @if (Auth::user()->hasRole('ControlEscolar'))
                     <li class="nav-item">
                         <a class="nav-link text-white" href="{{ route('capturista.selectsearch') }}">
-                            <i class="fas fa-search"></i> Buscar Alumnos
+                            <i class="fas fa-search"></i> Ver Alumnos
                         </a>
                     </li>
                 @endif

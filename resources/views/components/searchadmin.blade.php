@@ -22,59 +22,63 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const urlParams = new URLSearchParams(window.location.search);
-        const nivel = urlParams.get('nivel'); // Captura el ID de nivel
+    const urlParams = new URLSearchParams(window.location.search);
+    const nivel = urlParams.get('nivel'); // Captura el ID de nivel
 
-        // Función para actualizar la lista de alumnos
-        function updateAlumnosList(query = '') {
-            // Si la búsqueda está vacía, muestra todos los resultados
-            let url = `{{ route('alumnos.search') }}?search=${query}`;
-            if (nivel) {
-                url += `&nivel=${nivel}`; // Agregar nivel si está presente
-            }
-
-            fetch(url, {
-                method: 'GET',
-                headers: { 'Accept': 'application/json' }
-            })
-            .then(response => response.json())
-            .then(data => {
-                let resultsHTML = '';
-                if (data.length > 0) {
-                    data.forEach(alumno => {
-                        resultsHTML += ` 
-                            <tr>
-                                <td>${alumno.matricula}</td>
-                                <td>${alumno.nivel_educativo ? alumno.nivel_educativo.nombre : 'Sin Nivel'}</td>
-                                <td>${alumno.nombre}</td>
-                                <td>${alumno.apellidopaterno}</td>
-                                <td>${alumno.apellidomaterno}</td>
-                                <td class="d-none">${alumno.created_at}</td>
-                                <td>
-                                    <a href="{{ url('alumnos') }}/${alumno.id}/edit" class="btn btn-primary">Ver Alumno</a>
-                                </td>
-                            </tr>
-                        `;
-                    });
-                } else {
-                    resultsHTML = '<tr><td colspan="6">No se encontraron resultados.</td></tr>';
-                }
-                document.getElementById('alumnos-list').innerHTML = resultsHTML;
-            })
-            .catch(error => {
-                console.error('Error al realizar la búsqueda:', error);
-                document.getElementById('alumnos-list').innerHTML = '<tr><td colspan="6">Error al buscar alumnos.</td></tr>';
-            });
+    function updateAlumnosList(query) {
+        let url = `{{ route('alumnos.search') }}?search=${query}`;
+        if (nivel) {
+            url += `&nivel=${nivel}`; // Agregar nivel si está presente
         }
 
-        // Escuchar el input de búsqueda
-        document.getElementById('search').addEventListener('input', function() {
-            let query = this.value;
-            updateAlumnosList(query);
+        fetch(url, {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            let resultsHTML = '';
+            if (data.length > 0) {
+                data.forEach(alumno => {
+                    resultsHTML += ` 
+                        <tr>
+                            <td>${alumno.matricula}</td>
+                            <td>${alumno.nivel_educativo ? alumno.nivel_educativo.nombre : 'Sin Nivel'}</td>
+                            <td>${alumno.nombre}</td>
+                            <td>${alumno.apellidopaterno}</td>
+                            <td>${alumno.apellidomaterno}</td>
+                            <td class="d-none">${alumno.created_at}</td>
+                            <td>
+                                <a href="{{ url('alumnos') }}/${alumno.id}/edit" class="btn btn-primary">Ver Alumno</a>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } else {
+                resultsHTML = '<tr><td colspan="6">No se encontraron resultados.</td></tr>';
+            }
+            document.getElementById('alumnos-list').innerHTML = resultsHTML;
+        })
+        .catch(error => {
+            console.error('Error al realizar la búsqueda:', error);
+            document.getElementById('alumnos-list').innerHTML = '<tr><td colspan="6">Error al buscar alumnos.</td></tr>';
         });
+    }
 
-        // Mostrar todos los alumnos al entrar a la vista
-        updateAlumnosList('');  // Llamada con un query vacío para cargar todos los resultados
-
+    // Escuchar el input de búsqueda
+    document.getElementById('search').addEventListener('input', function () {
+        let query = this.value.trim();
+        if (query.length > 0) {
+            updateAlumnosList(query);
+        } else {
+            document.getElementById('alumnos-list').innerHTML = ''; // Limpiar la tabla si el campo está vacío
+        }
     });
+
+    // Si NO hay nivel seleccionado, mostrar todos los alumnos al cargar
+    if (!nivel) {
+        updateAlumnosList('');
+    }
+});
+
 </script>

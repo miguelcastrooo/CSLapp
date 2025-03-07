@@ -59,7 +59,9 @@
         <div class="content">
             <p>Estimados Coordinadores,</p>
 
-            <p>El área de Control Escolar ha actualizado la información de las credenciales del siguiente alumno. Ahora es su turno de verificar y ajustar la asignación de la sección y las credenciales correspondientes.</p>
+            <p>
+                Se han actualizado campos del alumno, favor de terminar de completar la información
+            </p>
 
             <h3>Información Actualizada del Alumno:</h3>
             <ul class="list-group">
@@ -99,8 +101,27 @@
 
                 <h3>Plataformas Asignadas:</h3>
                 <ul class="list-group">
-                    <li class="list-group-item">✅ Classroom</li>
-                    <li class="list-group-item">✅ Moodle</li>
+                    <!-- Mostrar credenciales de Moodle si existen -->
+                    @if($alumno->usuario_moodle && $alumno->contraseña_moodle)
+                        <li class="list-group-item">
+                            ✅ Moodle: {{ $alumno->usuario_moodle }} / {{ $alumno->contraseña_moodle }}
+                        </li>
+                    @else
+                        <li class="list-group-item">
+                            ⚠️ Moodle: Usuario o Contraseña faltante
+                        </li>
+                    @endif
+
+                    <!-- Mostrar credenciales de Classroom si existen -->
+                    @if($alumno->usuario_classroom && $alumno->contraseña_classroom)
+                        <li class="list-group-item">
+                            ✅ Classroom: <br>{{ $alumno->usuario_classroom }} / {{ $alumno->contraseña_classroom }}
+                        </li>
+                    @else
+                        <li class="list-group-item">
+                            ⚠️ Classroom: Usuario o Contraseña faltante
+                        </li>
+                    @endif
 
                     @if($alumno->nivelEducativo->nombre == 'Primaria Baja')
                         <li class="list-group-item">

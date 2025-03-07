@@ -306,124 +306,137 @@ class AlumnoController extends Controller
     }   
 
     public function update(Request $request, $id)
-{
-    // Obtener el alumno a actualizar
-    $alumno = Alumno::find($id);
-    
-    if (!$alumno) {
-        return redirect()->back()->with('error', 'Alumno no encontrado.');
-    }
-
-    // Validación de los campos, solo para los campos que estás actualizando
-    $validationRules = [
-        'matricula' => 'nullable|numeric|unique:alumnos,matricula,' . $id,
-        'nombre' => 'nullable|string|max:255',
-        'apellidopaterno' => 'nullable|string|max:255',
-        'apellidomaterno' => 'nullable|string|max:255',
-        'contacto1nombre' => 'nullable|string|max:255',
-        'telefono1' => 'nullable|digits:10',
-        'contacto1tipo_contacto' => 'nullable|string|max:255',
-        'correo1' => 'nullable|email',
-        'contacto2nombre' => 'nullable|string|max:255',
-        'telefono2' => 'nullable|digits:10',
-        'contacto2tipo_contacto' => 'nullable|string|max:255',
-        'correo2' => 'nullable|email',
-        'contacto3nombre' => 'nullable|string|max:255',
-        'telefono3' => 'nullable|digits:10',
-        'contacto3tipo_contacto' => 'nullable|string|max:255',
-        'correo3' => 'nullable|email',
-        'nivel_educativo_id' => 'nullable|exists:nivel_educativo,id',
-        'grado_id' => 'nullable|exists:grados,id',
-        'fecha_inscripcion' => 'nullable|date',
-        'fecha_inicio' => 'nullable|date',
-    ];
-
-    $request->validate($validationRules);
-
-    // Asignación de fecha_inicio: si no se recibe, se asigna la fecha actual
-    $fecha_inicio = $request->fecha_inicio ?? now()->toDateString();
-
-    // Generar las credenciales
-    $credenciales = $this->generarCredenciales(
-        $request->nombre ?? $alumno->nombre,
-        $request->apellidopaterno ?? $alumno->apellidopaterno,
-        $request->matricula ?? $alumno->matricula,
-        $request->fecha_inscripcion ?? $alumno->fecha_inscripcion
-    );
-
-    // Verificar si los valores de nivel_educativo_id y grado_id han cambiado
-    $nivel_educativo_id = $request->nivel_educativo_id ?? $alumno->nivel_educativo_id;
-    $grado_id = $request->grado_id ?? $alumno->grado_id;
-
-    // Actualizar solo los campos que han sido modificados
-    $alumno->update([
-        'matricula' => $request->matricula ?? $alumno->matricula,
-        'nombre' => $request->nombre ?? $alumno->nombre,
-        'apellidopaterno' => $request->apellidopaterno ?? $alumno->apellidopaterno,
-        'apellidomaterno' => $request->apellidomaterno ?? $alumno->apellidomaterno,
-        'usuario_classroom' => $credenciales['usuario_classroom'],
-        'contraseña_classroom' => $credenciales['contraseña_classroom'],
-        'usuario_moodle' => $credenciales['usuario_moodle'],
-        'contraseña_moodle' => $credenciales['contraseña_moodle'],
-        'nivel_educativo_id' => $nivel_educativo_id, // Solo actualizamos si se cambió
-        'grado_id' => $grado_id, // Solo actualizamos si se cambió
-        'fecha_inscripcion' => $request->fecha_inscripcion ?? $alumno->fecha_inscripcion,
-        'fecha_inicio' => $fecha_inicio,
-    ]);
-
-    // Actualizar los contactos solo si se ha modificado el nombre o cualquier otro campo relacionado
-    $contactos = Contacto::where('alumno_id', $alumno->id)->get();
-
-    foreach ($contactos as $contacto) {
-        $contactoData = [
-            'nombre' => $request->{'contacto' . $contacto->tipo_contacto . 'nombre'} ?? $contacto->nombre,
-            'telefono' => $request->{'telefono' . $contacto->tipo_contacto} ?? $contacto->telefono,
-            'tipo_contacto' => $request->{'contacto' . $contacto->tipo_contacto . 'tipo_contacto'} ?? $contacto->tipo_contacto,
-            'correo' => $request->{'correo' . $contacto->tipo_contacto} ?? $contacto->correo,
-        ];
-
-        // Verificamos si se modificaron los datos del contacto
-        if ($contacto->nombre !== $contactoData['nombre'] || 
-            $contacto->telefono !== $contactoData['telefono'] ||
-            $contacto->tipo_contacto !== $contactoData['tipo_contacto'] ||
-            $contacto->correo !== $contactoData['correo']) {
-            
-            // Si algún campo fue modificado, actualizamos ese contacto
-            $contacto->update($contactoData);
+    {
+        // Obtener el alumno a actualizar
+        $alumno = Alumno::find($id);
+        
+        if (!$alumno) {
+            return redirect()->back()->with('error', 'Alumno no encontrado.');
         }
-    }
-
-    // Lógica para agregar los destinatarios del correo
-    $destinatarios = [
-        'coordinador_tecnologia@colegiosanluis.com',
-        'coordinadora_academica@colegiosanluis.com',
-    ];
-
-    // Agregar al coordinador del nivel educativo
-    switch ($nivel_educativo_id) {
-        case 1:
-            $destinatarios[] = 'coordinador.preescolar@colegiosanluis.com';
-            break;
-        case 2:
-            $destinatarios[] = 'coordinador.primaria@colegiosanluis.com';
-            break;
-        case 3:
-            $destinatarios[] = 'coordinador.secundaria@colegiosanluis.com';
-            break;
-    }
-
-    // Enviar el correo de notificación a los destinatarios
-    Mail::to($destinatarios)->send(new AlumnoUpdate($alumno, $contactos));
-
-
-    // Verificar el rol del usuario para redirigir al lugar adecuado
-    if (auth()->user()->hasRole('SuperAdmin')) {
-        // Si el usuario es SuperAdmin, redirigir a selectadmin
-        return redirect()->route('admin.selectadmin')->with('success', 'Alumno actualizado correctamente.');
-    }
-
-    // Si no es SuperAdmin, redirigir a la ruta de capturista (o ControlEscolar)
-    return redirect()->route('capturista.selectsearch')->with('success', 'Alumno actualizado correctamente.');}
+    
+        // Validación de los campos
+        $validationRules = [
+            'matricula' => 'nullable|numeric|unique:alumnos,matricula,' . $id,
+            'nombre' => 'nullable|string|max:255',
+            'apellidopaterno' => 'nullable|string|max:255',
+            'apellidomaterno' => 'nullable|string|max:255',
+            'contacto1nombre' => 'nullable|string|max:255',
+            'telefono1' => 'nullable|digits:10',
+            'contacto1tipo_contacto' => 'nullable|string|max:255',
+            'correo1' => 'nullable|email',
+            'contacto2nombre' => 'nullable|string|max:255',
+            'telefono2' => 'nullable|digits:10',
+            'contacto2tipo_contacto' => 'nullable|string|max:255',
+            'correo2' => 'nullable|email',
+            'contacto3nombre' => 'nullable|string|max:255',
+            'telefono3' => 'nullable|digits:10',
+            'contacto3tipo_contacto' => 'nullable|string|max:255',
+            'correo3' => 'nullable|email',
+            'usuario_classroom' => 'required|string|max:255',
+            'contraseña_classroom' => 'required|string|max:255',
+            'usuario_moodle' => 'required|string|max:255',
+            'contraseña_moodle' => 'required|string|max:255',
+            'usuario_hmh' => 'nullable|string|max:255',
+            'contraseña_hmh' => 'nullable|string|max:255',
+            'usuario_mathletics' => 'nullable|string|max:255',
+            'contraseña_mathletics' => 'nullable|string|max:255',
+            'usuario_progrentis' => 'nullable|string|max:255',
+            'contraseña_progrentis' => 'nullable|string|max:255',
+            'nivel_educativo_id' => 'nullable|exists:nivel_educativo,id',
+            'grado_id' => 'nullable|exists:grados,id',
+            'fecha_inscripcion' => 'nullable|date',
+            'fecha_inicio' => 'nullable|date',
+            'seccion' => 'nullable|in:A,B,C', // Validación para la sección
+        ];
+    
+        $request->validate($validationRules);
+    
+        // Asignación de la fecha de inicio
+        $fecha_inicio = $request->fecha_inicio ?? now()->toDateString();
+    
+        // Generar las credenciales
+        $credenciales = $this->generarCredenciales(
+            $request->nombre ?? $alumno->nombre,
+            $request->apellidopaterno ?? $alumno->apellidopaterno,
+            $request->matricula ?? $alumno->matricula,
+            $request->fecha_inscripcion ?? $alumno->fecha_inscripcion
+        );
+    
+        // Asignar los valores recibidos de la solicitud
+        $nivel_educativo_id = $request->nivel_educativo_id ?? $alumno->nivel_educativo_id;
+        $grado_id = $request->grado_id ?? $alumno->grado_id;
+        // Asignar la variable $seccion
+        $seccion = $request->seccion ?? $alumno->seccion; // Asignación de la sección                   
+    
+        // Actualización del alumno
+        $alumno->update([
+            'matricula' => $request->matricula ?? $alumno->matricula,
+            'nombre' => $request->nombre ?? $alumno->nombre,
+            'apellidopaterno' => $request->apellidopaterno ?? $alumno->apellidopaterno,
+            'apellidomaterno' => $request->apellidomaterno ?? $alumno->apellidomaterno,
+            'usuario_classroom' => $credenciales['usuario_classroom'],
+            'contraseña_classroom' => $credenciales['contraseña_classroom'],
+            'usuario_moodle' => $credenciales['usuario_moodle'],
+            'contraseña_moodle' => $credenciales['contraseña_moodle'],
+            'usuario_hmh' => $request->usuario_hmh ?? $alumno->usuario_hmh,
+            'contraseña_hmh' => $request->contraseña_hmh ?? $alumno->contraseña_hmh,
+            'usuario_mathletics' => $request->usuario_mathletics ?? $alumno->usuario_mathletics,
+            'contraseña_mathletics' => $request->contraseña_mathletics ?? $alumno->contraseña_mathletics,
+            'usuario_progrentis' => $request->usuario_progrentis ?? $alumno->usuario_progrentis,
+            'contraseña_progrentis' => $request->contraseña_progrentis ?? $alumno->contraseña_progrentis,
+            'nivel_educativo_id' => $nivel_educativo_id, // Asegúrate de actualizar el nivel
+            'grado_id' => $grado_id, // También se actualiza el grado
+            'fecha_inscripcion' => $request->fecha_inscripcion ?? $alumno->fecha_inscripcion,
+            'fecha_inicio' => $fecha_inicio,
+            'seccion' => $seccion, // Actualización de la sección
+        ]);
+    
+        // Actualizar contactos si es necesario
+        $contactos = Contacto::where('alumno_id', $alumno->id)->get();
+        foreach ($contactos as $contacto) {
+            $contactoData = [
+                'nombre' => $request->{'contacto' . $contacto->tipo_contacto . 'nombre'} ?? $contacto->nombre,
+                'telefono' => $request->{'telefono' . $contacto->tipo_contacto} ?? $contacto->telefono,
+                'tipo_contacto' => $request->{'contacto' . $contacto->tipo_contacto . 'tipo_contacto'} ?? $contacto->tipo_contacto,
+                'correo' => $request->{'correo' . $contacto->tipo_contacto} ?? $contacto->correo,
+            ];
+    
+            if ($contacto->nombre !== $contactoData['nombre'] || 
+                $contacto->telefono !== $contactoData['telefono'] ||
+                $contacto->tipo_contacto !== $contactoData['tipo_contacto'] ||
+                $contacto->correo !== $contactoData['correo']) {
+                $contacto->update($contactoData);
+            }
+        }
+    
+        // Enviar correo de notificación
+        $destinatarios = [
+            'coordinador_tecnologia@colegiosanluis.com',
+            'coordinadora_academica@colegiosanluis.com',
+        ];
+    
+        // Añadir el coordinador de nivel educativo
+        switch ($nivel_educativo_id) {
+            case 1:
+                $destinatarios[] = 'coordinador.preescolar@colegiosanluis.com';
+                break;
+            case 2:
+                $destinatarios[] = 'coordinador.primaria@colegiosanluis.com';
+                break;
+            case 3:
+                $destinatarios[] = 'coordinador.secundaria@colegiosanluis.com';
+                break;
+        }
+    
+        Mail::to($destinatarios)->send(new AlumnoUpdate($alumno, $contactos));
+    
+        // Redirigir según el rol del usuario
+        if (auth()->user()->hasRole('SuperAdmin')) {
+            return redirect()->route('admin.selectadmin')->with('success', 'Alumno actualizado correctamente.');
+        }
+    
+        return redirect()->route('capturista.selectsearch')->with('success', 'Alumno actualizado correctamente.');
+    }    
         
     private function eliminarContactosDuplicados(Alumno $alumno)
     {
