@@ -346,7 +346,7 @@ class AlumnoController extends Controller
             'grado_id' => 'nullable|exists:grados,id',
             'fecha_inscripcion' => 'nullable|date',
             'fecha_inicio' => 'nullable|date',
-            'seccion' => 'nullable|in:A,B,C', // Validación para la sección
+            'seccion' => 'nullable|in:A,B', // Validación para la sección
         ];
     
         $request->validate($validationRules);

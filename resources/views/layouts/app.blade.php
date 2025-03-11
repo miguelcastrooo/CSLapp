@@ -5,7 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'Laravel') }}</title>
+    <title>CSL</title>
+
+    <link rel="icon" href="{{ asset('img/san-luis_512%20(1).webp') }}" type="image/x-icon">
+
 
     <!-- Carga de estilos con Vite -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -52,6 +55,15 @@
                         </a>
                     </li>
                 @endif
+
+                @if (Auth::user()->hasRole('SuperAdmin'))
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="{{ route('admin.grupos.form') }}">
+                            <i class="fas fa-user-plus"></i> Mover Grupos
+                        </a>
+                    </li>
+                @endif
+
 
                 @if(Auth::user()->hasRole('CoordinacionPreescolar'))
                     <li class="nav-item">

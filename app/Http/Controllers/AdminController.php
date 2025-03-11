@@ -11,6 +11,7 @@ use App\Models\AlumnoPlataforma;
 use App\Models\NivelPlataforma;
 use App\Models\Plataforma;
 use App\Models\Egresado;
+use App\Models\Grupo;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Spatie\Permission\Models\Role;
 
@@ -353,10 +354,94 @@ class AdminController extends Controller
         return view('admin.index', compact('nivel', 'alumnos', 'grados', 'secciones'));
     }
     
+    public function moverGrupos(Request $request)
+    {
+        // Validar los datos recibidos
+        $request->validate([
+            'grado_id' => 'required|exists:grado,id',
+            'nivel_educativo_id' => 'required|exists:nivel_educativo,id',
+            'nuevo_grado_id' => 'required|exists:grado,id',
+            'nuevo_nivel_id' => 'required|exists:nivel_educativo,id',
+        ]);
     
+        // Verificar que el nuevo grado pertenece al nuevo nivel
+        $nuevoGrado = Grado::find($request->nuevo_grado_id);
+        if (!$nuevoGrado || $nuevoGrado->nivel_educativo_id != $request->nuevo_nivel_id) {
+            return redirect()->back()->with('error', 'El grado seleccionado no pertenece al nivel educativo seleccionado.');
+        }
+    
+        // Obtener a los alumnos del grado y nivel actual
+        $alumnos = Alumno::where('grado_id', $request->grado_id)
+                        ->where('nivel_educativo_id', $request->nivel_educativo_id)
+                        ->get();
+    
+        // Verificar si hay alumnos para mover
+        if ($alumnos->isEmpty()) {
+            return redirect()->back()->with('error', 'No hay alumnos en ese grado y nivel.');
+        }
+    
+        // Actualizar el grado y nivel de los alumnos seleccionados
+        $alumnos->each(function ($alumno) use ($request) {
+            $alumno->update([
+                'grado_id' => $request->nuevo_grado_id,
+                'nivel_educativo_id' => $request->nuevo_nivel_id,
+            ]);
+        });
+    
+        // Redirigir con un mensaje de éxito
+        return redirect()->route('admin.index')->with('success', 'Grupo movido correctamente.');
+    }
+    
+    public function mostrarFormularioMoverGrupos(Request $request)
+    {
+        // Obtener todos los grados y niveles educativos
+        $grados = Grado::all();
+        $niveles = NivelEducativo::all();
+    
+        // Filtros de grado y nivel
+        $grado_id = $request->grado_id;
+        $nivel_educativo_id = $request->nivel_educativo_id;
+    
+        // Obtener los alumnos filtrados por grado y nivel educativo, si se han proporcionado
+        $alumnos = Alumno::when($grado_id, function ($query) use ($grado_id) {
+                            return $query->where('grado_id', $grado_id);
+                        })
+                        ->when($nivel_educativo_id, function ($query) use ($nivel_educativo_id) {
+                            return $query->where('nivel_educativo_id', $nivel_educativo_id);
+                        })
+                        ->get();
+    
+        return view('admin.movergrupos', compact('grados', 'niveles', 'alumnos', 'grado_id', 'nivel_educativo_id'));
+    }
+    
+    public function obtenerGradosYNiveles(Request $request)
+{
+    // Validar los datos entrantes (opcional, pero recomendable)
+    $request->validate([
+        'niveles' => 'array',
+        'grados' => 'array',
+    ]);
 
-    
+    // Obtener niveles filtrados
+    $niveles = NivelEducativo::whereIn('id', $request->niveles ?: [])->get();
 
-    
+    // Obtener grados filtrados
+    $grados = Grado::whereIn('id', $request->grados ?: [])->get();
+
+    // Obtener alumnos que pertenecen a esos niveles y grados
+    $alumnos = Alumno::when($request->niveles, function ($query) use ($request) {
+                        return $query->whereIn('nivel_educativo_id', $request->niveles);
+                    })
+                    ->when($request->grados, function ($query) use ($request) {
+                        return $query->whereIn('grado_id', $request->grados);
+                    })
+                    ->get();
+
+    return response()->json([
+        'niveles' => $niveles,
+        'grados' => $grados,
+        'alumnos' => $alumnos
+    ]);
+}
     
 }

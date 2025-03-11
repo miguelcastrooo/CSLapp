@@ -53,7 +53,7 @@
     <div class="container">
         <div class="header">
             <img src="{{ asset('img/san-luis_512%20(1).webp') }}" alt="Logo Escuela" class="img-fluid" style="max-width: 150px;">
-            <h2>Actualización de Credenciales - Alumno</h2>
+            <h2>Registro de Alumno</h2>
         </div>
 
         <div class="content">
@@ -68,7 +68,7 @@
                 <li class="list-group-item"><strong>Grado:</strong> {{ $alumno->grado->nombre }}</li>
                 <li class="list-group-item"><strong>Nivel Educativo:</strong> {{ $alumno->nivelEducativo->nombre }}</li>
                 <li class="list-group-item"><strong>Fecha de Inscripción:</strong> {{ \Carbon\Carbon::parse($alumno->fecha_inscripcion)->format('d \d\e F, Y') }}</li>
-                <li class="list-group-item"><strong>Fecha de Inicio:</strong> {{ \Carbon\Carbon::parse($alumno->fecha_inscripcion)->format('d \d\e F, Y') }}</li>
+                <li class="list-group-item"><strong>Fecha de Inicio:</strong> {{ \Carbon\Carbon::parse($alumno->fecha_inicio)->format('d \d\e F, Y') }}</li>
             </ul>
 
             @if($contactos->isNotEmpty())
@@ -88,11 +88,21 @@
 
             <h3>Plataformas Asignadas:</h3>
             <ul class="list-group">
-                <li class="list-group-item">✅ Classroom</li>
-                <li class="list-group-item">✅ Moodle</li>
-
-                @if($alumno->nivelEducativo->nombre == 'Preescolar')
-                    <li class="list-group-item"><strong>Sección:</strong> {{ $alumno->grado->nombre }}</li>
+                @if($alumno->nivelEducativo->nombre)
+                    <li class="list-group-item">
+                        @if($alumno->usuario_classroom && $alumno->contraseña_classroom)
+                            ✅ Classroom: {{ $alumno->usuario_classroom }} / {{ $alumno->contraseña_classroom }}
+                        @else
+                            ⚠️ Classroom: Usuario o Contraseña faltante
+                        @endif
+                    </li>
+                    <li class="list-group-item">
+                        @if($alumno->usuario_moodle && $alumno->contraseña_moodle)
+                            ✅ Moodle: {{ $alumno->usuario_moodle }} / {{ $alumno->contraseña_moodle }}
+                        @else
+                            ⚠️ Moodle: Usuario o Contraseña faltante
+                        @endif
+                    </li>
                 @endif
 
                 @if($alumno->nivelEducativo->nombre == 'Primaria Baja')
@@ -139,8 +149,8 @@
                     </li>
                 @endif
 
-                @if(empty($alumno->grado->nombre))
-                    <li class="list-group-item text-danger">⚠️ Sección pendiente por asignar.</li>
+                @if(empty($alumno->grado->seccion))
+                    <li class="list-group-item">⚠️ Sección pendiente por asignar.</li>
                 @endif
             </ul>
 

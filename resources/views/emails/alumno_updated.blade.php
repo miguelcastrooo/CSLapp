@@ -70,7 +70,7 @@
                 <li class="list-group-item"><strong>Grado:</strong> {{ $alumno->grado->nombre }}</li>
                 <li class="list-group-item"><strong>Nivel Educativo:</strong> {{ $alumno->nivelEducativo->nombre }}</li>
                 <li class="list-group-item"><strong>Fecha de Inscripción:</strong> {{ \Carbon\Carbon::parse($alumno->fecha_inscripcion)->format('d \d\e F, Y') }}</li>
-                <li class="list-group-item"><strong>Fecha de Inicio:</strong> {{ \Carbon\Carbon::parse($alumno->fecha_inscripcion)->format('d \d\e F, Y') }}</li>
+                <li class="list-group-item"><strong>Fecha de Inicio:</strong> {{ \Carbon\Carbon::parse($alumno->fecha_inicio)->format('d \d\e F, Y') }}</li>
             </ul>
 
             @if($contactos->isNotEmpty())

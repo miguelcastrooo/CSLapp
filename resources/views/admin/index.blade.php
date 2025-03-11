@@ -32,10 +32,6 @@
                     <input type="checkbox" class="form-check-input" id="seccion-B" value="B" onchange="filterAlumnos()">
                     <label class="form-check-label" for="seccion-B">B</label>
                 </div>
-                <div class="form-check form-check-inline">
-                    <input type="checkbox" class="form-check-input" id="seccion-C" value="C" onchange="filterAlumnos()">
-                    <label class="form-check-label" for="seccion-C">C</label>
-                </div>
             </div>
         </div>
     </div>

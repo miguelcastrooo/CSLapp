@@ -53,6 +53,17 @@ Route::middleware(['auth', 'role:SuperAdmin|CoordinacionPreescolar|CoordinacionP
     // Nueva ruta para generar PDF de plataformas según el nivel educativo
     Route::get('/admin/alumnos/pdf/plataformas/{nivel}', [AdminController::class, 'generarPdfPlataformas'])->name('admin.alumnos.pdf.plataformas');
 
+    // Ruta para mostrar el formulario de mover grupos
+    Route::get('/admin/mover-grupos', [AdminController::class, 'mostrarFormularioMoverGrupos'])->name('admin.grupos.form');
+
+    // Ruta para procesar el movimiento de los grupos
+    Route::post('/admin/mover-grupos', [AdminController::class, 'moverGrupos'])->name('admin.grupos.mover');
+
+    // Ruta para obtener grados y niveles filtrados
+    Route::post('/admin/obtener-grados-niveles', [AdminController::class, 'obtenerGradosYNiveles'])->name('admin.obtenerGradosYNiveles');
+
+
+
 
 
     // Niveles

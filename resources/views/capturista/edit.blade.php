@@ -96,7 +96,6 @@
                             <option value="">Selecciona una sección</option>
                             <option value="A" {{ old('seccion', $alumno->seccion) == 'A' ? 'selected' : '' }}>A</option>
                             <option value="B" {{ old('seccion', $alumno->seccion) == 'B' ? 'selected' : '' }}>B</option>
-                            <option value="C" {{ old('seccion', $alumno->seccion) == 'C' ? 'selected' : '' }}>C</option>
                         </select>
                     </div>
                 </div>
