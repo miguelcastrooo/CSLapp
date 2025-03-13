@@ -79,21 +79,7 @@ Route::middleware(['auth', 'role:SuperAdmin|CoordinacionPreescolar|CoordinacionP
 });
 
 Route::middleware(['auth', 'role:CoordinacionPreescolar|CoordinacionPrimaria|CoordinacionSecundaria'])->group(function () {
-    // Rutas para el coordinador, dependiendo del rol
-    Route::prefix('coordinador')->name('coordinador.')->group(function () {
-        
-        // Página principal donde se muestran los alumnos según el nivel educativo
-        Route::get('/', [CoordinacionController::class, 'index'])->name('index');
 
-        Route::get('coordinacion/alumnos/{id}', [CoordinacionController::class, 'show'])->name('coordinacion.alumnos.show');
-        
-        // Ruta para editar la información de un alumno
-        Route::get('/alumno/{alumno}/edit', [CoordinacionController::class, 'edit'])->name('edit');
-        Route::put('/alumno/{alumno}', [CoordinacionController::class, 'update'])->name('update');
-        
-        // Ruta para generar un PDF de un alumno
-        Route::get('/alumno/{alumno}/pdf', [CoordinacionController::class, 'generatePdf'])->name('generatePdf');
-    });
 });
 
 

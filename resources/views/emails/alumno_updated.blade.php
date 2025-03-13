@@ -88,85 +88,31 @@
                 <p>No se han registrado contactos de emergencia.</p>
             @endif
 
-            <h3>Información Pendiente de Asignación:</h3>
+            <h3>Plataformas Asignadas:</h3>
                 <ul class="list-group">
-                    <li class="list-group-item">
-                        @if(!empty($alumno->seccion))
-                            ✅ <strong>Sección:</strong> {{ $alumno->seccion }}
-                        @else
-                            ⚠️ <strong>Sección pendiente por asignar.</strong>
-                        @endif
-                    </li>
-                </ul>
-
-                <h3>Plataformas Asignadas:</h3>
-                <ul class="list-group">
-                    <!-- Mostrar credenciales de Moodle si existen -->
-                    @if($alumno->usuario_moodle && $alumno->contraseña_moodle)
+                    @foreach ($alumno->alumnoPlataforma as $plataforma)
                         <li class="list-group-item">
-                            ✅ Moodle: {{ $alumno->usuario_moodle }} / {{ $alumno->contraseña_moodle }}
+                            @if($plataforma->usuario && $plataforma->contraseña)
+                                ✅ {{ $plataforma->plataforma->nombre }}: {{ $plataforma->usuario }} / {{ $plataforma->contraseña }}
+                            @else
+                                ⚠️ {{ $plataforma->plataforma->nombre }}: Usuario o Contraseña faltante
+                            @endif
+                        </li>
+                    @endforeach
+
+                    <!-- Mostrar la sección si está disponible -->
+                    @if($alumno->seccion)
+                        <li class="list-group-item">
+                            ✅ Sección: {{ $alumno->seccion }}
                         </li>
                     @else
                         <li class="list-group-item">
-                            ⚠️ Moodle: Usuario o Contraseña faltante
-                        </li>
-                    @endif
-
-                    <!-- Mostrar credenciales de Classroom si existen -->
-                    @if($alumno->usuario_classroom && $alumno->contraseña_classroom)
-                        <li class="list-group-item">
-                            ✅ Classroom: <br>{{ $alumno->usuario_classroom }} / {{ $alumno->contraseña_classroom }}
-                        </li>
-                    @else
-                        <li class="list-group-item">
-                            ⚠️ Classroom: Usuario o Contraseña faltante
-                        </li>
-                    @endif
-
-                    @if($alumno->nivelEducativo->nombre == 'Primaria Baja')
-                        <li class="list-group-item">
-                            @if($alumno->usuario_hmh && $alumno->contraseña_hmh)
-                                ✅ HMH: {{ $alumno->usuario_hmh }} / {{ $alumno->contraseña_hmh }}
-                            @else
-                                ⚠️ HMH: Usuario o Contraseña faltante
-                            @endif
-                        </li>
-                    @endif
-
-                    @if($alumno->nivelEducativo->nombre == 'Primaria Alta')
-                        <li class="list-group-item">
-                            @if($alumno->usuario_hmh && $alumno->contraseña_hmh)
-                                ✅ HMH: {{ $alumno->usuario_hmh }} / {{ $alumno->contraseña_hmh }}
-                            @else
-                                ⚠️ HMH: Usuario o Contraseña faltante
-                            @endif
-                        </li>
-                        <li class="list-group-item">
-                            @if($alumno->usuario_mathletics && $alumno->contraseña_mathletics)
-                                ✅ Mathletics: {{ $alumno->usuario_mathletics }} / {{ $alumno->contraseña_mathletics }}
-                            @else
-                                ⚠️ Mathletics: Usuario o Contraseña faltante
-                            @endif
-                        </li>
-                        <li class="list-group-item">
-                            @if($alumno->usuario_progrentis && $alumno->contraseña_progrentis)
-                                ✅ Progrentis: {{ $alumno->usuario_progrentis }} / {{ $alumno->contraseña_progrentis }}
-                            @else
-                                ⚠️ Progrentis: Usuario o Contraseña faltante
-                            @endif
-                        </li>
-                    @endif
-
-                    @if($alumno->nivelEducativo->nombre == 'Secundaria')
-                        <li class="list-group-item">
-                            @if($alumno->usuario_mathletics && $alumno->contraseña_mathletics)
-                                ✅ Mathletics: {{ $alumno->usuario_mathletics }} / {{ $alumno->contraseña_mathletics }}
-                            @else
-                                ⚠️ Mathletics: Usuario o Contraseña faltante
-                            @endif
+                            ⚠️ Sección pendiente por asignar.
                         </li>
                     @endif
                 </ul>
+
+
             <h3>Indicaciones para la Asignación:</h3>
             <ul class="list-group">
                 <li class="list-group-item"><strong>Profesor 1:</strong> Verificar la sección y asignarla en el sistema.</li>

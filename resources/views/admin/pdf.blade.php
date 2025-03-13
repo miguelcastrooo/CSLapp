@@ -57,8 +57,9 @@
 
     <div class="container mt-4">
         <div class="header">
+            <img src="{{ asset('img/san-luis_512%20(1).webp') }}" alt="Logo Escuela" class="img-fluid" style="max-width: 150px;">
             <h2>DATOS DE ACCESO A PLATAFORMAS DIGITALES</h2>
-            <i class="fas fa-user-graduate logo"></i> <!-- Ejemplo de ícono, reemplázalo con tu logo -->
+            <i class="fas fa-user-graduate logo"></i>
         </div>
 
         <div class="row mt-4">
@@ -81,79 +82,15 @@
                 </tr>
             </thead>
             <tbody>
-                @if($alumno->nivelEducativo->nombre == 'Preescolar')
+                @foreach ($alumno->plataformas as $index => $plataforma)
                     <tr>
-                        <td>Moodle</td>
-                        <td>{{ $alumno->usuario_moodle ?? 'N/A' }}</td>
-                        <td>{{ $alumno->contraseña_moodle ?? 'N/A' }}</td>
+                        <!-- Nombre de la plataforma -->
+                        <td>{{ $plataforma->nombre ?? 'N/A' }}</td>
+                        <!-- Usuario y Contraseña, mostrando N/A solo si están vacíos -->
+                        <td>{{ $plataforma->pivot->usuario ?? 'N/A' }}</td>
+                        <td>{{ $plataforma->pivot->contraseña ?? 'N/A' }}</td>
                     </tr>
-                    <tr>
-                        <td>ClassRoom</td>
-                        <td>{{ $alumno->usuario_classroom ?? 'N/A' }}</td>
-                        <td>{{ $alumno->contraseña_classroom ?? 'N/A' }}</td>
-                    </tr>
-
-                @elseif($alumno->nivelEducativo->nombre == 'Primaria Baja')
-                    <tr>
-                        <td>Moodle</td>
-                        <td>{{ $alumno->usuario_moodle ?? 'N/A' }}</td>
-                        <td>{{ $alumno->contraseña_moodle ?? 'N/A' }}</td>
-                    </tr>
-                    <tr>
-                        <td>ClassRoom</td>
-                        <td>{{ $alumno->usuario_classroom ?? 'N/A' }}</td>
-                        <td>{{ $alumno->contraseña_classroom ?? 'N/A' }}</td>
-                    </tr>
-                    <tr>
-                        <td>HMH</td>
-                        <td>{{ $alumno->usuario_hmh ?? 'N/A' }}</td>
-                        <td>{{ $alumno->contraseña_hmh ?? 'N/A' }}</td>
-                    </tr>
-
-                @elseif($alumno->nivelEducativo->nombre == 'Primaria Alta')
-                    <tr>
-                        <td>Moodle</td>
-                        <td>{{ $alumno->usuario_moodle ?? 'N/A' }}</td>
-                        <td>{{ $alumno->contraseña_moodle ?? 'N/A' }}</td>
-                    </tr>
-                    <tr>
-                        <td>ClassRoom</td>
-                        <td>{{ $alumno->usuario_classroom ?? 'N/A' }}</td>
-                        <td>{{ $alumno->contraseña_classroom ?? 'N/A' }}</td>
-                    </tr>
-                    <tr>
-                        <td>HMH</td>
-                        <td>{{ $alumno->usuario_hmh ?? 'N/A' }}</td>
-                        <td>{{ $alumno->contraseña_hmh ?? 'N/A' }}</td>
-                    </tr>
-                    <tr>
-                        <td>Mathletics</td>
-                        <td>{{ $alumno->usuario_mathletics ?? 'N/A' }}</td>
-                        <td>{{ $alumno->contraseña_mathletics ?? 'N/A' }}</td>
-                    </tr>
-                    <tr>
-                        <td>Progrentis</td>
-                        <td>{{ $alumno->usuario_progrentis ?? 'N/A' }}</td>
-                        <td>{{ $alumno->contraseña_progrentis ?? 'N/A' }}</td>
-                    </tr>
-
-                @elseif($alumno->nivelEducativo->nombre == 'Secundaria')
-                    <tr>
-                        <td>Moodle</td>
-                        <td>{{ $alumno->usuario_moodle ?? 'N/A' }}</td>
-                        <td>{{ $alumno->contraseña_moodle ?? 'N/A' }}</td>
-                    </tr>
-                    <tr>
-                        <td>ClassRoom</td>
-                        <td>{{ $alumno->usuario_classroom ?? 'N/A' }}</td>
-                        <td>{{ $alumno->contraseña_classroom ?? 'N/A' }}</td>
-                    </tr>
-                    <tr>
-                        <td>Mathletics</td>
-                        <td>{{ $alumno->usuario_mathletics ?? 'N/A' }}</td>
-                        <td>{{ $alumno->contraseña_mathletics ?? 'N/A' }}</td>
-                    </tr>
-                @endif
+                @endforeach
             </tbody>
         </table>
     </div>

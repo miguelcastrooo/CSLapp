@@ -177,179 +177,57 @@
             </div>
         </div>
 
-        @if(Auth::user()->hasRole('SuperAdmin'))
-    <div class="card shadow-sm mb-4" style="background-color: #f8f9fa;">
+        @if (Auth::user()->hasRole('SuperAdmin') || Auth::user()->hasRole('CoordinacionPreescolar') || Auth::user()->hasRole('CoordinacionPrimaria') || Auth::user()->hasRole('CoordinacionSecundaria'))
+        <div class="card shadow-sm mb-4" style="background-color: #f8f9fa;">
         <div class="card-body">
             <h5 class="card-title text-primary">Datos de Usuario</h5>
 
-            <!-- Campos para el usuario y contraseñas -->
+            @php
+                // Define las plataformas por nivel educativo
+                $plataformasPorNivel = [
+                    'preescolar' => [1, 2], 
+                    'primaria_baja' => [1, 2, 3], 
+                    'primaria_alta' => [1, 2, 3, 4, 5], 
+                    'secundaria' => [1, 2, 4] 
+                ];
 
-            @if($alumno->nivel_educativo_id == 1) <!-- Preescolar -->
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="usuario_classroom" class="form-label">Usuario Classroom</label>
-                        <input type="text" class="form-control" id="usuario_classroom" name="usuario_classroom" value="{{ old('usuario_classroom', $alumno->usuario_classroom) }}" >
-                    </div>
+                // Determina las plataformas que deben mostrarse en función del nivel educativo
+                $nivel = $alumno->nivel_educativo_id;
+                $plataformasDisponibles = $plataformasPorNivel[
+                    ['preescolar', 'primaria_baja', 'primaria_alta', 'secundaria'][$nivel - 1] ?? []
+                ];
+            @endphp
 
-                    <div class="col-md-6">
-                        <label for="contraseña_classroom" class="form-label">Contraseña Classroom</label>
-                        <input type="text" class="form-control" id="contraseña_classroom" name="contraseña_classroom" value="{{ old('contraseña_classroom', $alumno->contraseña_classroom) }}">
-                    </div>
-                </div>
-
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="usuario_moodle" class="form-label">Usuario Moodle</label>
-                        <input type="text" class="form-control" id="usuario_moodle" name="usuario_moodle" value="{{ old('usuario_moodle', $alumno->usuario_moodle) }}" >
-                    </div>
-
-                    <div class="col-md-6">
-                        <label for="contraseña_moodle" class="form-label">Contraseña Moodle</label>
-                        <input type="text" class="form-control" id="contraseña_moodle" name="contraseña_moodle" value="{{ old('contraseña_moodle', $alumno->contraseña_moodle) }}">
-                    </div>
-                </div>
-            @elseif($alumno->nivel_educativo_id == 2) <!-- Primaria Baja -->
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="usuario_classroom" class="form-label">Usuario Classroom</label>
-                        <input type="text" class="form-control" id="usuario_classroom" name="usuario_classroom" value="{{ old('usuario_classroom', $alumno->usuario_classroom) }}" >
-                    </div>
-
-                    <div class="col-md-6">
-                        <label for="contraseña_classroom" class="form-label">Contraseña Classroom</label>
-                        <input type="text" class="form-control" id="contraseña_classroom" name="contraseña_classroom" value="{{ old('contraseña_classroom', $alumno->contraseña_classroom) }}">
-                    </div>
-                </div>
+            @foreach($plataformasDisponibles as $plataformaId)
+                @php
+                    // Obtener datos de la plataforma
+                    $plataformaExistente = $alumno->alumnoPlataforma->firstWhere('plataforma_id', $plataformaId);
+                    $plataforma = \App\Models\Plataforma::find($plataformaId);
+                    $plataformaNombre = $plataforma->nombre ?? 'Plataforma no asignada';
+                @endphp
 
                 <div class="row mb-3">
                     <div class="col-md-6">
-                        <label for="usuario_moodle" class="form-label">Usuario Moodle</label>
-                        <input type="text" class="form-control" id="usuario_moodle" name="usuario_moodle" value="{{ old('usuario_moodle', $alumno->usuario_moodle) }}" >
+                        <label for="plataformas_{{ $plataformaId }}_usuario" class="form-label">Usuario {{ ucfirst($plataformaNombre) }}</label>
+                        <input type="text" class="form-control" 
+                            id="plataformas_{{ $plataformaId }}_usuario" 
+                            name="plataformas[{{ $plataformaId }}][usuario]" 
+                            value="{{ old('plataformas.'.$plataformaId.'.usuario', $plataformaExistente->usuario ?? '') }}">
                     </div>
-
                     <div class="col-md-6">
-                        <label for="contraseña_moodle" class="form-label">Contraseña Moodle</label>
-                        <input type="text" class="form-control" id="contraseña_moodle" name="contraseña_moodle" value="{{ old('contraseña_moodle', $alumno->contraseña_moodle) }}">
+                        <label for="plataformas_{{ $plataformaId }}_contraseña" class="form-label">Contraseña {{ ucfirst($plataformaNombre) }}</label>
+                        <input type="text" class="form-control" 
+                            id="plataformas_{{ $plataformaId }}_contraseña" 
+                            name="plataformas[{{ $plataformaId }}][contraseña]" 
+                            value="{{ old('plataformas.'.$plataformaId.'.contraseña', $plataformaExistente->contraseña ?? '') }}">
                     </div>
                 </div>
-
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="usuario_hmh" class="form-label">Usuario HMH</label>
-                        <input type="text" class="form-control" id="usuario_hmh" name="usuario_hmh" value="{{ old('usuario_hmh', $alumno->usuario_hmh) }}" >
-                    </div>
-
-                    <div class="col-md-6">
-                        <label for="contraseña_hmh" class="form-label">Contraseña HMH</label>
-                        <input type="text" class="form-control" id="contraseña_hmh" name="contraseña_hmh" value="{{ old('contraseña_hmh', $alumno->contraseña_hmh) }}" >
-                    </div>
-                </div>
-            @elseif($alumno->nivel_educativo_id == 3) <!-- Primaria Alta -->
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="usuario_classroom" class="form-label">Usuario Classroom</label>
-                        <input type="text" class="form-control" id="usuario_classroom" name="usuario_classroom" value="{{ old('usuario_classroom', $alumno->usuario_classroom) }}" >
-                    </div>
-
-                    <div class="col-md-6">
-                        <label for="contraseña_classroom" class="form-label">Contraseña Classroom</label>
-                        <input type="text" class="form-control" id="contraseña_classroom" name="contraseña_classroom" value="{{ old('contraseña_classroom', $alumno->contraseña_classroom) }}">
-                    </div>
-                </div>
-
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="usuario_moodle" class="form-label">Usuario Moodle</label>
-                        <input type="text" class="form-control" id="usuario_moodle" name="usuario_moodle" value="{{ old('usuario_moodle', $alumno->usuario_moodle) }}" >
-                    </div>
-
-                    <div class="col-md-6">
-                        <label for="contraseña_moodle" class="form-label">Contraseña Moodle</label>
-                        <input type="text" class="form-control" id="contraseña_moodle" name="contraseña_moodle" value="{{ old('contraseña_moodle', $alumno->contraseña_moodle) }}">
-                    </div>
-                </div>
-
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="usuario_hmh" class="form-label">Usuario HMH</label>
-                        <input type="text" class="form-control" id="usuario_hmh" name="usuario_hmh" value="{{ old('usuario_hmh', $alumno->usuario_hmh) }}" >
-                    </div>
-
-                    <div class="col-md-6">
-                        <label for="contraseña_hmh" class="form-label">Contraseña HMH</label>
-                        <input type="text" class="form-control" id="contraseña_hmh" name="contraseña_hmh" value="{{ old('contraseña_hmh', $alumno->contraseña_hmh) }}" >
-                    </div>
-                </div>
-
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="usuario_mathletics" class="form-label">Usuario Mathletics</label>
-                        <input type="text" class="form-control" id="usuario_mathletics" name="usuario_mathletics" value="{{ old('usuario_mathletics', $alumno->usuario_mathletics) }}" >
-                    </div>
-
-                    <div class="col-md-6">
-                        <label for="contraseña_mathletics" class="form-label">Contraseña Mathletics</label>
-                        <input type="text" class="form-control" id="contraseña_mathletics" name="contraseña_mathletics" value="{{ old('contraseña_mathletics', $alumno->contraseña_mathletics) }}" >
-                    </div>
-                </div>
-
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="usuario_progrentis" class="form-label">Usuario Progrentis</label>
-                        <input type="text" class="form-control" id="usuario_progrentis" name="usuario_progrentis" value="{{ old('usuario_progrentis', $alumno->usuario_progrentis) }}" >
-                    </div>
-
-                    <div class="col-md-6">
-                        <label for="contraseña_progrentis" class="form-label">Contraseña Progrentis</label>
-                        <input type="text" class="form-control" id="contraseña_progrentis" name="contraseña_progrentis" value="{{ old('contraseña_progrentis', $alumno->contraseña_progrentis) }}" >
-                    </div>
-                </div>
-            @elseif($alumno->nivel_educativo_id == 4) <!-- Secundaria -->
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="usuario_classroom" class="form-label">Usuario Classroom</label>
-                        <input type="text" class="form-control" id="usuario_classroom" name="usuario_classroom" value="{{ old('usuario_classroom', $alumno->usuario_classroom) }}" >
-                    </div>
-
-                    <div class="col-md-6">
-                        <label for="contraseña_classroom" class="form-label">Contraseña Classroom</label>
-                        <input type="text" class="form-control" id="contraseña_classroom" name="contraseña_classroom" value="{{ old('contraseña_classroom', $alumno->contraseña_classroom) }}">
-                    </div>
-                </div>
-
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="usuario_moodle" class="form-label">Usuario Moodle</label>
-                        <input type="text" class="form-control" id="usuario_moodle" name="usuario_moodle" value="{{ old('usuario_moodle', $alumno->usuario_moodle) }}" >
-                    </div>
-
-                    <div class="col-md-6">
-                        <label for="contraseña_moodle" class="form-label">Contraseña Moodle</label>
-                        <input type="text" class="form-control" id="contraseña_moodle" name="contraseña_moodle" value="{{ old('contraseña_moodle', $alumno->contraseña_moodle) }}">
-                    </div>
-                </div>
-
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="usuario_mathletics" class="form-label">Usuario Mathletics</label>
-                        <input type="text" class="form-control" id="usuario_mathletics" name="usuario_mathletics" value="{{ old('usuario_mathletics', $alumno->usuario_mathletics) }}" >
-                    </div>
-
-                    <div class="col-md-6">
-                        <label for="contraseña_mathletics" class="form-label">Contraseña Mathletics</label>
-                        <input type="text" class="form-control" id="contraseña_mathletics" name="contraseña_mathletics" value="{{ old('contraseña_mathletics', $alumno->contraseña_mathletics) }}" >
-                    </div>
-                </div>
-            @endif
-
+            @endforeach
         </div>
     </div>
 @endif
 
 
-
-
-       
     </form>
 </div>
 <br><br>

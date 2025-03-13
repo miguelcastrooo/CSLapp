@@ -19,7 +19,7 @@ use Spatie\Permission\Models\Role;
 class AdminController extends Controller
 {
     public function index(Request $request)
-{
+    {
     // Obtener los niveles educativos
     $niveles = NivelEducativo::all();
 
@@ -43,13 +43,11 @@ class AdminController extends Controller
 
     // Obtener grados y secciones dinámicamente dependiendo del nivel
     $grados = Grado::all();
-    $secciones = ['A', 'B', 'C'];
+    $secciones = ['A', 'B'];
 
     return view('admin.index', compact('alumnos', 'niveles', 'grados', 'secciones'));
-}
+    }
 
-
-        
     public function search(Request $request)
     {
         $search = $request->get('search');
@@ -70,44 +68,17 @@ class AdminController extends Controller
         return view('admin.search', compact('alumnos'));
     }
 
-    // Función para crear un nuevo alumno (admin)
-    public function create()
+   // Función para editar un alumno (admin)
+   public function edit($id)
     {
-        return view('admin.admincreate');
-    }
-
-    // Función para almacenar un nuevo alumno
-    public function store(Request $request)
-    {
-        $request->validate([
-            'matricula' => 'required|string|max:255',
-            'nombre' => 'required|string|max:255',
-            'apellidopaterno' => 'required|string|max:255',
-            'apellidomaterno' => 'required|string|max:255',
-            'contacto1nombre' => 'required|string|max:255',
-            'telefono1' => 'required|string|max:255',
-            'correo_familia' => 'required|email|max:255',
-            'grado_id' => 'required|integer',
-            'fecha_inscripcion' => 'required|date',
-            // Asegúrate de validar todos los campos según sea necesario
-        ]);
-
-        Alumno::create($request->all());
-        return redirect()->route('admin.storeAdmin');
-    }
-
-    // Función para editar un alumno (admin)
-    public function edit($id)
-    {
-        $alumno = Alumno::findOrFail($id);
+        $alumno = Alumno::with('alumnoPlataforma')->findOrFail($id);
         $niveles = NivelEducativo::all();
         $grados = Grado::all();
-        $contactos = $alumno->contactos; // Recuperas los contactos asociados al alumno
-    
+        $contactos = $alumno->contactos;
+
         return view('admin.adminedit', compact('alumno', 'niveles', 'grados', 'contactos'));
     }
-    
-
+   
     // Función para actualizar la información de un alumno (admin)
     public function update(Request $request, $id)
     {
@@ -243,72 +214,16 @@ class AdminController extends Controller
     {
         // Obtener el nivel educativo según el ID
         $nivelEducativo = NivelEducativo::findOrFail($nivelId);
-    
-        // Obtener los alumnos relacionados con este nivel
-        $alumnos = Alumno::where('nivel_educativo_id', $nivelEducativo->id)->paginate(10); // Ajusta el número de elementos por página
-    
+        
+        // Obtener los alumnos relacionados con este nivel e incluir las plataformas asociadas
+        $alumnos = Alumno::with('alumnoPlataforma')  // Cargar las plataformas
+                         ->where('nivel_educativo_id', $nivelEducativo->id)
+                         ->paginate(10); // Ajusta el número de elementos por página
+        
         // Pasar los datos a la vista
         return view('admin.niveles', compact('nivelEducativo', 'alumnos'));
     }
-    
 
-    //Baja alumno
-    public function darBaja($id)
-    {
-        $alumno = Alumno::findOrFail($id);
-
-        // Mostrar el modal para pedir el motivo
-        return view('admin.dar_baja', compact('alumno'));
-    }
-
-    public function confirmarBaja($id, Request $request)
-    {
-        // Recuperamos el alumno con el ID
-        $alumno = Alumno::findOrFail($id);
-    
-        // Verificamos si la matrícula ya está en la tabla de egresados
-        $egresadoExistente = Egresado::where('matricula', $alumno->matricula)->first();
-    
-        if ($egresadoExistente) {
-            return redirect()->route('admin.index')->with('error', 'Este alumno ya está registrado como egresado.');
-        }
-    
-        // Insertamos el alumno en la tabla de egresados
-        $egresado = new Egresado();
-        $egresado->matricula = $alumno->matricula;
-        $egresado->nombre = $alumno->nombre;
-        $egresado->apellidopaterno = $alumno->apellidopaterno;
-        $egresado->apellidomaterno = $alumno->apellidomaterno;
-        $egresado->correo = $alumno->correo;
-        $egresado->contacto1nombre = $alumno->contacto1nombre;
-        $egresado->telefono1 = $alumno->telefono1;
-        $egresado->correo_familia = $alumno->correo_familia;
-        $egresado->contacto2nombre = $alumno->contacto2nombre;
-        $egresado->telefono2 = $alumno->telefono2;
-        $egresado->usuario_classroom = $alumno->usuario_classroom;
-        $egresado->contraseña_classroom = $alumno->contraseña_classroom;
-        $egresado->usuario_moodle = $alumno->usuario_moodle;
-        $egresado->contraseña_moodle = $alumno->contraseña_moodle;
-        $egresado->usuario_mathletics = $alumno->usuario_mathletics;
-        $egresado->contraseña_mathletics = $alumno->contraseña_mathletics;
-        $egresado->usuario_hmh = $alumno->usuario_hmh;
-        $egresado->contraseña_hmh = $alumno->contraseña_hmh;
-        $egresado->usuario_progrentis = $alumno->usuario_progrentis;
-        $egresado->contraseña_progrentis = $alumno->contraseña_progrentis;
-        $egresado->nivel_educativo_id = $alumno->nivel_educativo_id;
-        $egresado->grado_id = $alumno->grado_id;
-        $egresado->plataforma_id = $alumno->plataforma_id;
-        $egresado->seccion = $alumno->seccion;
-        $egresado->fecha_inscripcion = $alumno->fecha_inscripcion;
-        $egresado->motivo_baja = $request->motivo_baja;
-        $egresado->save();
-    
-        // Actualizamos el estado del alumno
-        $alumno->status = 0; // Baja
-        $alumno->save();
-    
-        return redirect()->route('admin.index')->with('success', 'El alumno ha sido dado de baja y movido a egresados.');
-    }
 
     public function selectAdmin()
     {

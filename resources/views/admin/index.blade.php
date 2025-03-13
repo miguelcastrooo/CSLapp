@@ -7,7 +7,6 @@
 
     <!-- Filtros de Grado y Sección -->
     <div class="filters mb-4">
-        <!-- Filtro de Grado -->
         <div class="form-group">
             <label for="grado-filter">Filtrar por Grado</label>
             <div id="grado-filter">
@@ -20,7 +19,6 @@
             </div>
         </div>
 
-        <!-- Filtro de Sección -->
         <div class="form-group">
             <label for="seccion-filter">Filtrar por Sección</label>
             <div id="seccion-filter">
@@ -37,144 +35,104 @@
     </div>
 
     <!-- Contenedor de la tabla con scroll horizontal -->
-    <div class="table-responsive">
-        <table class="table table-bordered table-striped table-hover">
-            <thead class="text-center">
-                <tr>
-                    <th class="p-3 text-nowrap">ID</th>
-                    <th class="p-3 text-nowrap">Matrícula</th>
-                    <th class="p-3 text-nowrap">Nombre</th>
-                    <th class="p-3 text-nowrap">Apellido Paterno</th>
-                    <th class="p-3 text-nowrap">Apellido Materno</th>
-                    <!-- Condiciones para mostrar plataformas según el nivel -->
-                    @switch($nivel->nombre)
-                        @case('Preescolar')
-                            <th class="p-3 text-nowrap">Usuario Classroom</th>
-                            <th class="p-3 text-nowrap">Contraseña Classroom</th>
-                            <th class="p-3 text-nowrap">Usuario Moodle</th>
-                            <th class="p-3 text-nowrap">Contraseña Moodle</th>
-                            @break
+<div class="table-responsive">
+    <table class="table table-bordered table-striped table-hover">
+        <thead class="text-center" style="background-color: #212121 !important; color: #e0e0e0 !important;">
+            <tr>
+                <th class="p-3">Matrícula</th>
+                <th class="p-3">Nombre del Alumno</th>
+                <th class="p-3">Apellido Paterno</th>
+                <th class="p-3">Apellido Materno</th>
+                <th class="p-3">Grado</th>
+                <th class="p-3">Sección</th>
+                <th class="p-3">Plataforma</th>
+                <th class="p-3">Usuario</th>
+                <th class="p-3">Contraseña</th>
 
-                        @case('Primaria Baja')
-                            <th class="p-3 text-nowrap">Usuario Classroom</th>
-                            <th class="p-3 text-nowrap">Contraseña Classroom</th>
-                            <th class="p-3 text-nowrap">Usuario Moodle</th>
-                            <th class="p-3 text-nowrap">Contraseña Moodle</th>
-                            <th class="p-3 text-nowrap">Usuario HMH</th>
-                            <th class="p-3 text-nowrap">Contraseña HMH</th>
-                            @break
+                @if (in_array($nivel->first()->nombre, ['Primaria Baja', 'Primaria Alta']))
+                    <th class="p-3">Usuario HMH</th>
+                    <th class="p-3">Contraseña HMH</th>
+                @endif
 
-                        @case('Primaria Alta')
-                            <th class="p-3 text-nowrap">Usuario Classroom</th>
-                            <th class="p-3 text-nowrap">Contraseña Classroom</th>
-                            <th class="p-3 text-nowrap">Usuario Moodle</th>
-                            <th class="p-3 text-nowrap">Contraseña Moodle</th>
-                            <th class="p-3 text-nowrap">Usuario HMH</th>
-                            <th class="p-3 text-nowrap">Contraseña HMH</th>
-                            <th class="p-3 text-nowrap">Usuario Mathletics</th>
-                            <th class="p-3 text-nowrap">Contraseña Mathletics</th>
-                            <th class="p-3 text-nowrap">Usuario Progrentis</th>
-                            <th class="p-3 text-nowrap">Contraseña Progrentis</th>
-                            @break
+                @if (in_array($nivel->first()->nombre, ['Primaria Alta', 'Secundaria']))
+                    <th class="p-3">Usuario Mathletics</th>
+                    <th class="p-3">Contraseña Mathletics</th>
+                @endif
 
-                        @case('Secundaria')
-                            <th class="p-3 text-nowrap">Usuario Classroom</th>
-                            <th class="p-3 text-nowrap">Contraseña Classroom</th>
-                            <th class="p-3 text-nowrap">Usuario Moodle</th>
-                            <th class="p-3 text-nowrap">Contraseña Moodle</th>
-                            <th class="p-3 text-nowrap">Usuario Mathletics</th>
-                            <th class="p-3 text-nowrap">Contraseña Mathletics</th>
-                            @break
-                    @endswitch
+                @if ($nivel->first()->nombre == 'Primaria Alta')
+                    <th class="p-3">Usuario Progrentis</th>
+                    <th class="p-3">Contraseña Progrentis</th>
+                @endif
 
-                    <th class="p-3 text-nowrap">Grado</th>
-                    <th class="p-3 text-nowrap">Sección</th>
-                    <th class="p-3 text-nowrap">Fecha de Inscripción</th>
-                    <th class="p-3 text-nowrap">Fecha de Inicio</th>
-                    <th class="p-3 text-nowrap text-center">Acciones</th>
-                </tr>
-            </thead>
-            <tbody id="alumnos-table">
-                @foreach ($alumnos as $alumno)
-                    <tr class="alumno-row" data-grado="{{ $alumno->grado->id }}" data-seccion="{{ $alumno->seccion }}">
-                        <td class="p-3">{{ $alumno->id }}</td>
-                        <td class="p-3">{{ $alumno->matricula }}</td>
-                        <td class="p-3">{{ $alumno->nombre }}</td>
-                        <td class="p-3">{{ $alumno->apellidopaterno }}</td>
-                        <td class="p-3">{{ $alumno->apellidomaterno }}</td>
+                <th class="p-3">Acciones</th>
+            </tr>
+        </thead>
+        <tbody style="background-color: #2c2c2c !important; color: white !important;">
+            @foreach ($alumnos as $alumno)
+                @foreach ($alumno->plataformas as $index => $plataforma)
+                    <tr class="alumno-row" data-grado="{{ $alumno->grado_id }}" data-seccion="{{ $alumno->seccion }}">
+                        @if ($loop->first)
+                            <td rowspan="{{ count($alumno->plataformas) }}" class="align-middle">{{ $alumno->matricula }}</td>
+                            <td rowspan="{{ count($alumno->plataformas) }}" class="align-middle">{{ $alumno->nombre }}</td>
+                            <td rowspan="{{ count($alumno->plataformas) }}" class="align-middle">{{ $alumno->apellidopaterno }}</td>
+                            <td rowspan="{{ count($alumno->plataformas) }}" class="align-middle">{{ $alumno->apellidomaterno }}</td>
+                            <td rowspan="{{ count($alumno->plataformas) }}" class="align-middle">{{ $alumno->grado->nombre }}</td>
+                            <td rowspan="{{ count($alumno->plataformas) }}" class="align-middle">{{ $alumno->seccion }}</td>
+                        @endif
 
-                        @switch($nivel->nombre)
-                            @case('Preescolar')
-                                <td class="p-3">{{ $alumno->usuario_classroom ?? 'N/A' }}</td>
-                                <td class="p-3">{{ $alumno->contraseña_classroom ?? 'N/A' }}</td>
-                                <td class="p-3">{{ $alumno->usuario_moodle ?? 'N/A' }}</td>
-                                <td class="p-3">{{ $alumno->contraseña_moodle ?? 'N/A' }}</td>
-                                @break
+                        <!-- Nombre de la plataforma -->
+                        <td>{{ $plataforma->nombre ?? 'N/A' }}</td>
 
-                            @case('Primaria Baja')
-                                <td class="p-3">{{ $alumno->usuario_classroom ?? 'N/A' }}</td>
-                                <td class="p-3">{{ $alumno->contraseña_classroom ?? 'N/A' }}</td>
-                                <td class="p-3">{{ $alumno->usuario_moodle ?? 'N/A' }}</td>
-                                <td class="p-3">{{ $alumno->contraseña_moodle ?? 'N/A' }}</td>
-                                <td class="p-3">{{ $alumno->usuario_hmh ?? 'N/A' }}</td>
-                                <td class="p-3">{{ $alumno->contraseña_hmh ?? 'N/A' }}</td>
-                                @break
+                        <!-- Usuario y Contraseña, mostrando N/A solo si están vacíos -->
+                        <td>{{ $plataforma->pivot->usuario ?? 'N/A' }}</td>
+                        <td>{{ $plataforma->pivot->contraseña ?? 'N/A' }}</td>
 
-                            @case('Primaria Alta')
-                                <td class="p-3">{{ $alumno->usuario_classroom ?? 'N/A' }}</td>
-                                <td class="p-3">{{ $alumno->contraseña_classroom ?? 'N/A' }}</td>
-                                <td class="p-3">{{ $alumno->usuario_moodle ?? 'N/A' }}</td>
-                                <td class="p-3">{{ $alumno->contraseña_moodle ?? 'N/A' }}</td>
-                                <td class="p-3">{{ $alumno->usuario_hmh ?? 'N/A' }}</td>
-                                <td class="p-3">{{ $alumno->contraseña_hmh ?? 'N/A' }}</td>
-                                <td class="p-3">{{ $alumno->usuario_mathletics ?? 'N/A' }}</td>
-                                <td class="p-3">{{ $alumno->contraseña_mathletics ?? 'N/A' }}</td>
-                                <td class="p-3">{{ $alumno->usuario_progrentis ?? 'N/A' }}</td>
-                                <td class="p-3">{{ $alumno->contraseña_progrentis ?? 'N/A' }}</td>
-                                @break
+                        @if (in_array($nivel->first()->nombre, ['Primaria Baja', 'Primaria Alta']))
+                            <!-- Campos adicionales para Primaria Baja y Alta -->
+                            <td>{{ $plataforma->pivot->usuario_hmh ?? 'N/A' }}</td>
+                            <td>{{ $plataforma->pivot->contraseña_hmh ?? 'N/A' }}</td>
+                        @endif
 
-                            @case('Secundaria')
-                                <td class="p-3">{{ $alumno->usuario_classroom ?? 'N/A' }}</td>
-                                <td class="p-3">{{ $alumno->contraseña_classroom ?? 'N/A' }}</td>
-                                <td class="p-3">{{ $alumno->usuario_moodle ?? 'N/A' }}</td>
-                                <td class="p-3">{{ $alumno->contraseña_moodle ?? 'N/A' }}</td>
-                                <td class="p-3">{{ $alumno->usuario_mathletics ?? 'N/A' }}</td>
-                                <td class="p-3">{{ $alumno->contraseña_mathletics ?? 'N/A' }}</td>
-                                @break
-                        @endswitch
+                        @if (in_array($nivel->first()->nombre, ['Primaria Alta', 'Secundaria']))
+                            <!-- Campos adicionales para Primaria Alta y Secundaria -->
+                            <td>{{ $plataforma->pivot->usuario_mathletics ?? 'N/A' }}</td>
+                            <td>{{ $plataforma->pivot->contraseña_mathletics ?? 'N/A' }}</td>
+                        @endif
 
-                        <td class="p-3">{{ $alumno->grado->nombre ?? 'N/A' }}</td>
-                        <td class="p-3">{{ $alumno->seccion ?? 'N/A' }}</td>
-                        <td class="p-3">{{ $alumno->fecha_inscripcion }}</td>
-                        <td class="p-3">{{ $alumno->fecha_inicio }}</td>
-                        <td class="p-3">
-                        <a href="{{ route('alumnos.edit', $alumno->id) }}" class="btn btn-warning btn-sm">Editar</a>
-                        </td>
+                        @if ($nivel->first()->nombre == 'Primaria Alta')
+                            <!-- Campos específicos para Primaria Alta -->
+                            <td>{{ $plataforma->pivot->usuario_progrentis ?? 'N/A' }}</td>
+                            <td>{{ $plataforma->pivot->contraseña_progrentis ?? 'N/A' }}</td>
+                        @endif
+
+                        @if ($loop->first)
+                            <td class="text-center">
+                                <a href="{{ route('alumnos.edit', $alumno->id) }}" class="btn btn-warning btn-sm">Editar</a>
+                            </td>
+                        @endif
                     </tr>
                 @endforeach
-            </tbody>
-        </table>
-    </div>
-
-    <a href="{{ route('admin.selectadmin') }}" class="btn btn-primary mt-3">Volver</a>
+            @endforeach
+        </tbody>
+    </table>
 </div>
+
+<a href="{{ route('admin.selectadmin') }}" class="btn btn-primary mt-3">Volver</a>
+
 
 <script>
     function filterAlumnos() {
         let selectedGrados = [];
         let selectedSecciones = [];
 
-        // Obtener los grados seleccionados
         document.querySelectorAll('#grado-filter input:checked').forEach(function (checkbox) {
             selectedGrados.push(checkbox.value);
         });
 
-        // Obtener las secciones seleccionadas
         document.querySelectorAll('#seccion-filter input:checked').forEach(function (checkbox) {
             selectedSecciones.push(checkbox.value);
         });
 
-        // Filtrar las filas de los alumnos
         document.querySelectorAll('.alumno-row').forEach(function (row) {
             let grado = row.getAttribute('data-grado');
             let seccion = row.getAttribute('data-seccion');

@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
 
 class Alumno extends Model
 {
@@ -16,16 +15,6 @@ class Alumno extends Model
         'apellidopaterno', 
         'apellidomaterno', 
         'correo', 
-        'usuario_classroom', 
-        'contraseña_classroom', 
-        'usuario_moodle', 
-        'contraseña_moodle', 
-        'usuario_mathletics', 
-        'contraseña_mathletics', 
-        'usuario_hmh', 
-        'contraseña_hmh', 
-        'usuario_progrentis', 
-        'contraseña_progrentis', 
         'nivel_educativo_id', 
         'grado_id', 
         'seccion', 
@@ -36,24 +25,35 @@ class Alumno extends Model
 
     public $timestamps = true; 
 
+    // Relación con las plataformas a través de la tabla intermedia alumno_plataforma
     public function plataformas()
     {
-        return $this->belongsToMany(Plataforma::class, 'alumno_plataforma', 'alumno_id', 'plataforma_id');
+        return $this->belongsToMany(Plataforma::class, 'alumno_plataforma')
+                    ->withPivot('usuario', 'contraseña')
+                    ->withTimestamps();
     }
 
     public function nivelEducativo()
     {
-        return $this->belongsTo(NivelEducativo::class, 'nivel_educativo_id'); // Ajusta el nombre de la clave foránea
+        return $this->belongsTo(NivelEducativo::class, 'nivel_educativo_id');
     }
 
     public function grado()
     {
-        return $this->belongsTo(Grado::class, 'grado_id'); // Ajusta el nombre de la clave foránea
+        return $this->belongsTo(Grado::class, 'grado_id');
     }
 
     public function contactos()
     {
-        return $this->belongsToMany(Contacto::class, 'alumno_contacto', 'alumno_id', 'contacto_id')
+        return $this->belongsToMany(Contacto::class, 'alumno_contacto')
                     ->withTimestamps();
     }
+
+    
+    // Relación con el modelo AlumnoPlataforma
+    public function alumnoPlataforma()
+    {
+        return $this->hasMany(AlumnoPlataforma::class);
+    }
+
 }

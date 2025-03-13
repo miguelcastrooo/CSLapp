@@ -43,48 +43,23 @@
             </div>
 
             <ul class="nav flex-column">
-                @if (Auth::user()->hasRole('SuperAdmin'))
-                    <li class="nav-item">
-                        <a class="nav-link text-white" href="{{ route('admin.select') }}">
-                            <i class="fas fa-cogs"></i> Plataformas
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-white" href="{{ route('admin.selectadmin') }}">
-                            <i class="fas fa-user"></i> Administrar Alumnos
-                        </a>
-                    </li>
-                @endif
+            @if (Auth::user()->hasRole('SuperAdmin') || Auth::user()->hasRole('CoordinacionPreescolar') || Auth::user()->hasRole('CoordinacionPrimaria') || Auth::user()->hasRole('CoordinacionSecundaria'))
+                <li class="nav-item">
+                    <a class="nav-link text-white" href="{{ route('admin.select') }}">
+                        <i class="fas fa-cogs"></i> Plataformas
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white" href="{{ route('admin.selectadmin') }}">
+                        <i class="fas fa-user"></i> Administrar Alumnos
+                    </a>
+                </li>
+            @endif
 
                 @if (Auth::user()->hasRole('SuperAdmin'))
                     <li class="nav-item">
                         <a class="nav-link text-white" href="{{ route('admin.grupos.form') }}">
                             <i class="fas fa-user-plus"></i> Mover Grupos
-                        </a>
-                    </li>
-                @endif
-
-
-                @if(Auth::user()->hasRole('CoordinacionPreescolar'))
-                    <li class="nav-item">
-                        <a class="nav-link text-white" href="#">
-                            <i class="fas fa-cogs"></i> Credenciales Preescolar
-                        </a>
-                    </li>
-                @endif
-
-                @if(Auth::user()->hasRole('CoordinacionPrimaria'))
-                    <li class="nav-item">
-                        <a class="nav-link text-white" href="#">
-                            <i class="fas fa-cogs"></i> Credenciales Primaria
-                        </a>
-                    </li>
-                @endif
-
-                @if(Auth::user()->hasRole('CoordinacionSecundaria'))
-                    <li class="nav-item">
-                        <a class="nav-link text-white" href="#">
-                            <i class="fas fa-cogs"></i> Credenciales Secundaria
                         </a>
                     </li>
                 @endif
@@ -103,11 +78,7 @@
                             <i class="fas fa-user-plus"></i> Registrar Alumno
                         </a>
                     </li>
-                @endif
-
-           
-
-               
+                @endif      
             </ul>
 
             <div class="d-flex justify-content-center mt-2">

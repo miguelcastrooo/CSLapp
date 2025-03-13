@@ -143,7 +143,7 @@ class AlumnoController extends Controller
             'grado_id' => 'required|exists:grados,id',
             'fecha_inscripcion' => 'required|date',
             'fecha_inicio' => 'nullable|date',
-        ]);        
+        ]);
     
         // Asignación de fecha_inicio: si no se recibe, se asigna la fecha actual
         $fecha_inicio = $request->fecha_inicio ?? now()->toDateString(); // Usa la fecha actual si es nula
@@ -162,10 +162,6 @@ class AlumnoController extends Controller
             'nombre' => $request->nombre,
             'apellidopaterno' => $request->apellidopaterno,
             'apellidomaterno' => $request->apellidomaterno,
-            'usuario_classroom' => $credenciales['usuario_classroom'],
-            'contraseña_classroom' => $credenciales['contraseña_classroom'],
-            'usuario_moodle' => $credenciales['usuario_moodle'],
-            'contraseña_moodle' => $credenciales['contraseña_moodle'],
             'nivel_educativo_id' => $request->nivel_educativo_id,
             'grado_id' => $request->grado_id,
             'fecha_inscripcion' => $request->fecha_inscripcion,
@@ -178,9 +174,11 @@ class AlumnoController extends Controller
     
         // Relacionar los contactos
         $this->relacionarContactos($request, $alumno);
-
+    
+        // Guardar las credenciales en la tabla alumno_plataforma
+        $this->guardarCredencialesPlataforma($alumno, $credenciales);
+    
         $contactos = Contacto::where('alumno_id', $alumno->id)->get();
-
     
         // Lógica para agregar los destinatarios del correo
         $destinatarios = [
@@ -207,51 +205,6 @@ class AlumnoController extends Controller
         return redirect()->route('capturista.selectsearch')->with('success', 'Alumno registrado correctamente.');
     }
     
-    // Función para guardar los contactos
-    public function relacionarContactos(Request $request, Alumno $alumno)
-    {
-        // Crear los datos de los contactos
-        $contactos = [];
-
-        // Primer contacto
-        if ($request->contacto1nombre && $request->correo1) {
-            $contactos[] = [
-                'nombre' => $request->contacto1nombre,
-                'telefono' => $request->telefono1,
-                'correo' => $request->correo1, // Correo del primer contacto
-                'tipo_contacto' => $request->contacto1tipo,
-                'alumno_id' => $alumno->id,
-            ];
-        }
-
-        // Segundo contacto
-        if ($request->contacto2nombre && $request->correo2) {
-            $contactos[] = [
-                'nombre' => $request->contacto2nombre,
-                'telefono' => $request->telefono2,
-                'correo' => $request->correo2, // Correo del segundo contacto
-                'tipo_contacto' => $request->contacto2tipo,
-                'alumno_id' => $alumno->id,
-            ];
-        }
-
-        // Tercer contacto
-        if ($request->contacto3nombre && $request->correo3) {
-            $contactos[] = [
-                'nombre' => $request->contacto3nombre,
-                'telefono' => $request->telefono3,
-                'correo' => $request->correo3, // Correo del tercer contacto
-                'tipo_contacto' => $request->contacto3tipo,
-                'alumno_id' => $alumno->id,
-            ];
-        }
-
-        // Guardar los contactos en la base de datos
-        if (count($contactos) > 0) {
-            Contacto::insert($contactos);
-        }
-    }
-
     protected function generarCredenciales($nombre, $apellido, $matricula, $fechaInscripcion)
     {
         // Obtener el primer nombre y apellido
@@ -261,9 +214,9 @@ class AlumnoController extends Controller
         // Generar el correo con el dominio @colegiosanluis.com.mx
         $emailClassroom = $primerNombre . $primerApellido . '@colegiosanluis.com.mx';
     
-        // Comprobamos si el correo ya existe y agregamos un número si es necesario
+        // Comprobamos si el correo ya existe en la tabla alumno_plataforma
         $contador = 1;
-        while (Alumno::where('usuario_classroom', $emailClassroom)->exists()) {
+        while (AlumnoPlataforma::where('usuario', $emailClassroom)->exists()) {
             $emailClassroom = $primerNombre . $primerApellido . $contador . '@colegiosanluis.com.mx';
             $contador++;
         }
@@ -285,7 +238,74 @@ class AlumnoController extends Controller
         ];
     }
     
+    // Función para guardar las credenciales en alumno_plataforma
+    protected function guardarCredencialesPlataforma(Alumno $alumno, $credenciales)
+{
+    // Asignar plataforma_id para Classroom (1) y Moodle (2)
+    $classroomPlataformaId = 1;
+    $moodlePlataformaId = 2;
 
+    // Guardar en la tabla alumno_plataforma para Classroom
+    AlumnoPlataforma::create([
+        'alumno_id' => $alumno->id,
+        'plataforma_id' => $classroomPlataformaId, // ID de la plataforma
+        'usuario' => $credenciales['usuario_classroom'],
+        'contraseña' => $credenciales['contraseña_classroom'],
+    ]);
+
+    // Guardar en la tabla alumno_plataforma para Moodle
+    AlumnoPlataforma::create([
+        'alumno_id' => $alumno->id,
+        'plataforma_id' => $moodlePlataformaId, // ID de la plataforma
+        'usuario' => $credenciales['usuario_moodle'],
+        'contraseña' => $credenciales['contraseña_moodle'],
+    ]);
+}    
+    // Función para guardar los contactos
+    public function relacionarContactos(Request $request, Alumno $alumno)
+    {
+        // Crear los datos de los contactos
+        $contactos = [];
+    
+        // Primer contacto
+        if ($request->contacto1nombre && $request->correo1) {
+            $contactos[] = [
+                'nombre' => $request->contacto1nombre,
+                'telefono' => $request->telefono1,
+                'correo' => $request->correo1, // Correo del primer contacto
+                'tipo_contacto' => $request->contacto1tipo,
+                'alumno_id' => $alumno->id,
+            ];
+        }
+    
+        // Segundo contacto
+        if ($request->contacto2nombre && $request->correo2) {
+            $contactos[] = [
+                'nombre' => $request->contacto2nombre,
+                'telefono' => $request->telefono2,
+                'correo' => $request->correo2, // Correo del segundo contacto
+                'tipo_contacto' => $request->contacto2tipo,
+                'alumno_id' => $alumno->id,
+            ];
+        }
+    
+        // Tercer contacto
+        if ($request->contacto3nombre && $request->correo3) {
+            $contactos[] = [
+                'nombre' => $request->contacto3nombre,
+                'telefono' => $request->telefono3,
+                'correo' => $request->correo3, // Correo del tercer contacto
+                'tipo_contacto' => $request->contacto3tipo,
+                'alumno_id' => $alumno->id,
+            ];
+        }
+    
+        // Guardar los contactos en la base de datos
+        if (count($contactos) > 0) {
+            Contacto::insert($contactos);
+        }
+    }
+    
     public function edit($id)
     {
         $alumno = Alumno::findOrFail($id);
@@ -309,7 +329,7 @@ class AlumnoController extends Controller
     {
         // Obtener el alumno a actualizar
         $alumno = Alumno::find($id);
-        
+    
         if (!$alumno) {
             return redirect()->back()->with('error', 'Alumno no encontrado.');
         }
@@ -332,10 +352,10 @@ class AlumnoController extends Controller
             'telefono3' => 'nullable|digits:10',
             'contacto3tipo_contacto' => 'nullable|string|max:255',
             'correo3' => 'nullable|email',
-            'usuario_classroom' => 'required|string|max:255',
-            'contraseña_classroom' => 'required|string|max:255',
-            'usuario_moodle' => 'required|string|max:255',
-            'contraseña_moodle' => 'required|string|max:255',
+            'usuario_classroom' => 'nullable|string|max:255',
+            'contraseña_classroom' => 'nullable|string|max:255',
+            'usuario_moodle' => 'nullable|string|max:255',
+            'contraseña_moodle' => 'nullable|string|max:255',
             'usuario_hmh' => 'nullable|string|max:255',
             'contraseña_hmh' => 'nullable|string|max:255',
             'usuario_mathletics' => 'nullable|string|max:255',
@@ -365,8 +385,7 @@ class AlumnoController extends Controller
         // Asignar los valores recibidos de la solicitud
         $nivel_educativo_id = $request->nivel_educativo_id ?? $alumno->nivel_educativo_id;
         $grado_id = $request->grado_id ?? $alumno->grado_id;
-        // Asignar la variable $seccion
-        $seccion = $request->seccion ?? $alumno->seccion; // Asignación de la sección                   
+        $seccion = $request->seccion ?? $alumno->seccion;
     
         // Actualización del alumno
         $alumno->update([
@@ -384,12 +403,15 @@ class AlumnoController extends Controller
             'contraseña_mathletics' => $request->contraseña_mathletics ?? $alumno->contraseña_mathletics,
             'usuario_progrentis' => $request->usuario_progrentis ?? $alumno->usuario_progrentis,
             'contraseña_progrentis' => $request->contraseña_progrentis ?? $alumno->contraseña_progrentis,
-            'nivel_educativo_id' => $nivel_educativo_id, // Asegúrate de actualizar el nivel
-            'grado_id' => $grado_id, // También se actualiza el grado
+            'nivel_educativo_id' => $nivel_educativo_id,
+            'grado_id' => $grado_id,
             'fecha_inscripcion' => $request->fecha_inscripcion ?? $alumno->fecha_inscripcion,
             'fecha_inicio' => $fecha_inicio,
-            'seccion' => $seccion, // Actualización de la sección
+            'seccion' => $seccion,
         ]);
+    
+        // Actualizar o crear las credenciales en alumno_plataforma
+        $this->actualizarPlataformas($request, $alumno);
     
         // Actualizar contactos si es necesario
         $contactos = Contacto::where('alumno_id', $alumno->id)->get();
@@ -436,8 +458,24 @@ class AlumnoController extends Controller
         }
     
         return redirect()->route('capturista.selectsearch')->with('success', 'Alumno actualizado correctamente.');
-    }    
-        
+    }
+    
+    public function actualizarPlataformas(Request $request, Alumno $alumno)
+    {
+        $plataformas = $request->input('plataformas', []);
+    
+        foreach ($plataformas as $plataformaId => $datos) {
+            if (!empty($datos['usuario']) && !empty($datos['contraseña'])) {
+                $alumno->alumnoPlataforma()->updateOrCreate(
+                    ['plataforma_id' => $plataformaId],
+                    ['usuario' => $datos['usuario'], 'contraseña' => $datos['contraseña']]
+                );
+            }
+        }
+    
+        return redirect()->back()->with('success', 'Datos actualizados correctamente');
+    }
+    
     private function eliminarContactosDuplicados(Alumno $alumno)
     {
         // Obtener todos los contactos del alumno
