@@ -26,69 +26,210 @@
     <form action="{{ route('alumnos.store') }}" method="POST">
         @csrf
         <div class="row">
-            <!-- Información del Alumno en columnas -->
-            <div class="col-md-12">
-                <div class="card shadow-sm mb-4" style="background-color: #f8f9fa;">
-                    <div class="card-body">
-                        <h5 class="card-title text-primary">Datos del Alumno</h5>
+<!-- Información del Alumno en columnas -->
+<div class="col-md-12">
+    <div class="card shadow-sm mb-4" style="background-color: #f8f9fa;">
+        <div class="card-body">
+            <h5 class="card-title text-primary">Datos del Alumno</h5>
 
-                        <!-- Matrícula en su propia fila centrado -->
-                        <div class="row mb-3 justify-content-center">
-                            <div class="col-md-6">
-                                <label for="matricula" class="form-label text-center d-block"><strong>Matrícula</strong></label>
-                                <input type="number" class="form-control" id="matricula" name="matricula" value="{{ old('matricula') }}" required min="1" placeholder="Ej. 123456">
-                            </div>
-                        </div>
+            <input type="hidden" name="nivel_educativo_id" value="{{ $nivel_id }}">
 
-                        <!-- Los demás campos en una sola fila -->
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="nombre" class="form-label"><strong>Nombre</strong></label>
-                                <input type="text" class="form-control" id="nombre" name="nombre" value="{{ old('nombre') }}" required pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" title="Solo letras y espacios" placeholder="Ej. Juan">
-                            </div>
+            <!-- Sección 1: Datos Básicos -->
+            <div class="section mb-4">
+                <div class="row mb-3">
+                    
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="nombre" class="form-label"><strong>Nombre</strong></label>
+                        <input type="text" class="form-control" id="nombre" name="nombre" value="{{ old('nombre') }}" required pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" inputmode="text" style="text-transform: capitalize;" placeholder="Escribe el nombre" title="El nombre solo debe contener letras y espacios y comenzar con mayúscula.">
+                    </div>
 
-                            <div class="col-md-6">
-                                <label for="apellidopaterno" class="form-label"><strong>Apellido Paterno</strong></label>
-                                <input type="text" class="form-control" id="apellidopaterno" name="apellidopaterno" value="{{ old('apellidopaterno') }}" required pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" placeholder="Ej. Pérez">
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="apellidomaterno" class="form-label"><strong>Apellido Materno</strong></label>
-                                <input type="text" class="form-control" id="apellidomaterno" name="apellidomaterno" value="{{ old('apellidomaterno') }}" required pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" placeholder="Ej. Gómez">
-                            </div>
-
-                            <input type="hidden" name="nivel_educativo_id" value="{{ $nivel_id }}">
-
-                            <div class="col-md-6">
-                                <label for="grado_id" class="form-label"><strong>Grado</strong></label>
-                                <select class="form-select" id="grado_id" name="grado_id" required>
-                                    <option value="">Selecciona un grado</option>
-                                    @if($grados && $grados->isNotEmpty())
-                                        @foreach ($grados as $grado)
-                                            <option value="{{ $grado->id }}" {{ old('grado_id') == $grado->id ? 'selected' : '' }}>{{ $grado->nombre }}</option>
-                                        @endforeach
-                                    @else
-                                        <option value="">No hay grados disponibles</option>
-                                    @endif
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="fecha_inscripcion" class="form-label"><strong>Fecha de Inscripción</strong></label>
-                                <input type="date" class="form-control" id="fecha_inscripcion" name="fecha_inscripcion" value="{{ old('fecha_inscripcion') }}" required placeholder="Ej. 2025-03-01">
-                            </div>
-
-                            <div class="col-md-6">
-                                <label for="fecha_inicio" class="form-label"><strong>Fecha de Inicio</strong></label>
-                                <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" value="{{ old('fecha_inicio') }}" required placeholder="Ej. 2025-08-15">
-                            </div>
-                        </div>
+                <div class="col-md-6">
+                    <label for="apellidopaterno" class="form-label"><strong>Apellido Paterno</strong></label>
+                    <input type="text" class="form-control" id="apellidopaterno" name="apellidopaterno" value="{{ old('apellidopaterno') }}" required pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" inputmode="text" style="text-transform: capitalize;" placeholder="Escribe su Apellido Paterno " title="El apellido paterno solo debe contener letras y espacios y comenzar con mayúscula.">
+                </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="apellidomaterno" class="form-label"><strong>Apellido Materno</strong></label>
+                        <input type="text" class="form-control" id="apellidomaterno" name="apellidomaterno" value="{{ old('apellidomaterno') }}" required pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" style="text-transform: capitalize;" placeholder="Escribe su Apellido Materno" title="El apellido materno solo debe contener letras y espacios y comenzar con mayúscula.">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="grado_id" class="form-label"><strong>Grado</strong></label>
+                        <select class="form-select" id="grado_id" name="grado_id" required>
+                            <option value="">Selecciona un grado</option>
+                            @if($grados && $grados->isNotEmpty())
+                                @foreach ($grados as $grado)
+                                    <option value="{{ $grado->id }}" {{ old('grado_id') == $grado->id ? 'selected' : '' }}>{{ $grado->nombre }}</option>
+                                @endforeach
+                            @else
+                                <option value="">No hay grados disponibles</option>
+                            @endif
+                        </select>
                     </div>
                 </div>
+            </div>
+
+            <!-- Sección 2: Datos de Nacimiento y Edad -->
+            <div class="section mb-4">
+                <h6 class="text-secondary">Datos de Nacimiento y Edad</h6>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="fecha_nacimiento" class="form-label"><strong>Fecha de Nacimiento</strong></label>
+                        <input type="date" class="form-control" id="fecha_nacimiento" name="fecha_nacimiento" value="{{ old('fecha_nacimiento') }}" required placeholder="Ej. 2000-01-01">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="edad_anios" class="form-label"><strong>Edad (Años)</strong></label>
+                        <input type="number" class="form-control" id="edad_anios" name="edad_anios" value="{{ old('edad_anios') }}" required min="1" max="150" placeholder="Edad en años">
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="edad_meses" class="form-label"><strong>Edad (Meses)</strong></label>
+                        <input type="number" class="form-control" id="edad_meses" name="edad_meses" value="{{ old('edad_meses') }}" required min="0" max="150" placeholder="Edad en meses">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="sexo" class="form-label"><strong>Sexo</strong></label>
+                        <select class="form-select" id="sexo" name="sexo" required>
+                            <option>Selecciona una opcion</option>
+                            <option value="Masculino" {{ old('sexo') == 'Masculino' ? 'selected' : '' }}>Masculino</option>
+                            <option value="Femenino" {{ old('sexo') == 'Femenino' ? 'selected' : '' }}>Femenino</option>
+                            <option value="Sin Definir" {{ old('sexo') == 'Sin Definir' ? 'selected' : '' }}>Sin Definir</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección 3: Información de Contacto -->
+            <div class="section mb-4">
+                <h6 class="text-secondary">Información de Contacto</h6>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="cp" class="form-label"><strong>Código Postal (C.P.)</strong></label>
+                        <input type="number" class="form-control" id="cp" name="cp" value="{{ old('cp') }}" required pattern="[0-9]{5}" title="El código postal debe ser un número de 5 dígitos.">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="ciudad" class="form-label"><strong>Ciudad</strong></label>
+                        <input type="text" class="form-control" id="ciudad" name="ciudad" value="{{ old('ciudad') }}">
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="estado" class="form-label"><strong>Estado</strong></label>
+                        <input type="text" class="form-control" id="estado" name="estado" value="{{ old('estado') }}">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="lugar_nacimiento" class="form-label"><strong>Lugar de Nacimiento</strong></label>
+                        <input type="text" class="form-control" id="lugar_nacimiento" name="lugar_nacimiento" value="{{ old('lugar_nacimiento') }}">
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="domicilio" class="form-label"><strong>Domicilio</strong></label>
+                        <input type="text" class="form-control" id="domicilio" name="domicilio" value="{{ old('domicilio') }}" placeholder="Ej. Calle 123, Número 45">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="colonia" class="form-label"><strong>Colonia</strong></label>
+                        <input type="text" class="form-control" id="colonia" name="colonia" value="{{ old('colonia') }}" placeholder="Ej. Centro, Las Lomas">
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="cerrada" class="form-label"><strong>Cerrada</strong></label>
+                        <input type="text" class="form-control" id="cerrada" name="cerrada" value="{{ old('cerrada') }}" placeholder="Ej. Cerrada del Bosque">
+                    </div>
+
+                    <div class="col-md-6">
+            <label for="numero_calle" class="form-label"><strong>Número de Calle o Departamento</strong></label>
+            <input type="text" class="form-control" id="no_domicilio" name="no_domicilio" value="{{ old('no_domicilio') }}" placeholder="Ej. 45 o A2" pattern="[A-Za-z0-9]+">
+        </div>
+                </div>
+                
+            </div>
+
+            <!-- Sección 4: Datos Familiares y Salud -->
+            <div class="section mb-4">
+                <h6 class="text-secondary">Datos Familiares y Salud</h6>
+                 <!-- Primer Hermano -->
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label for="hermano1nombre" class="form-label"><strong>Nombre del Primer Hermano</strong></label>
+                <input type="text" class="form-control" id="hermano1nombre" name="hermano1nombre" value="{{ old('hermano1nombre') }}" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" placeholder="Ej. Juan Pérez">
+            </div>
+
+            <div class="col-md-6">
+        <label for="hermano1apellido_paterno" class="form-label"><strong>Apellido Paterno del Primer Hermano</strong></label>
+        <input type="text" class="form-control" id="hermano1apellido_paterno" name="hermano1apellido_paterno" value="{{ old('hermano1apellido_paterno') }}">
+    </div>
+
+    <div class="col-md-6">
+        <label for="hermano1apellido_materno" class="form-label"><strong>Apellido Materno del Primer Hermano</strong></label>
+        <input type="text" class="form-control" id="hermano1apellido_materno" name="hermano1apellido_materno" value="{{ old('hermano1apellido_materno') }}">
+    </div>
+
+            <div class="col-md-6">
+                <label for="hermano1edad" class="form-label"><strong>Edad del Primer Hermano</strong></label>
+                <input type="number" class="form-control" id="hermano1edad" name="hermano1edad" value="{{ old('hermano1edad') }}" min="0" max="50" required>
+            </div>
+        </div>
+
+        <!-- Agregar Hermanos Adicionales -->
+        <div id="hermanos-adicionales"></div>
+
+        <div class="d-flex justify-content-center">
+            <button type="button" class="btn btn-info" id="agregar-hermano">Agregar otro hermano</button>
+        </div>
+
+        <p class="text-muted mt-2">Puedes agregar hasta 5 hermanos. Los campos de hermano son opcionales.</p>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="enfermedades_alergias" class="form-label"><strong>Enfermedades o Alergias</strong></label>
+                        <input type="text" class="form-control" id="enfermedades_alergias" name="enfermedades_alergias" value="{{ old('enfermedades_alergias') }}">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="pediatra_nombre" class="form-label"><strong>Nombre del Pediatra</strong></label>
+                        <input type="text" class="form-control" id="pediatra_nombre" name="pediatra_nombre" value="{{ old('pediatra_nombre') }}">
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="pediatra_telefono" class="form-label"><strong>Teléfono del Pediatra</strong></label>
+                        <input type="number" class="form-control" id="pediatra_telefono" name="pediatra_telefono" value="{{ old('pediatra_telefono') }}">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección 5: Fechas de Inscripción -->
+            <div class="section mb-4">
+                <h6 class="text-secondary">Fechas de Inscripción</h6>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="fecha_inscripcion" class="form-label"><strong>Fecha de Inscripción</strong></label>
+                        <input type="date" class="form-control" id="fecha_inscripcion" name="fecha_inscripcion" value="{{ old('fecha_inscripcion') }}">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="fecha_inicio" class="form-label"><strong>Fecha de Inicio</strong></label>
+                        <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" value="{{ old('fecha_inicio') }}">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
                 <!-- Información de Contactos -->
                 <div class="card shadow-sm mb-4" style="background-color: #f8f9fa;">
@@ -104,14 +245,14 @@
 
                             <div class="col-md-6">
                                 <label for="telefono1" class="form-label"><strong>Teléfono del Primer Contacto</strong></label>
-                                <input type="number" class="form-control" id="telefono1" name="telefono1" value="{{ old('telefono1') }}" maxlength="12" required pattern="\d{12}" title="Debe ser un número de 12 dígitos" placeholder="Ej. 551234567890">
+                                <input type="number" class="form-control" id="telefono1" name="telefono1" value="{{ old('telefono1') }}" maxlength="12" required pattern="\d{12}" title="Debe ser un número de 12 dígitos">
                             </div>
                         </div>
 
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label for="correo1" class="form-label"><strong>Correo del Primer Contacto</strong></label>
-                                <input type="email" class="form-control" id="correo1" name="correo1" value="{{ old('correo1') }}" required placeholder="Ej. contacto@correo.com">
+                                <input type="email" class="form-control" id="correo1" name="correo1" value="{{ old('correo1') }}">
                             </div>
 
                             <div class="col-md-6">
@@ -121,6 +262,8 @@
                                     <option value="madre" {{ old('contacto1tipo') == 'madre' ? 'selected' : '' }}>Madre</option>
                                     <option value="padre" {{ old('contacto1tipo') == 'padre' ? 'selected' : '' }}>Padre</option>
                                     <option value="tutor" {{ old('contacto1tipo') == 'tutor' ? 'selected' : '' }}>Tutor</option>
+                                    <option value="tutor" {{ old('contacto1tipo') == 'abuelo' ? 'selected' : '' }}>Abuelo</option>
+
                                 </select>
                             </div>
                         </div>
@@ -145,11 +288,15 @@
 </div>
 
 <script>
+    // Contador y configuración para los contactos
     let contactoCount = 1;
     const maxContactos = 3;
     const agregarContactoButton = document.getElementById('agregar-contacto');
     const contactosAdicionales = document.getElementById('contactos-adicionales');
 
+    
+
+    // Función para agregar contactos
     agregarContactoButton.addEventListener('click', function() {
         if (contactoCount < maxContactos) {
             contactoCount++;
@@ -162,11 +309,11 @@
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label for="contacto${contactoCount}nombre" class="form-label"><strong>Nombre del Contacto ${contactoCount}</strong></label>
-                            <input type="text" class="form-control" id="contacto${contactoCount}nombre" name="contacto${contactoCount}nombre" placeholder="Ej. Juan Pérez">
+                            <input type="text" class="form-control" id="contacto${contactoCount}nombre" name="contacto${contactoCount}nombre">
                         </div>
                         <div class="col-md-6">
                             <label for="telefono${contactoCount}" class="form-label"><strong>Teléfono del Contacto ${contactoCount}</strong></label>
-                            <input type="number" class="form-control" id="telefono${contactoCount}" name="telefono${contactoCount}" maxlength="12" placeholder="Ej. 551234567890">
+                            <input type="number" class="form-control" id="telefono${contactoCount}" name="telefono${contactoCount}" maxlength="12">
                         </div>
                     </div>
                     <div class="row mb-3">
@@ -194,5 +341,54 @@
             }
         }
     });
+    // Contador y configuración para los hermanos
+let hermanoCount = 1;
+const maxHermanos = 5;
+const agregarHermanoButton = document.getElementById('agregar-hermano');
+const hermanosAdicionales = document.getElementById('hermanos-adicionales');
+
+// Función para agregar hermanos
+agregarHermanoButton.addEventListener('click', function() {
+    if (hermanoCount < maxHermanos) {
+        hermanoCount++;
+        const hermanoDiv = document.createElement('div');
+        hermanoDiv.classList.add('card', 'shadow-sm', 'mb-4');
+        hermanoDiv.style.backgroundColor = '#f8f9fa';
+        hermanoDiv.innerHTML = `
+             <div class="card-body">
+    <h5 class="card-title text-primary">Hermano ${hermanoCount}</h5>
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <label for="hermano${hermanoCount}nombre" class="form-label"><strong>Nombre del Hermano ${hermanoCount}</strong></label>
+            <input type="text" class="form-control" id="hermano${hermanoCount}nombre" name="hermano${hermanoCount}nombre" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" placeholder="Ej. Juan Pérez">
+        </div>
+
+        <div class="col-md-6">
+            <label for="hermano${hermanoCount}apellido_paterno" class="form-label"><strong>Apellido Paterno del Hermano ${hermanoCount}</strong></label>
+            <input type="text" class="form-control" id="hermano${hermanoCount}apellido_paterno" name="hermano${hermanoCount}apellido_paterno" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" placeholder="Ej. Pérez">
+        </div>
+
+        <div class="col-md-6">
+            <label for="hermano${hermanoCount}apellido_materno" class="form-label"><strong>Apellido Materno del Hermano ${hermanoCount}</strong></label>
+            <input type="text" class="form-control" id="hermano${hermanoCount}apellido_materno" name="hermano${hermanoCount}apellido_materno" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" placeholder="Ej. Gómez">
+        </div>
+
+        <div class="col-md-6">
+            <label for="hermano${hermanoCount}edad" class="form-label"><strong>Edad del Hermano ${hermanoCount}</strong></label>
+            <input type="number" class="form-control" id="hermano${hermanoCount}edad" name="hermano${hermanoCount}edad" min="0" max="50" required>
+        </div>
+    </div>
+</div>`;
+        hermanosAdicionales.appendChild(hermanoDiv);
+
+        // Si se alcanzan los 5 hermanos, ocultamos el botón
+        if (hermanoCount === maxHermanos) {
+            agregarHermanoButton.classList.add('d-none');
+        }
+    }
+});
+
+
 </script>
+
 @endsection

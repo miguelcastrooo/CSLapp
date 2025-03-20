@@ -8,22 +8,27 @@ use Illuminate\Support\Facades\Auth;
 
 class CheckNivelEducativo
 {
-    public function handle(Request $request, Closure $next, $role)
+    public function handle(Request $request, Closure $next)
     {
         $user = Auth::user();
 
-        // Verifica si el usuario tiene el rol adecuado
-        if (!$user->hasRole($role)) {
-            return redirect()->route('home')->with('error', 'No tienes acceso a esta página.');
+        // Si es Admin o ControlEscolar, permite el acceso
+        if ($user->role?->name === 'SuperAdmin' || $user->role?->name === 'ControlEscolar') {
+            return $next($request);
         }
 
-        // Verifica si el usuario tiene un nivel educativo asignado
-        $nivelEducativo = $user->nivelEducativo;
-        if (!$nivelEducativo) {
-            return redirect()->route('home')->with('error', 'No tienes un nivel educativo asignado.');
+        // Si el usuario tiene un nivel educativo asignado, permite el acceso
+        if ($user->role?->nivelEducativo) {
+            return $next($request);
         }
 
-        // Permite el acceso si se pasa todas las condiciones
-        return $next($request);
+        // Si el usuario tiene roles de Coordinación, permite el acceso
+        $allowedRoles = ['CoordinacionPreescolar', 'CoordinacionPrimaria', 'CoordinacionSecundaria'];
+        if (in_array($user->role?->name, $allowedRoles)) {
+            return $next($request);
+        }
+
+        // Si no tiene nivel educativo ni rol de coordinación, redirigir o mostrar error
+        return abort(403, 'Acceso no autorizado');
     }
 }

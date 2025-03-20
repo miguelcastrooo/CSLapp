@@ -1,38 +1,60 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'CSL')</title>
+    <title>@yield('title', 'Colegio San Luis')</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <link rel="icon" href="{{ asset('img/san-luis_512%20(1).webp') }}" type="image/x-icon">
-
+    
     @yield('styles')
     <style>
         body {
-            background-color: rgb(255, 255, 255);
-            color: #FFFFFF;
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
         }
+
+        /* NAVBAR */
         .navbar {
-            background-color: rgb(54, 52, 52);
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease-in-out;
         }
-        .navbar-brand, .nav-link {
-            color: #FFFFFF !important;
+
+        .navbar.scrolled {
+            background: rgba(30, 30, 30, 1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
+
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #fff !important;
+        }
+
+        .nav-link {
+            color: #f8f9fa !important;
+            font-weight: 500;
+            transition: color 0.3s ease-in-out;
+        }
+
         .nav-link:hover {
             color: #3E8E7E !important;
         }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg">
+
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-expand-lg fixed-top">
         <div class="container">
             <a class="navbar-brand" href="{{ url('/') }}">
-                <i class="fas fa-cogs"></i> Colegio San Luis
+                <i class="fas fa-graduation-cap"></i> Colegio San Luis
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <i class="fas fa-bars"></i>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
@@ -50,13 +72,12 @@
             </div>
         </div>
     </nav>
-    
-    <main class="container py-5">
+
+    <!-- CONTENIDO -->
+    <div style="margin-top: 70px;">
         @yield('content')
-    </main>
-    
+    </div>
+
     @yield('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
 </body>
 </html>

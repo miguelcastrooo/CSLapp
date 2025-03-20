@@ -35,11 +35,8 @@ class NivelEducativo extends Model
         return $this->hasMany(User::class);
     }
 
-   
-    // Relación uno a muchos con roles
     public function roles()
     {
-        return $this->hasMany(Role::class);
+        return $this->hasMany(Role::class, 'nivel_educativo_id');
     }
-    
 }

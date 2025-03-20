@@ -44,52 +44,41 @@ Route::middleware(['auth', 'role:SuperAdmin|CoordinacionPreescolar|CoordinacionP
     Route::get('/admin/{id}/edit', [AdminController::class, 'edit'])->name('admin.adminedit');
     Route::put('/admin/alumnos/{id}', [AdminController::class, 'update'])->name('admin.adminupdate');
     Route::get('/admin/search', [AdminController::class, 'search'])->name('admin.search');
-
     // Generar PDF de alumnos
     Route::get('/admin/alumnos/pdf', [AdminController::class, 'generarPDF'])->name('admin.alumnos.pdf');
     Route::get('/admin/alumnos/pdf/{nivel}/{id}', [AdminController::class, 'generarPdf'])->name('admin.alumnos.pdf.individual');
     Route::get('/admin/alumnos/pdf/{id}', [AdminController::class, 'generarPdfPorId'])->name('admin.alumnos.pdf.id');
-
     // Nueva ruta para generar PDF de plataformas según el nivel educativo
     Route::get('/admin/alumnos/pdf/plataformas/{nivel}', [AdminController::class, 'generarPdfPlataformas'])->name('admin.alumnos.pdf.plataformas');
-
     // Ruta para mostrar el formulario de mover grupos
     Route::get('/admin/mover-grupos', [AdminController::class, 'mostrarFormularioMoverGrupos'])->name('admin.grupos.form');
-
     // Ruta para procesar el movimiento de los grupos
     Route::post('/admin/mover-grupos', [AdminController::class, 'moverGrupos'])->name('admin.grupos.mover');
-
     // Ruta para obtener grados y niveles filtrados
     Route::post('/admin/obtener-grados-niveles', [AdminController::class, 'obtenerGradosYNiveles'])->name('admin.obtenerGradosYNiveles');
-
-
-
-
-
     // Niveles
     Route::get('/admin/niveles', [AdminController::class, 'nivelesIndex'])->name('admin.niveles');
     Route::get('/admin/select', [AdminController::class, 'select'])->name('admin.select');
     Route::get('/admin/niveles/{nivelId}', [AdminController::class, 'nivelesShow'])->name('niveles.show');
-
     Route::get('admin/selectadmin', [AdminController::class, 'selectAdmin'])->name('admin.selectadmin');
     Route::get('/admin/select/alumnos/{nivelId}', [AdminController::class, 'showNivelAlumnos'])->name('admin.showNivelAlumnos');
 
-    // Dar de baja a un alumno
-    Route::put('/admin/alumnos/confirmarBaja/{id}', [AdminController::class, 'confirmarBaja'])->name('admin.confirmarBaja');
+    
+    // Rutas para grados
+   // Rutas para grados dentro de coordinacion
+   Route::get('/admin/grados', [CoordinacionController::class, 'gradosIndex'])->name('admin.grados'); // Muestra los grados
+   Route::get('/admin/select/grados', [CoordinacionController::class, 'selectGrado'])->name('admin.selectGrado'); // Select de grados
+   Route::get('/admin/coordinacion/grados/{gradoId}', [CoordinacionController::class, 'gradosShow'])
+   ->name('coordinacion.grados.show');
+  Route::get('/admin/select/alumnos/grado/{gradoId}', [CoordinacionController::class, 'showGradoAlumnos'])->name('admin.grados.alumnos'); // Ver alumnos por grado
+    // Ruta para ver los detalles de un alumno en Coordinación
+    Route::get('/admin/coordinacion/alumnos/{id}', [CoordinacionController::class, 'showAlumno'])->name('admin.coordinacion.alumnos.show');
+    Route::get('/admin/nivel/{nivelId}/alumnos', [CoordinacionController::class, 'mostrarAlumnos'])
+    ->name('admin.nivel.alumnos');
+
+
+
 });
-
-Route::middleware(['auth', 'role:CoordinacionPreescolar|CoordinacionPrimaria|CoordinacionSecundaria'])->group(function () {
-
-});
-
-
-//Coordinacion
-Route::middleware(['auth'])->group(function () {
-    // Solo usuarios con rol de AdministracionPreescolar, AdministracionPrimariaBaja, AdministracionPrimariaAlta, AdministracionSecundaria
-    Route::resource('/coordinacion', CoordinacionController::class)->only(['index', 'edit', 'update']);
-});
-
-
 
 // Rutas de perfil (Disponible para todos los usuarios autenticados)
 Route::middleware('auth')->group(function () {

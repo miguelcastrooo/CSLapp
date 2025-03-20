@@ -10,17 +10,11 @@ class Alumno extends Model
     use HasFactory;
 
     protected $fillable = [
-        'matricula', 
-        'nombre', 
-        'apellidopaterno', 
-        'apellidomaterno', 
-        'correo', 
-        'nivel_educativo_id', 
-        'grado_id', 
-        'seccion', 
-        'fecha_inscripcion', 
-        'status', 
-        'fecha_inicio'
+        'matricula', 'nombre', 'apellidopaterno', 'apellidomaterno', 'nivel_educativo_id',
+        'grado_id', 'fecha_inscripcion', 'fecha_inicio',
+        'lugar_nacimiento', 'fecha_nacimiento', 'edad_anios', 'edad_meses', 'sexo',
+        'domicilio', 'cp', 'cerrada', 'colonia', 'ciudad', 'estado',
+        'hermano_nombre', 'hermano_edad', 'enfermedades_alergias', 'pediatra_nombre', 'pediatra_telefono','no_domicilio'
     ];
 
     public $timestamps = true; 
@@ -55,5 +49,11 @@ class Alumno extends Model
     {
         return $this->hasMany(AlumnoPlataforma::class);
     }
+
+    public function hermanos()
+    {
+        return $this->hasMany(Hermano::class);
+    }
+
 
 }

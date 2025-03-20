@@ -43,8 +43,7 @@
             </div>
 
             <ul class="nav flex-column">
-            @if (Auth::user()->hasRole('SuperAdmin') || Auth::user()->hasRole('CoordinacionPreescolar') || Auth::user()->hasRole('CoordinacionPrimaria') || Auth::user()->hasRole('CoordinacionSecundaria'))
-                <li class="nav-item">
+            @if (Auth::user()->hasRole('SuperAdmin'))
                     <a class="nav-link text-white" href="{{ route('admin.select') }}">
                         <i class="fas fa-cogs"></i> Plataformas
                     </a>
@@ -62,6 +61,15 @@
                             <i class="fas fa-user-plus"></i> Mover Grupos
                         </a>
                     </li>
+                @endif
+
+                @if (Auth::user()->hasRole('SuperAdmin') || Auth::user()->hasRole('CoordinacionPreescolar') || Auth::user()->hasRole('CoordinacionPrimaria') || Auth::user()->hasRole('CoordinacionSecundaria'))
+                <li class="nav-item">
+                <a class="nav-link text-white" href="{{ route('admin.selectGrado') }}">
+                    <i class="fas fa-user-plus"></i> Plataformas Alumno
+                </a>
+
+                </li>
                 @endif
 
                 @if (Auth::user()->hasRole('ControlEscolar'))

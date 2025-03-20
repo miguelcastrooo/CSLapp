@@ -1,14 +1,12 @@
 <?php
 
-
-namespace App\Models;
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use Spatie\Permission\Models\Role as SpatieRole; // Extiende la clase de Spatie
+use App\Models\NivelEducativo;  // Asegúrate de importar el modelo NivelEducativo
 
-class Role extends Model
+class Role extends SpatieRole
 {
     use HasFactory;
 
@@ -18,13 +16,13 @@ class Role extends Model
     // Relación inversa con el nivel educativo
     public function nivelEducativo()
     {
-        return $this->belongsTo(NivelEducativo::class);
+        return $this->belongsTo(NivelEducativo::class, 'nivel_educativo_id');
     }
 
     // Relación con usuarios (si es necesario, Spatie lo maneja automáticamente)
     public function users()
     {
-        return $this->hasMany(User::class);
+        return $this->belongsToMany(User::class, 'role_user');
     }
-}
 
+}

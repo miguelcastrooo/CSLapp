@@ -21,10 +21,13 @@ class AlumnoRegistered extends Mailable
      * @param  array  $contactos
      * @return void
      */
-    public function __construct(Alumno $alumno, $contactos)
+    public function __construct(Alumno $alumno, $contactos, $hermanos)
     {
         $this->alumno = $alumno;
         $this->contactos = $contactos;
+        $this->hermanos = $hermanos;
+        
+
     }
 
     /**
@@ -39,6 +42,7 @@ class AlumnoRegistered extends Mailable
                     ->with([
                         'alumno' => $this->alumno,
                         'contactos' => $this->contactos,  // Pasar los contactos a la vista
+                        'hermanos' => $this->hermanos,    // Pasar los hermanos a la vista
                     ]);
     }
 }

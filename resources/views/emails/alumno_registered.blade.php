@@ -86,6 +86,21 @@
                 <p>No se han registrado contactos de emergencia.</p>
             @endif
 
+            @if($hermanos->isNotEmpty())
+                <h3>Hermanos</h3>
+                <div class="list-group">
+                    @foreach ($hermanos as $hermano)
+                        <div class="list-group-item">
+                            <h5 class="mb-1"><strong>Nombre:</strong> {{ $hermano->nombre }}</h5>
+                            <p class="mb-1"><strong>Edad:</strong> {{ $hermano->edad }}</p>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <p>No se han registrado hermanos.</p>
+            @endif
+
+
             <h3>Plataformas Asignadas:</h3>
             <ul class="list-group">
                 @foreach ($alumno->alumnoPlataforma as $plataforma)

@@ -8,41 +8,46 @@
             <br><br><br>
 
                 <!-- Carrusel -->
-                <div id="welcomeCarousel" class="carousel slide" data-bs-ride="carousel">
-                    <div class="carousel-inner">
-                        <div class="carousel-item active">
-                            <img src="{{ asset('img/4.jpg') }}" class="d-block w-100" alt="Imagen 1">
-                            <div class="carousel-caption d-none d-md-block">
-                                <h5>Bienvenido a tu Dashboard</h5>
-                                <p>Explora tus configuraciones y herramientas personalizadas.</p>
-                            </div>
-                        </div>
-                        <div class="carousel-item">
-                        <img src="{{ asset('img/escuela-1.webp') }}" class="d-block w-100" alt="Imagen 2">
-                        <div class="carousel-caption d-none d-md-block">
-                                <h5>Inicia tu día con éxito</h5>
-                                <p>Todo lo que necesitas está aquí para ti.</p>
-                            </div>
-                        </div>
-                        <div class="carousel-item">
-                            <img src="{{ asset('img/escuela-og.webp') }}" class="d-block w-100" alt="Imagen 3">
-                            <div class="carousel-caption d-none d-md-block">
-                                <h5>Personaliza tu experiencia</h5>
-                                <p>Haz que tu panel de control sea tuyo.</p>
-                            </div>
-                        </div>
+    <div class="container carousel-container">
+        <div id="carouselExample" class="carousel slide" data-bs-ride="carousel">
+            <div class="carousel-indicators">
+                <button type="button" data-bs-target="#carouselExample" data-bs-slide-to="0" class="active"></button>
+                <button type="button" data-bs-target="#carouselExample" data-bs-slide-to="1"></button>
+                <button type="button" data-bs-target="#carouselExample" data-bs-slide-to="2"></button>
+            </div>
+            <div class="carousel-inner">
+                <div class="carousel-item active">
+                    <img src="{{ asset('img/5.jpg') }}" class="d-block w-100" alt="Campus moderno">
+                    <div class="carousel-caption">
+                        <h5>Campus moderno</h5>
+                        <p>Infraestructura de vanguardia para nuestros estudiantes.</p>
                     </div>
-                    <button class="carousel-control-prev" type="button" data-bs-target="#welcomeCarousel" data-bs-slide="prev">
-                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                        <span class="visually-hidden">Anterior</span>
-                    </button>
-                    <button class="carousel-control-next" type="button" data-bs-target="#welcomeCarousel" data-bs-slide="next">
-                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                        <span class="visually-hidden">Siguiente</span>
-                    </button>
+                </div>
+                <div class="carousel-item">
+                    <img src="{{ asset('img/6.jpg') }}" class="d-block w-100" alt="Aulas equipadas">
+                    <div class="carousel-caption">
+                        <h5>Aulas equipadas</h5>
+                        <p>Espacios diseñados para el aprendizaje interactivo.</p>
+                    </div>
+                </div>
+                <div class="carousel-item">
+                    <img src="{{ asset('img/7.jpg') }}" class="d-block w-100" alt="Actividades extracurriculares">
+                    <div class="carousel-caption">
+                        <h5>Actividades extracurriculares</h5>
+                        <p>Fomentamos el desarrollo integral de nuestros estudiantes.</p>
+                    </div>
                 </div>
             </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#carouselExample" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Anterior</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#carouselExample" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Siguiente</span>
+            </button>
         </div>
+    </div>
 
         <!-- Contenido del dashboard -->
         <div class="container d-flex align-items-center justify-content-center mt-5" style="height: 60vh;">
