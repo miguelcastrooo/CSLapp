@@ -18,7 +18,7 @@ use App\Models\Hermano;
 use App\Mail\AlumnoRegistered;
 use App\Mail\AlumnoUpdate;
 use Illuminate\Support\Facades\Mail;
-use App\Models\Parentesco;
+use App\Models\Familiar;
 
 
 class AlumnoController extends Controller
@@ -108,19 +108,20 @@ class AlumnoController extends Controller
     {
         // Obtener el nivel educativo con su ID
         $nivel = NivelEducativo::findOrFail($nivel_id);
-    
-        // Obtener los parentescos y grados relacionados
-        $parentescos = Parentesco::all();
+
+        $familiares = Familiar::all();
         $grados = Grado::where('nivel_educativo_id', $nivel->id)->get();
         
         // Pasar las variables a la vista, incluyendo el id del nivel educativo
-        return view('capturista.create', compact('nivel', 'grados', 'parentescos', 'nivel_id'));
+        return view('capturista.create', compact('nivel', 'grados', 'nivel_id','familiares'));
     }
     
     public function store(Request $request)
-{
-  // Validación de los datos del formulario
-$request->validate([
+    {
+
+
+    // Validación de los datos del formulario
+    $request->validate([
     'nombre' => 'required',
     'apellidopaterno' => 'required',
     'apellidomaterno' => 'required',
@@ -149,7 +150,7 @@ $request->validate([
     'cp' => 'required|numeric|digits_between:5,12',
     'cerrada' => 'nullable',
     'colonia' => 'nullable',
-    'no_domicilio' => 'nullable|integer|max:100',
+    'no_domicilio' => 'nullable|integer|max:100000',
     'ciudad' => 'required',
     'estado' => 'required',
     'enfermedades_alergias' => 'nullable|string',
@@ -165,35 +166,35 @@ $request->validate([
     'hermano4edad' => 'nullable|integer|min:0|max:50',
     'hermano5nombre' => 'nullable|string|max:255',
     'hermano5edad' => 'nullable|integer|min:0|max:50',
-]);
-    
+    ]);
+
     // Asignación de fecha_inicio: si no se recibe, se asigna la fecha actual
     $fecha_inicio = $request->fecha_inicio ?? now()->toDateString();
 
-     // Obtener los últimos dos dígitos del año (por ejemplo, "25" para el año 2025)
-     $año = now()->format('y'); // Esto devuelve "25" en el año 2025
+        // Obtener los últimos dos dígitos del año (por ejemplo, "25" para el año 2025)
+        $año = now()->format('y'); // Esto devuelve "25" en el año 2025
 
-     // Obtener el último alumno registrado
-     $ultimoAlumno = Alumno::orderBy('id', 'desc')->first();  
- 
-     // Verificar si hay una matrícula registrada y obtener el último número de matrícula,
-     // o utilizar 1723 si no hay registros previos.
-     if ($ultimoAlumno) {
-         // Extraer los últimos 4 dígitos del número de matrícula (suponiendo que el formato es "AA####")
-         $ultimoNumero = (int) substr($ultimoAlumno->matricula, -4);
-     } else {
-         // Si no hay registros previos, comenzar con 1723
-         $ultimoNumero = 1723;
-     }
- 
-     // Asegurarse de que el número no sea menor a 1723
-     $ultimoNumero = $ultimoNumero < 1723 ? 1723 : $ultimoNumero;
- 
-     // Incrementar en 1 y asegurarse de que tenga 4 dígitos
-     $nuevoNumero = str_pad($ultimoNumero + 1, 4, '0', STR_PAD_LEFT);
- 
-     // Crear la matrícula con el formato "AA + Número", por ejemplo "25" para 2025
-     $matricula = $año . $nuevoNumero;
+        // Obtener el último alumno registrado
+        $ultimoAlumno = Alumno::orderBy('id', 'desc')->first();  
+
+        // Verificar si hay una matrícula registrada y obtener el último número de matrícula,
+        // o utilizar 1723 si no hay registros previos.
+        if ($ultimoAlumno) {
+            // Extraer los últimos 4 dígitos del número de matrícula (suponiendo que el formato es "AA####")
+            $ultimoNumero = (int) substr($ultimoAlumno->matricula, -4);
+        } else {
+            // Si no hay registros previos, comenzar con 1723
+            $ultimoNumero = 1723;
+        }
+
+        // Asegurarse de que el número no sea menor a 1723
+        $ultimoNumero = $ultimoNumero < 1723 ? 1723 : $ultimoNumero;
+
+        // Incrementar en 1 y asegurarse de que tenga 4 dígitos
+        $nuevoNumero = str_pad($ultimoNumero + 1, 4, '0', STR_PAD_LEFT);
+
+        // Crear la matrícula con el formato "AA + Número", por ejemplo "25" para 2025
+        $matricula = $año . $nuevoNumero;
 
     // Crear credenciales solo para Classroom y Moodle
     $credenciales = $this->generarCredenciales(
@@ -235,8 +236,43 @@ $request->validate([
         return redirect()->back()->with('error', 'Error al crear el alumno.');
     }
 
+    if ($request->has('familiares')) {
+        // Definir los tipos requeridos
+        $tiposRequeridos = ['Padre', 'Madre', 'Tutor'];
+
+        foreach ($tiposRequeridos as $tipo) {
+            // Obtener datos si existen, sino asignar array vacío
+            $datos = $request->familiares[$tipo] ?? [];
+
+            Familiar::create([
+                'alumno_id' => $alumno->id,
+                'tipo' => $tipo, // Padre, Madre, Tutor
+                'nombre' => $datos['nombre'] ?? 'No Especificado',
+                'apellido_paterno'=> $datos['apellido_paterno']?? null,
+                'apellido_materno'=> $datos['apellido_materno']?? null,
+                'fecha_nacimiento' => $datos['fecha_nacimiento'] ?? null,
+                'estado_civil' => $datos['estado_civil'] ?? null,
+                'domicilio' => $datos['domicilio'] ?? null,
+                'no_domicilio' => $datos['no_domicilio'] ?? null,
+                'cp' => $datos['cp'] ?? null,
+                'colonia' => $datos['colonia'] ?? null,
+                'ciudad' => $datos['ciudad'] ?? null,
+                'estado' => $datos['estado'] ?? null,
+                'telefono_fijo' => $datos['telefono_fijo'] ?? null,
+                'celular' => $datos['celular'] ?? null,
+                'correo' => $datos['correo'] ?? null,
+                'profesion' => $datos['profesion'] ?? null,
+                'ocupacion' => $datos['ocupacion'] ?? null,
+                'empresa_nombre' => $datos['empresa_nombre'] ?? null,
+                'empresa_telefono' => $datos['empresa_telefono'] ?? null,
+                'empresa_domicilio' => $datos['empresa_domicilio'] ?? null,
+                'empresa_ciudad' => $datos['empresa_ciudad'] ?? null,
+            ]);
+        }
+    }
+        
     // Relacionar los contactos
-    $this->relacionarContactos($request, $alumno);
+    $this->relacionarContactos($request, $alumno);    
 
     // Guardar las credenciales en la tabla alumno_plataforma
     $this->guardarCredencialesPlataforma($alumno, $credenciales);
@@ -272,7 +308,7 @@ $request->validate([
     Mail::to($destinatarios)->send(new AlumnoRegistered($alumno, $contactos,$hermanos));
 
     return redirect()->route('capturista.selectsearch')->with('success', 'Alumno registrado correctamente.');
-}
+    }
 
     
     protected function generarCredenciales($nombre, $apellido, $matricula, $fechaInscripcion)
@@ -331,118 +367,57 @@ $request->validate([
             'contraseña' => $credenciales['contraseña_moodle'],
         ]);
     }    
-    // Función para guardar los contactos
-    public function relacionarContactos(Request $request, Alumno $alumno)
-    {
-        // Crear los datos de los contactos
-        $contactos = [];
-    
-        // Primer contacto
-        if ($request->contacto1nombre && $request->correo1) {
+
+public function relacionarContactos(Request $request, Alumno $alumno)
+{
+    // Crear los datos de los contactos
+    $contactos = [];
+
+    // Definir los posibles contactos
+    for ($i = 1; $i <= 3; $i++) {
+        $nombreKey = "contacto{$i}nombre";
+        $telefonoKey = "telefono{$i}";
+        $correoKey = "correo{$i}";
+        $tipoKey = "contacto{$i}tipo";
+
+        if ($request->$nombreKey && $request->$correoKey) {
             $contactos[] = [
-                'nombre' => $request->contacto1nombre,
-                'telefono' => $request->telefono1,
-                'correo' => $request->correo1, // Correo del primer contacto
-                'tipo_contacto' => $request->contacto1tipo,
+                'nombre' => $request->$nombreKey,
+                'telefono' => $request->$telefonoKey,
+                'correo' => $request->$correoKey,
+                'tipo_contacto' => $request->$tipoKey,
                 'alumno_id' => $alumno->id,
             ];
-        }
-    
-        // Segundo contacto
-        if ($request->contacto2nombre && $request->correo2) {
-            $contactos[] = [
-                'nombre' => $request->contacto2nombre,
-                'telefono' => $request->telefono2,
-                'correo' => $request->correo2, // Correo del segundo contacto
-                'tipo_contacto' => $request->contacto2tipo,
-                'alumno_id' => $alumno->id,
-            ];
-        }
-    
-        // Tercer contacto
-        if ($request->contacto3nombre && $request->correo3) {
-            $contactos[] = [
-                'nombre' => $request->contacto3nombre,
-                'telefono' => $request->telefono3,
-                'correo' => $request->correo3, // Correo del tercer contacto
-                'tipo_contacto' => $request->contacto3tipo,
-                'alumno_id' => $alumno->id,
-            ];
-        }
-    
-        // Guardar los contactos en la base de datos
-        if (count($contactos) > 0) {
-            Contacto::insert($contactos);
         }
     }
 
-    public function relacionarHermanos(Request $request, Alumno $alumno)
+    // Guardar los contactos en la base de datos
+    if (!empty($contactos)) {
+        Contacto::insert($contactos);
+    }
+}
+
+
+    private function relacionarHermanos(Request $request, Alumno $alumno)
     {
-        // Crear los datos de los hermanos
-        $hermanos = [];
-        
-        // Primer hermano
-        if ($request->hermano1nombre && $request->hermano1edad) {
-            $hermanos[] = [
-                'nombre' => $request->hermano1nombre,
-                'apellido_paterno' => $request->hermano1apellido_paterno,
-                'apellido_materno' => $request->hermano1apellido_materno,
-                'edad' => $request->hermano1edad,
+        // Recorrer del 1 al 5 (según los campos del formulario)
+        for ($i = 1; $i <= 5; $i++) {
+            $nombre = $request->input("hermano{$i}nombre");
+            $edad = $request->input("hermano{$i}edad");
+
+            // Si no hay nombre, no lo guardamos
+            if (!$nombre) {
+                continue;
+            }
+
+            // Crear o registrar el hermano
+            Hermano::create([
                 'alumno_id' => $alumno->id,
-            ];
-        }
-    
-        // Segundo hermano
-        if ($request->hermano2nombre && $request->hermano2edad) {
-            $hermanos[] = [
-                'nombre' => $request->hermano2nombre,
-                'apellido_paterno' => $request->hermano2apellido_paterno,
-                'apellido_materno' => $request->hermano2apellido_materno,
-                'edad' => $request->hermano2edad,
-                'alumno_id' => $alumno->id,
-            ];
-        }
-    
-        // Tercer hermano
-        if ($request->hermano3nombre && $request->hermano3edad) {
-            $hermanos[] = [
-                'nombre' => $request->hermano3nombre,
-                'apellido_paterno' => $request->hermano3apellido_paterno,
-                'apellido_materno' => $request->hermano3apellido_materno,
-                'edad' => $request->hermano3edad,
-                'alumno_id' => $alumno->id,
-            ];
-        }
-    
-        // Cuarto hermano
-        if ($request->hermano4nombre && $request->hermano4edad) {
-            $hermanos[] = [
-                'nombre' => $request->hermano4nombre,
-                'apellido_paterno' => $request->hermano4apellido_paterno,
-                'apellido_materno' => $request->hermano4apellido_materno,
-                'edad' => $request->hermano4edad,
-                'alumno_id' => $alumno->id,
-            ];
-        }
-    
-        // Quinto hermano
-        if ($request->hermano5nombre && $request->hermano5edad) {
-            $hermanos[] = [
-                'nombre' => $request->hermano5nombre,
-                'apellido_paterno' => $request->hermano5apellido_paterno,
-                'apellido_materno' => $request->hermano5apellido_materno,
-                'edad' => $request->hermano5edad,
-                'alumno_id' => $alumno->id,
-            ];
-        }
-    
-        // Guardar los hermanos en la base de datos
-        if (count($hermanos) > 0) {
-            Hermano::insert($hermanos);
+                'nombre' => $nombre,
+                'edad' => $edad ?? null,
+            ]);
         }
     }
-    
-
     
     public function edit($id)
     {

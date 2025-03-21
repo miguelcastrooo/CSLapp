@@ -134,7 +134,7 @@
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label for="domicilio" class="form-label"><strong>Domicilio</strong></label>
-                        <input type="text" class="form-control" id="domicilio" name="domicilio" value="{{ old('domicilio') }}" placeholder="Ej. Calle 123, Número 45">
+                        <input type="text" class="form-control" id="domicilio" name="domicilio" value="{{ old('domicilio') }}" placeholder="Ej. Calle 123">
                     </div>
 
                     <div class="col-md-6">
@@ -150,7 +150,7 @@
                     </div>
 
                     <div class="col-md-6">
-            <label for="numero_calle" class="form-label"><strong>Número de Calle o Departamento</strong></label>
+            <label for="numero_calle" class="form-label"><strong>No. Domicilio</strong></label>
             <input type="text" class="form-control" id="no_domicilio" name="no_domicilio" value="{{ old('no_domicilio') }}" placeholder="Ej. 45 o A2" pattern="[A-Za-z0-9]+">
         </div>
                 </div>
@@ -257,15 +257,9 @@
 
                             <div class="col-md-6">
                                 <label for="contacto1tipo" class="form-label"><strong>Tipo de Contacto</strong></label>
-                                <select class="form-select" id="contacto1tipo" name="contacto1tipo" required>
-                                    <option value="">Selecciona tipo</option>
-                                    <option value="madre" {{ old('contacto1tipo') == 'madre' ? 'selected' : '' }}>Madre</option>
-                                    <option value="padre" {{ old('contacto1tipo') == 'padre' ? 'selected' : '' }}>Padre</option>
-                                    <option value="tutor" {{ old('contacto1tipo') == 'tutor' ? 'selected' : '' }}>Tutor</option>
-                                    <option value="tutor" {{ old('contacto1tipo') == 'abuelo' ? 'selected' : '' }}>Abuelo</option>
-
-                                </select>
+                                <input list="contactoTipos" class="form-control" id="contacto1tipo" name="contacto1tipo" required>
                             </div>
+
                         </div>
 
                         <!-- Agregar Contactos Adicionales -->
@@ -279,22 +273,139 @@
                     </div>
                 </div>
             </div>
-        </div>
 
+        <!-- Información Común de los Padres o Tutor -->
+@php
+    $tiposFamiliares = ['Padre', 'Madre', 'Tutor'];
+@endphp
+
+    @foreach($tiposFamiliares as $tipo)
+    <div class="card shadow-sm mb-4" style="background-color: #f8f9fa;">
+        <div class="card-body">
+            <h5 class="card-title text-primary">Datos de {{ $tipo }}</h5> <!-- Título dinámico -->
+
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label"><strong>Nombre Completo</strong></label>
+                    <input type="text" class="form-control" name="familiares[{{ $tipo }}][nombre]" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label"><strong>Apellido Paterno</strong></label>
+                    <input type="text" class="form-control" name="familiares[{{ $tipo }}][apellido_paterno]" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label"><strong>Apellido Materno</strong></label>
+                    <input type="text" class="form-control" name="familiares[{{ $tipo }}][apellido_materno]" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label"><strong>Fecha de Nacimiento</strong></label>
+                    <input type="date" class="form-control" name="familiares[{{ $tipo }}][fecha_nacimiento]" required>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label"><strong>Estado Civil</strong></label>
+                    <select class="form-select" name="familiares[{{ $tipo }}][estado_civil]" required>
+                        <option value="">Selecciona estado civil</option>
+                        <option value="Soltero">Soltero</option>
+                        <option value="Casado">Casado</option>
+                        <option value="Divorciado">Divorciado</option>
+                        <option value="Viudo">Viudo</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label"><strong>Domicilio</strong></label>
+                    <input type="text" class="form-control" name="familiares[{{ $tipo }}][domicilio]" required>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-2">
+                        <label class="form-label"><strong>Colonia</strong></label>
+                        <input type="text" class="form-control" name="familiares[{{ $tipo }}][colonia]" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label"><strong>No.Domicilio</strong></label>
+                        <input type="number" class="form-control" name="familiares[{{ $tipo }}][no_domicilio]" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label"><strong>C.P.</strong></label>
+                        <input type="number" class="form-control" name="familiares[{{ $tipo }}][cp]" required>
+                    </div>
+                
+                    <div class="col-md-3">
+                        <label class="form-label"><strong>Ciudad</strong></label>
+                        <input type="text" class="form-control" name="familiares[{{ $tipo }}][ciudad]" required>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label"><strong>Estado</strong></label>
+                        <input type="text" class="form-control" name="familiares[{{ $tipo }}][estado]" required>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label"><strong>Teléfono Celular</strong></label>
+                        <input type="number" class="form-control" name="familiares[{{ $tipo }}][celular]" pattern="\d{10}" required placeholder="Ej. 1234567890">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label"><strong>Teléfono Fijo</strong></label>
+                        <input type="number" class="form-control" name="familiares[{{ $tipo }}][telefono_fijo]" pattern="\d{10}" required placeholder="Ej. 1234567890">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label"><strong>Correo</strong></label>
+                        <input type="email" class="form-control" name="familiares[{{ $tipo }}][correo]" required placeholder="Ej. ejemplo@correo.com">
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label"><strong>Profesión</strong></label>
+                        <input type="text" class="form-control" name="familiares[{{ $tipo }}][profesion]" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label"><strong>Ocupación</strong></label>
+                        <input type="text" class="form-control" name="familiares[{{ $tipo }}][ocupacion]" required>
+                    </div>
+                </div>
+
+                <!-- Campos de la Empresa -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label"><strong>Nombre de la Empresa</strong></label>
+                        <input type="text" class="form-control" name="familiares[{{ $tipo }}][empresa_nombre]" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label"><strong>Teléfono de la Empresa</strong></label>
+                        <input type="number" class="form-control" name="familiares[{{ $tipo }}][empresa_telefono]" pattern="\d{10}" required placeholder="Ej. 1234567890">
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label"><strong>Domicilio de la Empresa</strong></label>
+                        <input type="text" class="form-control" name="familiares[{{ $tipo }}][empresa_domicilio]" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label"><strong>Ciudad de la Empresa</strong></label>
+                        <input type="text" class="form-control" name="familiares[{{ $tipo }}][empresa_ciudad]" required>
+                    </div>
+                </div>
+            </div>
+        </div>
+     @endforeach
+</div>
         <div class="d-flex justify-content-center">
             <button type="submit" class="btn btn-success btn-lg">Registrar Alumno</button>
         </div>
+        <br><br>
     </form>
-</div>
-
+</div><br>
 <script>
     // Contador y configuración para los contactos
     let contactoCount = 1;
     const maxContactos = 3;
     const agregarContactoButton = document.getElementById('agregar-contacto');
     const contactosAdicionales = document.getElementById('contactos-adicionales');
-
-    
 
     // Función para agregar contactos
     agregarContactoButton.addEventListener('click', function() {
@@ -322,13 +433,9 @@
                             <input type="email" class="form-control" id="correo${contactoCount}" name="correo${contactoCount}" placeholder="Ej. contacto${contactoCount}@correo.com">
                         </div>
                         <div class="col-md-6">
-                            <label for="contacto${contactoCount}tipo" class="form-label"><strong>Tipo de Contacto</strong></label>
-                            <select class="form-select" id="contacto${contactoCount}tipo" name="contacto${contactoCount}tipo">
-                                <option value="">Selecciona tipo</option>
-                                <option value="madre">Madre</option>
-                                <option value="padre">Padre</option>
-                                <option value="tutor">Tutor</option>
-                            </select>
+                        <label for="contacto${contactoCount}tipo" class="form-label"><strong>Tipo de Contacto</strong></label>
+                        <input list="contactoTipos${contactoCount}" class="form-control" id="contacto${contactoCount}tipo" name="contacto${contactoCount}tipo" required>
+                    </div>
                         </div>
                     </div>
                 </div>
@@ -387,8 +494,5 @@ agregarHermanoButton.addEventListener('click', function() {
         }
     }
 });
-
-
 </script>
-
 @endsection

@@ -55,5 +55,8 @@ class Alumno extends Model
         return $this->hasMany(Hermano::class);
     }
 
-
+    public function contactoAlumno()
+    {
+        return $this->hasOne(ContactosAlumno::class);
+    }
 }
