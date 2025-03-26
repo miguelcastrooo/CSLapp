@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DATOS DE ACCESO A PLATAFORMAS DIGITALES</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/fontawesome.min.css" rel="stylesheet">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -18,38 +18,40 @@
             padding: 20px;
         }
         .header {
-            background-color: #f39c12; /* Amarillo */
+            background-color: #f39c12;
             color: #fff;
-            padding: 15px;
-            text-align: center;
+            padding: 20px;
             border-radius: 8px;
-            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
         }
-        .logo {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            font-size: 40px;
-            color: #fff;
+        .header .icon {
+            font-size: 50px;
+            color: #000;
+            margin-bottom: 10px;
         }
         .section {
             margin-bottom: 15px;
         }
-        .platform-table th, .platform-table td {
-            vertical-align: middle;
-        }
-        .platform-table td {
-            padding: 8px 12px;
+        .platform-table {
+            width: 100%;
+            margin-top: 20px;
         }
         .platform-table th {
-            background-color: #2ecc71; /* Verde */
+            background-color: #2ecc71;
             color: #fff;
+            text-align: center;
+        }
+        .platform-table td {
+            text-align: center;
+            background-color: #fff;
+            padding: 10px;
+            border: 1px solid #ddd;
         }
         .platform-table tr:nth-child(even) {
-            background-color: #f2f2f2; /* Gris claro */
-        }
-        .platform-table tr:nth-child(odd) {
-            background-color: #fff; /* Blanco */
+            background-color: #f2f2f2;
         }
     </style>
 </head>
@@ -57,23 +59,23 @@
 
     <div class="container mt-4">
         <div class="header">
-            <img src="{{ asset('img/san-luis_512%20(1).webp') }}" alt="Logo Escuela" class="img-fluid" style="max-width: 150px;">
-            <h2>DATOS DE ACCESO A PLATAFORMAS DIGITALES</h2>
-            <i class="fas fa-user-graduate logo"></i>
+            <i class="fas fa-graduation-cap icon"></i>
+            <h2>DATOS DE ACCESO A PLATAFORMAS</h2>
         </div>
 
         <div class="row mt-4">
             <div class="col-md-8">
                 <div class="section">
+                    <p><strong>Matricula:</strong> {{ $alumno->matricula }}</p>
                     <p><strong>Nombre Completo:</strong> {{ $alumno->nombre }} {{ $alumno->apellidopaterno }} {{ $alumno->apellidomaterno }}</p>
+                    <p><strong>Nivel Educativo:</strong> {{ $alumno->nivelEducativo->nombre ?? 'N/A' }}</p>
                     <p><strong>Grado:</strong> {{ $alumno->grado->nombre ?? 'N/A' }}</p>
                     <p><strong>Sección:</strong> {{ $alumno->seccion }}</p>
                 </div>
             </div>
         </div>
 
-        <!-- Tabla de plataformas -->
-        <table class="table table-bordered platform-table mt-4 mx-auto" style="width: 80%;">
+        <table class="table table-bordered platform-table mx-auto">
             <thead>
                 <tr>
                     <th>Plataforma</th>
@@ -82,11 +84,9 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach ($alumno->plataformas as $index => $plataforma)
+                @foreach ($alumno->plataformas as $plataforma)
                     <tr>
-                        <!-- Nombre de la plataforma -->
                         <td>{{ $plataforma->nombre ?? 'N/A' }}</td>
-                        <!-- Usuario y Contraseña, mostrando N/A solo si están vacíos -->
                         <td>{{ $plataforma->pivot->usuario ?? 'N/A' }}</td>
                         <td>{{ $plataforma->pivot->contraseña ?? 'N/A' }}</td>
                     </tr>
@@ -95,6 +95,6 @@
         </table>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

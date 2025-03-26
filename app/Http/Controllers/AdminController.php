@@ -14,6 +14,9 @@ use App\Models\Egresado;
 use App\Models\Grupo;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Spatie\Permission\Models\Role;
+use App\Mail\EnviarPdfConMensaje;
+use Illuminate\Support\Facades\Mail;
+
 
 
 class AdminController extends Controller
@@ -130,8 +133,51 @@ class AdminController extends Controller
         
         return $pdf->stream("credenciales_alumno_{$alumno->matricula}.pdf");
     }
-        
-    // Función privada para obtener las plataformas según el nivel educativo
+
+ public function enviarCorreoConPdf($id)
+{
+    // Obtener al alumno con sus familiares
+    $alumno = Alumno::with('familiares')->findOrFail($id);
+
+    // Filtrar al familiar por tipo (Padre o Madre)
+    $padre = $alumno->familiares->firstWhere('tipo_familiar', 'Padre');
+    $madre = $alumno->familiares->firstWhere('tipo_familiar', 'Madre');
+
+    // Generar el PDF
+    $pdf = Pdf::loadView('admin.pdf', compact('alumno'));
+    
+    
+    // Establecer el asunto del correo
+    $asunto = 'Datos de Acceso a Plataformas Digitales';
+
+    // Verificar si el padre tiene correo
+    if ($padre && !empty($padre->correo)) {
+        // Crear el mensaje para el padre
+        $mensaje = "Estimado Sr/Sra. {$padre->nombre} {$padre->apellido_paterno} {$padre->apellido_materno},\n\n";
+        $mensaje .= "Adjunto el PDF con los datos de acceso de su hijo(a) {$alumno->nombre} {$alumno->apellido_paterno} {$alumno->apellido_materno}.\n\n";
+        $mensaje .= "Atentamente,\n\nEl equipo de la escuela.";
+
+        // Enviar el correo al padre, pasando el $padre como $familiar
+        Mail::to($padre->correo)->send(new EnviarPdfConMensaje($mensaje, $alumno, $pdf, $asunto, $padre));
+    }
+
+    // Verificar si la madre tiene correo
+    if ($madre && !empty($madre->correo)) {
+        // Crear el mensaje para la madre
+        $mensaje = "Estimada Sra. {$madre->nombre} {$madre->apellido_paterno} {$madre->apellido_materno},\n\n";
+        $mensaje .= "Adjunto el PDF con los datos de acceso de su hijo(a) {$alumno->nombre} {$alumno->apellido_paterno} {$alumno->apellido_materno}.\n\n";
+        $mensaje .= "Atentamente,\n\nEl equipo de la escuela.";
+
+        // Enviar el correo a la madre, pasando el $madre como $familiar
+        Mail::to($madre->correo)->send(new EnviarPdfConMensaje($mensaje, $alumno, $pdf, $asunto, $madre));
+    }
+
+    // Redirigir con mensaje de éxito
+    return redirect()->back()->with('success', 'El correo se ha enviado exitosamente a los familiares.');
+}
+
+            
+        // Función privada para obtener las plataformas según el nivel educativo
     private function obtenerPlataformasPorNivel($nivelEducativo)
     {
         $nivelEducativo = ucfirst(strtolower($nivelEducativo));
@@ -209,20 +255,26 @@ class AdminController extends Controller
         return view('admin.niveles', compact('niveles'));
     }
     
-    // Mostrar los alumnos de un nivel educativo específico (usando ID en lugar de nombre)
     public function nivelesShow($nivelId)
     {
         // Obtener el nivel educativo según el ID
         $nivelEducativo = NivelEducativo::findOrFail($nivelId);
-        
-        // Obtener los alumnos relacionados con este nivel e incluir las plataformas asociadas
+    
+        // Obtener los grados que pertenecen a este nivel educativo, ordenados de más reciente a más antiguo
+        $grados = Grado::where('nivel_educativo_id', $nivelEducativo->id)
+                       ->orderBy('created_at', 'desc')  // Ordena por fecha de creación (de más reciente a más antiguo)
+                       ->get();
+    
+        // Obtener los alumnos relacionados con este nivel e incluir las plataformas asociadas, ordenados de más reciente a más antiguo
         $alumnos = Alumno::with('alumnoPlataforma')  // Cargar las plataformas
                          ->where('nivel_educativo_id', $nivelEducativo->id)
+                         ->orderBy('created_at', 'desc')  // Ordena por fecha de creación (de más reciente a más antiguo)
                          ->paginate(10); // Ajusta el número de elementos por página
-        
+    
         // Pasar los datos a la vista
-        return view('admin.niveles', compact('nivelEducativo', 'alumnos'));
+        return view('admin.niveles', compact('nivelEducativo', 'alumnos', 'grados'));
     }
+    
 
 
     public function selectAdmin()

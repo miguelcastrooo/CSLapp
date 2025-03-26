@@ -59,4 +59,9 @@ class Alumno extends Model
     {
         return $this->hasOne(ContactosAlumno::class);
     }
+
+    public function familiares()
+    {
+        return $this->hasMany(Familiar::class); // Ajusta esto según la relación que tengas
+    }
 }

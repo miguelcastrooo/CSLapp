@@ -3,7 +3,7 @@
 @section('content')
     <br><br><br><br>
     <div class="container">
-        <h1 class="text-center mb-4">Selecciona el Nivel Educativo</h1>
+        <h1 class="text-center mb-4">Selecciona el Nivel Educativo para ver sus Plataformas</h1>
         <div class="row justify-content-center">
             @foreach ($niveles as $nivel)
                 @php

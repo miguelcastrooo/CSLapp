@@ -9,6 +9,10 @@
 
     <link rel="icon" href="{{ asset('img/san-luis_512%20(1).webp') }}" type="image/x-icon">
 
+    <link href="{{ asset('css/bootstrap.min.css') }}" rel="stylesheet">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+
 
     <!-- Carga de estilos con Vite -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -20,7 +24,7 @@
 <body class="font-sans antialiased">
     <div class="d-flex">
         <!-- Sidebar -->
-        <div class="sidebar bg-dark text-white" style="width: 250px; height: 100vh; position: fixed; top: 0; left: 0;">
+        <div class="sidebar bg-black text-white" style="width: 250px; height: 100vh; position: fixed; top: 0; left: 0;">
             <div class="p-3">
                 <div class="d-flex justify-content-center align-items-center flex-column">
                     <img src="{{ asset('img/san-luis_512%20(1).webp') }}" alt="Icono" style="width: 100px; height: 100px; margin-bottom: 10px;">
@@ -43,14 +47,9 @@
             </div>
 
             <ul class="nav flex-column">
-            @if (Auth::user()->hasRole('SuperAdmin'))
-                    <a class="nav-link text-white" href="{{ route('admin.select') }}">
+            @if (Auth::user()->hasRole('SuperAdmin') || Auth::user()->hasRole('ControlEscolar'))
+            <a class="nav-link text-white" href="{{ route('admin.select') }}">
                         <i class="fas fa-cogs"></i> Plataformas
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white" href="{{ route('admin.selectadmin') }}">
-                        <i class="fas fa-user"></i> Administrar Alumnos
                     </a>
                 </li>
             @endif
@@ -61,6 +60,11 @@
                             <i class="fas fa-user-plus"></i> Mover Grupos
                         </a>
                     </li>
+                    <li class="nav-item">
+                    <a class="nav-link text-white" href="{{ route('admin.selectadmin') }}">
+                        <i class="fas fa-user"></i> Administrar Alumnos
+                    </a>
+                </li>
                 @endif
 
                 @if (Auth::user()->hasRole('SuperAdmin') || Auth::user()->hasRole('CoordinacionPreescolar') || Auth::user()->hasRole('CoordinacionPrimaria') || Auth::user()->hasRole('CoordinacionSecundaria'))
@@ -72,7 +76,7 @@
                 </li>
                 @endif
 
-                @if (Auth::user()->hasRole('ControlEscolar'))
+                @if (Auth::user()->hasRole('SuperAdmin') || Auth::user()->hasRole('ControlEscolar'))
                     <li class="nav-item">
                         <a class="nav-link text-white" href="{{ route('capturista.selectsearch') }}">
                             <i class="fas fa-search"></i> Ver Alumnos
@@ -86,7 +90,22 @@
                             <i class="fas fa-user-plus"></i> Registrar Alumno
                         </a>
                     </li>
-                @endif      
+
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="{{ route('index.baja') }}">
+                            <i class="fas fa-user-minus"></i> Dar de Baja un Alumno
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="{{ route('alumnos.archivados') }}">
+                            <i class="fas fa-redo"></i> Alumnos Archivados
+                        </a>
+                    </li>
+
+                @endif   
+                
+                
             </ul>
 
             <div class="d-flex justify-content-center mt-2">
@@ -120,5 +139,11 @@
     </form>
 
     @stack('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>
+
+
 </body>
 </html>

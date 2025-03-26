@@ -80,5 +80,4 @@
         updateAlumnosList('');
     }
 });
-
 </script>

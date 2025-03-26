@@ -25,7 +25,6 @@ Route::get('/alumnos/search/{nivel?}', [AlumnoController::class, 'search'])->nam
 Route::get('/alumnos/select', [AlumnoController::class, 'select'])->name('alumnos.select');
 Route::get('alumnos/create/{nivel}', [AlumnoController::class, 'create'])->name('alumnos.create');
 Route::post('/alumnos', [AlumnoController::class, 'store'])->name('alumnos.store');
-Route::get('/alumnos/{alumno}', [AlumnoController::class, 'show'])->name('alumnos.show');
 Route::get('/alumnos/{alumno}/edit', [AlumnoController::class, 'edit'])->name('alumnos.edit');
 Route::put('/alumnos/{alumno}', [AlumnoController::class, 'update'])->name('alumnos.update');
 Route::delete('/alumnos/{alumno}', [AlumnoController::class, 'destroy'])->name('alumnos.destroy');
@@ -34,10 +33,22 @@ Route::get('/send-email/{id}', [AlumnoController::class, 'sendAlumnoEmail']);
 
 Route::get('/grados/{nivel_id}', [AlumnoController::class, 'getGrados'])->name('grados.nivel');
 
+Route::get('/alumnos/baja', [AlumnoController::class, 'indexBaja'])->name('index.baja');
+Route::post('/alumnos/baja', [AlumnoController::class, 'darBaja'])->name('alumno.baja');
+
+// Ruta para ver los alumnos archivados
+Route::get('/alumnos/archivados', [AlumnoController::class, 'indexArchivados'])->name('alumnos.archivados');
+
+// Ruta para reactivar un alumno archivado
+Route::get('/alumnos/archivados/{id}/reactivar', [AlumnoController::class, 'reactivar'])->name('alumnos.reactivar');
+
+
+
+
 
 
 // Admin (Middleware: role:SuperAdmin)
-Route::middleware(['auth', 'role:SuperAdmin|CoordinacionPreescolar|CoordinacionPrimaria|CoordinacionSecundaria'])->group(function () {
+Route::middleware(['auth', 'role:SuperAdmin|CoordinacionPreescolar|CoordinacionPrimaria|CoordinacionSecundaria|ControlEscolar'])->group(function () {
     Route::get('/admin', [AdminController::class, 'index'])->name('admin.index');
     Route::get('/admin/create', [AdminController::class, 'create'])->name('admin.admincreate');
     Route::post('/admin', [AdminController::class, 'store'])->name('admin.storeAdmin');
@@ -47,6 +58,10 @@ Route::middleware(['auth', 'role:SuperAdmin|CoordinacionPreescolar|CoordinacionP
     // Generar PDF de alumnos
     Route::get('/admin/alumnos/pdf', [AdminController::class, 'generarPDF'])->name('admin.alumnos.pdf');
     Route::get('/admin/alumnos/pdf/{nivel}/{id}', [AdminController::class, 'generarPdf'])->name('admin.alumnos.pdf.individual');
+
+    Route::get('admin/alumnos/{alumnoId}/enviarCorreo', [AdminController::class, 'enviarCorreoConPdf'])->name('admin.enviarCorreo');
+
+
     Route::get('/admin/alumnos/pdf/{id}', [AdminController::class, 'generarPdfPorId'])->name('admin.alumnos.pdf.id');
     // Nueva ruta para generar PDF de plataformas según el nivel educativo
     Route::get('/admin/alumnos/pdf/plataformas/{nivel}', [AdminController::class, 'generarPdfPlataformas'])->name('admin.alumnos.pdf.plataformas');

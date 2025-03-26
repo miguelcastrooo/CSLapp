@@ -92,6 +92,7 @@
                     @foreach ($hermanos as $hermano)
                         <div class="list-group-item">
                             <h5 class="mb-1"><strong>Nombre:</strong> {{ $hermano->nombre }}</h5>
+                            <h5 class="mb-1"><strong>Apellidos:</strong> {{ $hermano->apellido_paterno }} {{ $hermano->apellido_materno }}</h5>
                             <p class="mb-1"><strong>Edad:</strong> {{ $hermano->edad }}</p>
                         </div>
                     @endforeach
