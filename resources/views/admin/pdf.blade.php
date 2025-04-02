@@ -69,8 +69,7 @@
                     <p><strong>Matricula:</strong> {{ $alumno->matricula }}</p>
                     <p><strong>Nombre Completo:</strong> {{ $alumno->nombre }} {{ $alumno->apellidopaterno }} {{ $alumno->apellidomaterno }}</p>
                     <p><strong>Nivel Educativo:</strong> {{ $alumno->nivelEducativo->nombre ?? 'N/A' }}</p>
-                    <p><strong>Grado:</strong> {{ $alumno->grado->nombre ?? 'N/A' }}</p>
-                    <p><strong>Sección:</strong> {{ $alumno->seccion }}</p>
+                    <p><strong>Grado y Seccion</strong> {{ $alumno->grado->nombre ?? 'N/A' }} {{ $alumno->seccion }}</p>
                 </div>
             </div>
         </div>

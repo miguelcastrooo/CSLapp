@@ -17,8 +17,8 @@
                 // Asignar un color si no está en la base de datos
                 $colores = [
                     'Preescolar' => '#FF5733',
-                    'Primaria Baja' => '#FFC300',
-                    'Primaria Alta' => '#28B463',
+                    'Primaria Inferior' => '#FFC300',
+                    'Primaria Superior' => '#28B463',
                     'Secundaria' => '#1976D2'
                 ];
                 $color = $nivel->color ?? ($colores[$nivel->nombre] ?? '#007bff');
@@ -26,8 +26,8 @@
                 // Asignar iconos para cada nivel
                 $iconos = [
                     'Preescolar' => 'fas fa-child',
-                    'Primaria Baja' => 'fas fa-book',
-                    'Primaria Alta' => 'fas fa-graduation-cap',
+                    'Primaria Inferior' => 'fas fa-book',
+                    'Primaria Superior' => 'fas fa-graduation-cap',
                     'Secundaria' => 'fas fa-school'
                 ];
                 $icono = $iconos[$nivel->nombre] ?? 'fas fa-users';

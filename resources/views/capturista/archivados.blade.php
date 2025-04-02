@@ -42,9 +42,10 @@
     </div>
 
     {{-- Tabla de alumnos archivados --}}
-    <table class="table" id="alumnosTable">
-        <thead>
-            <tr>
+    <div class="table-responsive">
+    <table class="table table-striped table-bordered" id="alumnosTable" style="background: white;">
+    <thead class="table-dark">
+    <tr>
                 <th>Matrícula</th>
                 <th>Nombre</th>
                 <th>Nivel Educativo</th>
@@ -73,6 +74,11 @@
             @endforeach
         </tbody>
     </table>
+</div>
+
+<div class="d-flex justify-content-center mt-3">
+    {{ $alumnosArchivados->links() }}
+</div>
 </div>
 
 {{-- Script de filtros dinámicos --}}

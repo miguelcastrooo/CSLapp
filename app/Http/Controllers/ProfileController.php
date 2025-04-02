@@ -7,6 +7,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Storage; // Asegúrate de importar Storage
 use Illuminate\View\View;
 use App\Models\User;
 
@@ -21,23 +22,55 @@ class ProfileController extends Controller
             'user' => $request->user(),
         ]);
     }
-    
 
     /**
      * Update the user's profile information.
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
-    {
-        $request->user()->fill($request->validated());
+{
+    $user = $request->user();
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+    // Actualizar otros datos del perfil
+    $user->fill($request->validated());
+
+    if ($user->isDirty('email')) {
+        $user->email_verified_at = null;
+    }
+
+    $user->save();
+
+    return Redirect::route('profile.edit')->with('status', 'Se han realizado los cambios con exito');
+}
+
+public function updatePicture(Request $request): RedirectResponse
+{
+    $user = $request->user();
+
+    if ($request->hasFile('profile_picture')) {
+        $request->validate([
+            'profile_picture' => 'image|mimes:jpeg,png,jpg,gif|max:2048'
+        ]);
+
+        // Eliminar imagen anterior si existe
+        if ($user->profile_picture && file_exists(public_path($user->profile_picture))) {
+            unlink(public_path($user->profile_picture));
         }
 
-        $request->user()->save();
+        // Guardar la imagen en public/img con un nombre único
+        $file = $request->file('profile_picture');
+        $filename = time() . '_' . $file->getClientOriginalName();
+        $file->move(public_path('img'), $filename);
 
-        return Redirect::route('profile.edit')->with('status', 'profile-updated');
+        // Guardar la ruta en la base de datos
+        $user->profile_picture = 'img/' . $filename;
+        $user->save();
     }
+
+    return Redirect::route('profile.edit')->with('status', 'Foto de perfil actualizada');
+}
+
+
+
 
     /**
      * Delete the user's account.

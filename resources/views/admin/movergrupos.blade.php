@@ -62,7 +62,7 @@
     <!-- Contenedor de la tabla con scroll horizontal -->
     <div class="table-responsive">
         <table class="table table-bordered table-striped table-hover">
-            <thead class="text-center">
+            <thead class="text-center bg-dark">
                 <tr>
                     <th class="p-3 text-nowrap">ID</th>
                     <th class="p-3 text-nowrap">Matrícula</th>
@@ -93,78 +93,42 @@
                 @endforeach
             </tbody>
         </table>
+        <!-- Paginación -->
+        <div class="d-flex justify-content-center">
+            {{ $alumnos->links() }}
+        </div>
     </div>
 
-    <!-- Selección de cambios: Nivel y Grado -->
-    <div class="col-md-6">
-    <label for="nivel-change" class="font-weight-bold">Seleccionar una opcion para el cambio:</label>
-    <select id="nivel-change" class="form-control" onchange="toggleChangeButtons()">
-        <option value="">Seleccione una opcion</option>
-        <option value="nivel">Nivel</option>
-        <option value="grado">Grado</option>
-        <option value="ambos">Nivel y Grado</option>
-    </select>
-</div>
+    <!-- Botón para promover los grupos -->
+    <div class="mb-4">
+        <button class="btn btn-success" id="promover-group" onclick="promoverAlumnos()" disabled>Promover</button>
+    </div>
 
-<div class="col-md-6" id="nivel-select-container" style="display:none;">
-    <label for="nivel" class="font-weight-bold">Seleccionar Nivel:</label>
-    <select id="nivel" class="form-control">
-        <option value="">Seleccione un Nivel</option>
-        <!-- Los niveles se cargarán dinámicamente aquí -->
-    </select>
-</div>
+    <!-- Checkbox para seleccionar todos los resultados filtrados -->
+    <div class="mb-4">
+        <input type="checkbox" id="select-all" onchange="selectAllAlumnos()"> Seleccionar todos los alumnos filtrados
+    </div>
 
-<div class="col-md-6" id="grado-select-container" style="display:none;">
-    <label for="grado-change" class="font-weight-bold">Seleccionar Grado:</label>
-    <select id="grado-change" class="form-control"  onchange="toggleChangeButtons()">
-        <option value="">Seleccione un Grado</option>
-        <!-- Los grados se cargarán dinámicamente aquí -->
-    </select>
-</div>
-
-<div class="col-md-6" id="nivel-grado-select-container" style="display:none;">
-    <label for="nivel" class="font-weight-bold">Seleccionar Nivel:</label>
-    <select id="nivel" class="form-control">
-        <option value="">Seleccione un Nivel</option>
-        <!-- Los niveles se cargarán dinámicamente aquí -->
-    </select>
-    <label for="grado" class="font-weight-bold">Seleccionar Grado:</label>
-    <select id="grado" class="form-control">
-        <option value="">Seleccione un Grado</option>
-        <!-- Los grados se cargarán dinámicamente aquí -->
-    </select>
-</div>
-<!-- Checkbox para seleccionar todos los resultados filtrados -->
-<div class="mb-4">
-    <input type="checkbox" id="select-all" onchange="selectAllAlumnos()"> Seleccionar todos los alumnos filtrados
-</div>
-
-<!-- Botón para mover los grupos -->
-<div class="mb-4">
-    <button class="btn btn-primary" id="move-group" onclick="showChangeModal()" disabled>Mover Grupo(s)</button>
-</div>
-
-<!-- Modal de Confirmación -->
-<div class="modal" id="confirmModal" tabindex="-1" role="dialog" aria-labelledby="confirmModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="confirmModalLabel">Confirmación</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                ¿Está seguro de que desea mover los alumnos seleccionados?
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary" onclick="moveAlumnos()">Confirmar</button>
+    <!-- Modal de Confirmación -->
+    <div class="modal" id="confirmModal" tabindex="-1" role="dialog" aria-labelledby="confirmModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmModalLabel">Confirmación</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    ¿Está seguro de que desea mover los alumnos seleccionados?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="moveAlumnos()">Confirmar</button>
+                </div>
             </div>
         </div>
     </div>
-</div>
-
 
     <a href="{{ route('admin.selectadmin') }}" class="btn btn-primary mt-3">Volver</a>
 </div>
@@ -246,109 +210,7 @@
         toggleButtons(); // Verificar si habilitar los botones
     }
 
-    // Función para habilitar los botones de cambiar nivel y grado
-function toggleChangeButtons() {
-    let cambioSeleccionado = document.getElementById('nivel-change').value;
-    let nivelSelectContainer = document.getElementById('nivel-select-container');
-    let gradoSelectContainer = document.getElementById('grado-select-container');
-    let nivelGradoSelectContainer = document.getElementById('nivel-grado-select-container');
-
-    // Ocultar todos los select por defecto
-    nivelSelectContainer.style.display = 'none';
-    gradoSelectContainer.style.display = 'none';
-    nivelGradoSelectContainer.style.display = 'none';
-
-    // Habilitar o deshabilitar según la selección
-    if (cambioSeleccionado === "nivel") {
-        nivelSelectContainer.style.display = 'block';  // Mostrar solo el select de nivel
-        gradoSelectContainer.style.display = 'none';
-        nivelGradoSelectContainer.style.display = 'none';
-
-        loadNiveles();  // Esta función debe cargar los niveles que necesitas
-    } else if (cambioSeleccionado === "grado") {
-        nivelSelectContainer.style.display = 'none';
-        gradoSelectContainer.style.display = 'block';  // Mostrar solo el select de grado
-        nivelGradoSelectContainer.style.display = 'none';
-
-        loadGrados();  // Esta función debe cargar los grados que necesitas
-    } else if (cambioSeleccionado === "ambos") {
-        nivelSelectContainer.style.display = 'block';  // Mostrar ambos selectores
-        gradoSelectContainer.style.display = 'block';
-        nivelGradoSelectContainer.style.display = 'none';
-
-        loadNiveles();  // Cargar los niveles
-        loadGrados();  // Cargar los grados
-    }
-    toggleButtons(); // Verificar si habilitar los botones
-}
-
-// Función para cargar los niveles
-function loadNiveles() {
-    let nivelSelect = document.getElementById('nivel');
-    nivelSelect.innerHTML = '<option value="">Seleccione un Nivel</option>';
-
-    if (!nivelesData || nivelesData.length === 0) {
-        console.log('No hay datos de niveles disponibles.');
-        nivelSelect.innerHTML += '<option value="">No hay niveles disponibles</option>';
-    } else {
-        nivelesData.forEach(function(nivel) {
-            console.log('Cargando nivel:', nivel);
-            nivelSelect.innerHTML += `<option value="${nivel.id}">${nivel.nombre}</option>`;
-        });
-
-        // Agregar evento para actualizar grados cuando cambia nivel
-        nivelSelect.addEventListener('change', loadGrados);
-    }
-}
-
-
-// Función para cargar los grados
-function loadGrados() {
-    let gradoSelect = document.getElementById('grado-change'); // Asegura que es el select correcto
-    let selectedNivel = document.getElementById('nivel').value; // Obtener nivel seleccionado
-    
-    // Limpiar las opciones previas
-    gradoSelect.innerHTML = '<option value="">Seleccione un Grado</option>';
-
-    // Si no hay datos de grados
-    if (!gradosData || gradosData.length === 0) {
-        console.log('No hay datos de grados disponibles.');
-        gradoSelect.innerHTML += '<option value="">No hay grados disponibles</option>';
-    } else {
-        // Filtrar grados según el nivel seleccionado
-        let gradosFiltrados = gradosData.filter(grado => grado.nivel_educativo_id == selectedNivel);
-        
-        // Si no hay grados para el nivel seleccionado
-        if (gradosFiltrados.length === 0) {
-            gradoSelect.innerHTML += '<option value="">No hay grados para este nivel</option>';
-        } else {
-            // Si hay grados, mostrarlos en el select
-            gradosFiltrados.forEach(function(grado) {
-                console.log('Cargando grado:', grado);
-                gradoSelect.innerHTML += `<option value="${grado.id}">${grado.nombre}</option>`;
-            });
-        }
-    }
-}
-
-
-// Verifica si el botón de cambio se puede habilitar
-function toggleButtons() {
-    let cambioSeleccionado = document.getElementById('nivel-change').value;
-    let cambioNivel = document.getElementById('nivel');
-    let cambioGrado = document.getElementById('grado');
-
-    if ((cambioSeleccionado === 'nivel' && cambioNivel.value !== '') ||
-        (cambioSeleccionado === 'grado' && cambioGrado.value !== '') ||
-        (cambioSeleccionado === 'ambos' && cambioNivel.value !== '' && cambioGrado.value !== '')) {
-        document.getElementById('cambiar-btn').disabled = false;
-    } else {
-        document.getElementById('cambiar-btn').disabled = true;
-    }
-}
-
-
-    // Función para habilitar el botón "Mover Grupo(s)" cuando se seleccionan alumnos
+    // Verifica si el botón de promover se puede habilitar
     function toggleButtons() {
         let anyAlumnoSelected = false;
         
@@ -359,23 +221,18 @@ function toggleButtons() {
             }
         });
         
-        let moveGroupButton = document.getElementById('move-group');
+        let promoteButton = document.getElementById('promover-group');
         
         // Habilitar o deshabilitar el botón dependiendo si hay alumnos seleccionados
         if (anyAlumnoSelected) {
-            moveGroupButton.disabled = false;
+            promoteButton.disabled = false;
         } else {
-            moveGroupButton.disabled = true;
+            promoteButton.disabled = true;
         }
     }
 
-    // Función para mostrar el modal de confirmación
-    function showChangeModal() {
-        $('#confirmModal').modal('show');
-    }
-
-    // Función para mover los alumnos seleccionados
-    function moveAlumnos() {
+    // Función para promover los alumnos seleccionados
+    function promoverAlumnos() {
         let selectedAlumnos = [];
         
         // Obtener los alumnos seleccionados
@@ -407,6 +264,5 @@ function toggleButtons() {
         }
     }
 </script>
-
 
 @endsection

@@ -5,11 +5,59 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Datos de Acceso a Plataformas</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            color: #333;
+        }
+        .container {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 5px;
+            max-width: 600px;
+            margin: auto;
+        }
+        .header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            border-radius: 5px;
+        }
+        .content {
+            margin-top: 30px;
+        }
+        .footer {
+            font-size: 12px;
+            text-align: center;
+            color: #888;
+            margin-top: 30px;
+        }
+        .footer a {
+            color: #4CAF50;
+            text-decoration: none;
+        }
+        .list-group-item {
+            padding-left: 20px;
+        }
+        h3 {
+            margin-bottom: 15px;
+        }
+        .warning {
+            color: #e74c3c;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
+    <div class="container">
+        <div class="header">
+        <img src="cid:logo-csl" alt="Logo Escuela" style="max-width: 150px;">
+        <h2>Datos de las Plataformas</h2>
+        </div>
+
         <div class="text-center my-5">
-            <h1 class="text-primary">Estimado/a {{ $familiar->nombre }} {{ $familiar->apellido_paterno }} {{ $familiar->apellido_materno }}:</h1>
+            <h1 class="text-dark">Estimado/a {{ $familiar->nombre }} {{ $familiar->apellido_paterno }} {{ $familiar->apellido_materno }}:</h1>
             <p class="lead">Adjunto a este correo encontrará el documento con los datos de acceso a las plataformas digitales de su hijo/a <strong>{{ $alumno->nombre }} {{ $alumno->apellido_paterno }} {{ $alumno->apellido_materno }}</strong>.</p>
             <p>Este documento incluye la información necesaria para acceder a las plataformas digitales utilizadas en el ámbito educativo.</p>
 

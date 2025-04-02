@@ -112,13 +112,6 @@
                     @endif
                 </ul>
 
-
-            <h3>Indicaciones para la Asignación:</h3>
-            <ul class="list-group">
-                <li class="list-group-item"><strong>Profesor 1:</strong> Verificar la sección y asignarla en el sistema.</li>
-                <li class="list-group-item"><strong>Profesor 2:</strong> Confirmar los accesos a HMH, Mathletics y Progrentis según lo indicado.</li>
-            </ul>
-
             <p>Por favor, revisen la información actualizada y asegúrense de completar el proceso lo antes posible para garantizar que el alumno tenga acceso a todos los recursos educativos.</p>
 
             <p>Gracias por su colaboración. Si tienen dudas, pueden contactarnos.</p>

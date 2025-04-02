@@ -16,8 +16,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Spatie\Permission\Models\Role;
 use App\Mail\EnviarPdfConMensaje;
 use Illuminate\Support\Facades\Mail;
-
-
+use App\Models\User;
 
 class AdminController extends Controller
 {
@@ -134,6 +133,36 @@ class AdminController extends Controller
         return $pdf->stream("credenciales_alumno_{$alumno->matricula}.pdf");
     }
 
+    public function generarPdfTodos($nivel)
+{
+    // Obtener todos los alumnos del nivel educativo proporcionado
+    $alumnos = Alumno::with(['nivelEducativo', 'grado', 'plataformas'])
+        ->whereHas('nivelEducativo', function ($query) use ($nivel) {
+            $query->where('nombre', $nivel);
+        })
+        ->get();
+    
+    // Verificar si hay alumnos en el nivel
+    if ($alumnos->isEmpty()) {
+        return back()->with('error', 'No hay alumnos en este nivel educativo.');
+    }
+
+    // Generar los PDFs para cada alumno
+    foreach ($alumnos as $alumno) {
+        // Si no hay plataformas, devolver colección vacía en lugar de null
+        $plataformasAlumno = $alumno->plataformas ?? collect();
+
+        // Generar el PDF para el alumno
+        $pdf = Pdf::loadView('admin.pdf', compact('alumno', 'plataformasAlumno'));
+
+        // Guardar el PDF en el servidor (puedes ajustarlo según tus necesidades)
+    }
+
+    // Redirigir con mensaje de éxito
+    return back()->with('success', 'PDFs generados para todos los alumnos.');
+}
+
+
  public function enviarCorreoConPdf($id)
 {
     // Obtener al alumno con sus familiares
@@ -176,7 +205,58 @@ class AdminController extends Controller
     return redirect()->back()->with('success', 'El correo se ha enviado exitosamente a los familiares.');
 }
 
-            
+public function enviarCorreoATodos($nivel)
+{
+    // Obtener todos los alumnos del nivel educativo proporcionado
+    $alumnos = Alumno::with(['familiares'])->whereHas('nivelEducativo', function ($query) use ($nivel) {
+        $query->where('nombre', $nivel);
+    })->get();
+
+    // Verificar si hay alumnos
+    if ($alumnos->isEmpty()) {
+        return back()->with('error', 'No hay alumnos en este nivel educativo.');
+    }
+
+    // Iterar sobre cada alumno y enviar el correo a los familiares
+    foreach ($alumnos as $alumno) {
+        // Filtrar al familiar por tipo (Padre o Madre)
+        $padre = $alumno->familiares->firstWhere('tipo_familiar', 'Padre');
+        $madre = $alumno->familiares->firstWhere('tipo_familiar', 'Madre');
+
+        // Generar el PDF para el alumno
+        $pdf = Pdf::loadView('admin.pdf', compact('alumno'));
+
+        // Establecer el asunto del correo
+        $asunto = 'Datos de Acceso a Plataformas Digitales';
+
+        // Verificar si el padre tiene correo
+        if ($padre && !empty($padre->correo)) {
+            // Crear el mensaje para el padre
+            $mensaje = "Estimado Sr/Sra. {$padre->nombre} {$padre->apellido_paterno} {$padre->apellido_materno},\n\n";
+            $mensaje .= "Adjunto el PDF con los datos de acceso de su hijo(a) {$alumno->nombre} {$alumno->apellido_paterno} {$alumno->apellido_materno}.\n\n";
+            $mensaje .= "Atentamente,\n\nEl equipo de la escuela.";
+
+            // Enviar el correo al padre
+            Mail::to($padre->correo)->send(new EnviarPdfConMensaje($mensaje, $alumno, $pdf, $asunto, $padre));
+        }
+
+        // Verificar si la madre tiene correo
+        if ($madre && !empty($madre->correo)) {
+            // Crear el mensaje para la madre
+            $mensaje = "Estimada Sra. {$madre->nombre} {$madre->apellido_paterno} {$madre->apellido_materno},\n\n";
+            $mensaje .= "Adjunto el PDF con los datos de acceso de su hijo(a) {$alumno->nombre} {$alumno->apellido_paterno} {$alumno->apellido_materno}.\n\n";
+            $mensaje .= "Atentamente,\n\nEl equipo de la escuela.";
+
+            // Enviar el correo a la madre
+            Mail::to($madre->correo)->send(new EnviarPdfConMensaje($mensaje, $alumno, $pdf, $asunto, $madre));
+        }
+    }
+
+    // Redirigir con mensaje de éxito
+    return redirect()->back()->with('success', 'Los correos se han enviado exitosamente a los familiares de todos los alumnos.');
+}
+
+           
         // Función privada para obtener las plataformas según el nivel educativo
     private function obtenerPlataformasPorNivel($nivelEducativo)
     {
@@ -274,8 +354,6 @@ class AdminController extends Controller
         // Pasar los datos a la vista
         return view('admin.niveles', compact('nivelEducativo', 'alumnos', 'grados'));
     }
-    
-
 
     public function selectAdmin()
     {
@@ -286,79 +364,81 @@ class AdminController extends Controller
         // Devolver la vista con los niveles
         return view('admin.selectadmin', compact('niveles'));
     }
-    
 
     public function showNivelAlumnos(Request $request, $nivelId)
-    {
-        // Buscar el nivel educativo específico
-        $nivel = NivelEducativo::findOrFail($nivelId);
-    
-        // Obtener los grados disponibles para el nivel educativo
-        $grados = Grado::where('nivel_educativo_id', $nivelId)->get();
-    
-        // Inicializar la consulta para los alumnos
-        $alumnos = Alumno::where('nivel_educativo_id', $nivelId);
-    
-        // Aplicar filtros de grado y sección si se pasan desde la vista
-        if ($request->has('grado') && $request->grado != '') {
-            $alumnos = $alumnos->where('grado_id', $request->grado);
-        }
-    
-        if ($request->has('seccion') && $request->seccion != '') {
-            $alumnos = $alumnos->where('seccion', 'like', '%' . $request->seccion . '%');
-        }
-    
-        // Obtener los alumnos filtrados y paginados
-        $alumnos = $alumnos->paginate(10);
-    
-        // Obtener las secciones del grado seleccionado (si hay un grado seleccionado)
-        $secciones = null;
-        if ($request->has('grado') && $request->grado != '') {
-            $secciones = Seccion::where('grado_id', $request->grado)->get();  // Asumiendo que tienes una relación en la tabla 'seccions'
-        }
-    
-        // Devolver la vista con el nivel, grados, secciones y alumnos filtrados
-        return view('admin.index', compact('nivel', 'alumnos', 'grados', 'secciones'));
+{
+    // Buscar el nivel educativo específico
+    $nivel = NivelEducativo::findOrFail($nivelId);
+
+    // Obtener los grados disponibles para el nivel educativo
+    $grados = Grado::where('nivel_educativo_id', $nivelId)->get();
+
+    // Inicializar la consulta para los alumnos y ordenarla por la fecha de creación (más reciente primero)
+    $alumnos = Alumno::where('nivel_educativo_id', $nivelId)->orderBy('created_at', 'desc');
+
+    // Aplicar filtros de grado y sección si se pasan desde la vista
+    if ($request->has('grado') && $request->grado != '') {
+        $alumnos = $alumnos->where('grado_id', $request->grado);
     }
-    
-    public function moverGrupos(Request $request)
-    {
-        // Validar los datos recibidos
-        $request->validate([
-            'grado_id' => 'required|exists:grado,id',
-            'nivel_educativo_id' => 'required|exists:nivel_educativo,id',
-            'nuevo_grado_id' => 'required|exists:grado,id',
-            'nuevo_nivel_id' => 'required|exists:nivel_educativo,id',
+
+    if ($request->has('seccion') && $request->seccion != '') {
+        $alumnos = $alumnos->where('seccion', 'like', '%' . $request->seccion . '%');
+    }
+
+    // Obtener los alumnos filtrados y paginados
+    $alumnos = $alumnos->paginate(10);
+
+    // Obtener las secciones del grado seleccionado (si hay un grado seleccionado)
+    $secciones = null;
+    if ($request->has('grado') && $request->grado != '') {
+        $secciones = Seccion::where('grado_id', $request->grado)->get();  // Asumiendo que tienes una relación en la tabla 'secciones'
+    }
+
+    // Devolver la vista con el nivel, grados, secciones y alumnos filtrados
+    return view('admin.index', compact('nivel', 'alumnos', 'grados', 'secciones'));
+}
+
+
+public function promoverGrupo(Request $request)
+{
+    // Validar los datos recibidos
+    $request->validate([
+        'grado_id' => 'required|exists:grado,id',
+        'nivel_educativo_id' => 'required|exists:nivel_educativo,id',
+        'nuevo_grado_id' => 'required|exists:grado,id',
+        'nuevo_nivel_id' => 'required|exists:nivel_educativo,id',
+    ]);
+
+    // Verificar que el nuevo grado pertenece al nuevo nivel
+    $nuevoGrado = Grado::find($request->nuevo_grado_id);
+    if (!$nuevoGrado || $nuevoGrado->nivel_educativo_id != $request->nuevo_nivel_id) {
+        return redirect()->back()->with('error', 'El grado seleccionado no pertenece al nivel educativo seleccionado.');
+    }
+
+    // Obtener a los alumnos del grado y nivel actual
+    $alumnos = Alumno::where('grado_id', $request->grado_id)
+                    ->where('nivel_educativo_id', $request->nivel_educativo_id)
+                    ->get();
+
+    // Verificar si hay alumnos para mover
+    if ($alumnos->isEmpty()) {
+        return redirect()->back()->with('error', 'No hay alumnos en ese grado y nivel.');
+    }
+
+    // Actualizar el grado y nivel de los alumnos seleccionados
+    $alumnos->each(function ($alumno) use ($request) {
+        // Actualizamos el grado y el nivel educativo de cada alumno
+        $alumno->update([
+            'grado_id' => $request->nuevo_grado_id,
+            'nivel_educativo_id' => $request->nuevo_nivel_id,
         ]);
-    
-        // Verificar que el nuevo grado pertenece al nuevo nivel
-        $nuevoGrado = Grado::find($request->nuevo_grado_id);
-        if (!$nuevoGrado || $nuevoGrado->nivel_educativo_id != $request->nuevo_nivel_id) {
-            return redirect()->back()->with('error', 'El grado seleccionado no pertenece al nivel educativo seleccionado.');
-        }
-    
-        // Obtener a los alumnos del grado y nivel actual
-        $alumnos = Alumno::where('grado_id', $request->grado_id)
-                        ->where('nivel_educativo_id', $request->nivel_educativo_id)
-                        ->get();
-    
-        // Verificar si hay alumnos para mover
-        if ($alumnos->isEmpty()) {
-            return redirect()->back()->with('error', 'No hay alumnos en ese grado y nivel.');
-        }
-    
-        // Actualizar el grado y nivel de los alumnos seleccionados
-        $alumnos->each(function ($alumno) use ($request) {
-            $alumno->update([
-                'grado_id' => $request->nuevo_grado_id,
-                'nivel_educativo_id' => $request->nuevo_nivel_id,
-            ]);
-        });
-    
-        // Redirigir con un mensaje de éxito
-        return redirect()->route('admin.index')->with('success', 'Grupo movido correctamente.');
-    }
-    
+    });
+
+    // Redirigir con un mensaje de éxito
+    return redirect()->route('admin.index')->with('success', 'Grupo movido correctamente.');
+}
+ 
+   
     public function mostrarFormularioMoverGrupos(Request $request)
     {
         // Obtener todos los grados y niveles educativos
@@ -376,10 +456,12 @@ class AdminController extends Controller
                         ->when($nivel_educativo_id, function ($query) use ($nivel_educativo_id) {
                             return $query->where('nivel_educativo_id', $nivel_educativo_id);
                         })
-                        ->get();
+                        ->paginate(10);  // Paginación de 10 alumnos por página
     
+        // Pasar los datos a la vista
         return view('admin.movergrupos', compact('grados', 'niveles', 'alumnos', 'grado_id', 'nivel_educativo_id'));
     }
+    
     
     public function obtenerGradosYNiveles(Request $request)
 {
@@ -409,6 +491,41 @@ class AdminController extends Controller
         'grados' => $grados,
         'alumnos' => $alumnos
     ]);
+}
+
+public function assignRoles()
+    {
+        if (!auth()->user()->hasRole('SuperAdmin')) {
+            abort(403);  // Acceso denegado
+        }
+    
+        $users = User::all();
+        $roles = Role::all();
+        return view('admin.assign-roles', compact('users', 'roles'));
+    }
+
+    // app/Http/Controllers/AdminController.php
+
+public function removeRole($userId, $roleId)
+{
+    $user = User::find($userId);
+    $role = Role::find($roleId);
+
+    if (!$user || !$role) {
+        return redirect()->route('admin.assignRoles')->with('error', 'Usuario o rol no encontrado.');
+    }
+
+    // Eliminar el rol del usuario
+    $user->removeRole($role);
+
+    return redirect()->route('admin.assignRoles')->with('success', 'Rol eliminado correctamente.');
+}
+    
+public function saveAssignedRoles(Request $request)
+{
+    $user = User::find($request->user_id);
+    $user->syncRoles($request->roles);  // Asignar los roles seleccionados
+    return redirect()->route('admin.assignRoles')->with('success', 'Roles asignados correctamente');
 }
     
 }

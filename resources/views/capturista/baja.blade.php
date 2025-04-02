@@ -41,12 +41,13 @@
     </div>
 
     {{-- Tabla de alumnos --}}
-    <table class="table" id="alumnosTable">
-        <thead>
+    <div class="table-responsive">
+    <table class="table table-striped table-bordered" id="alumnosTable" style="background: white;">
+        <thead class="table-dark">
             <tr>
                 <th>Matrícula</th>
                 <th>Nombre</th>
-                <th>NivelEducativo</th>
+                <th>Nivel Educativo</th>
                 <th>Grado</th>
                 <th>Sección</th>
                 <th>Acciones</th>
@@ -63,18 +64,22 @@
                     <td>{{ $alumno->grado->nombre ?? 'N/A' }}</td>
                     <td>{{ $alumno->seccion }}</td>
                     <td>
-                    <a href="#" class="btn btn-danger" 
-                    data-bs-toggle="modal" 
-                    data-bs-target="#motivoBajaModal" 
-                    data-id="{{ $alumno->id }}" 
-                    data-nombre="{{ $alumno->nombre }}">
-                        Dar de baja
-                    </a>
+                        <a href="#" class="btn btn-danger btn-sm" 
+                            data-bs-toggle="modal" 
+                            data-bs-target="#motivoBajaModal" 
+                            data-id="{{ $alumno->id }}" 
+                            data-nombre="{{ $alumno->nombre }}">
+                            Dar de baja
+                        </a>
                     </td>
                 </tr>
             @endforeach
         </tbody>
     </table>
+</div>
+
+<div class="d-flex justify-content-center mt-3">
+    {{ $alumnos->links() }}
 </div>
 
 <!-- Modal para capturar motivo de la baja -->

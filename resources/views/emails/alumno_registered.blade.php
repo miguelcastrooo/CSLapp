@@ -78,6 +78,7 @@
                         <div class="list-group-item">
                             <h5 class="mb-1"><strong>Nombre:</strong> {{ $contacto->nombre }}</h5>
                             <p class="mb-1"><strong>Teléfono:</strong> {{ $contacto->telefono }}</p>
+                            <p class="mb-1"><strong>Parentesco:</strong> {{ $contacto->tipo_contacto }}</p>
                             <p><strong>Correo:</strong> {{ $contacto->correo }}</p>
                         </div>
                     @endforeach
@@ -117,12 +118,6 @@
                 @if(empty($alumno->grado->seccion))
                     <li class="list-group-item">⚠️ Sección pendiente por asignar.</li>
                 @endif
-            </ul>
-
-            <h3>Indicaciones para la Asignación:</h3>
-            <ul class="list-group">
-                <li class="list-group-item"><strong>Profesor 1:</strong> Verificar la sección y asignarla en el sistema.</li>
-                <li class="list-group-item"><strong>Profesor 2:</strong> Confirmar los accesos a HMH, Mathletics y Progrentis según lo indicado.</li>
             </ul>
 
             <p>Por favor, revisen la información actualizada y asegúrense de completar el proceso lo antes posible para garantizar que el alumno tenga acceso a todos los recursos educativos.</p>

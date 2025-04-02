@@ -4,14 +4,14 @@
     <input type="text" id="search" class="form-control mb-3" placeholder="Buscar alumnos...">
 
     <table class="table table-striped mt-4">
-        <thead>
-            <tr>
+    <thead class="table-dark">
+    <tr>
                 <th>Matricula</th>
                 <th>Nivel Educativo</th>
                 <th>Nombre</th>
                 <th>Apellido Paterno</th>
                 <th>Apellido Materno</th>
-                <th>Edicion</th>
+                <th>Ver</th>
             </tr>
         </thead>
         <tbody id="alumnos-list">

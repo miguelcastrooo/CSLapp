@@ -58,8 +58,10 @@ Route::middleware(['auth', 'role:SuperAdmin|CoordinacionPreescolar|CoordinacionP
     // Generar PDF de alumnos
     Route::get('/admin/alumnos/pdf', [AdminController::class, 'generarPDF'])->name('admin.alumnos.pdf');
     Route::get('/admin/alumnos/pdf/{nivel}/{id}', [AdminController::class, 'generarPdf'])->name('admin.alumnos.pdf.individual');
+    Route::get('admin/generarPdfTodos/{nivel}', [AdminController::class, 'generarPdfTodos'])->name('admin.generarPdfTodos');
 
     Route::get('admin/alumnos/{alumnoId}/enviarCorreo', [AdminController::class, 'enviarCorreoConPdf'])->name('admin.enviarCorreo');
+    Route::get('/admin/enviarCorreoATodos/{nivel}', [AdminController::class, 'enviarCorreoATodos'])->name('admin.enviarCorreoATodos');
 
 
     Route::get('/admin/alumnos/pdf/{id}', [AdminController::class, 'generarPdfPorId'])->name('admin.alumnos.pdf.id');
@@ -91,6 +93,13 @@ Route::middleware(['auth', 'role:SuperAdmin|CoordinacionPreescolar|CoordinacionP
     Route::get('/admin/nivel/{nivelId}/alumnos', [CoordinacionController::class, 'mostrarAlumnos'])
     ->name('admin.nivel.alumnos');
 
+    // routes/web.php
+Route::get('/admin/assign-roles', [AdminController::class, 'assignRoles'])->name('admin.assignRoles');
+Route::post('/admin/assign-roles', [AdminController::class, 'saveAssignedRoles'])->name('admin.saveAssignedRoles');
+// routes/web.php
+Route::delete('/admin/remove-role/{user}/{role}', [AdminController::class, 'removeRole'])->name('admin.removeRole');
+
+
 
 
 });
@@ -100,6 +109,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::patch('/profile/update-picture', [ProfileController::class, 'updatePicture'])->name('profile.update-picture');
+
 });
 
 require __DIR__.'/auth.php';

@@ -4,11 +4,6 @@
 
 @section('styles')
     <style>
-      body {
-            background: linear-gradient(to right,rgb(255, 255, 255),rgb(218, 236, 23),rgb(44, 100, 51));
-            color: white;
-        }
-
         .hero-section {
             position: relative;
             height: 80vh;

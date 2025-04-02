@@ -43,6 +43,8 @@ class EnviarPdfConMensaje extends Mailable
      */
     public function build()
 {
+    $logoPath = public_path('img/csl.png'); // Ruta absoluta al logo
+
     return $this->view('emails.pdfConMensaje')
                 ->subject($this->asunto)
                 ->from('control.escolar@colegiosanluis.com.mx')
@@ -53,10 +55,11 @@ class EnviarPdfConMensaje extends Mailable
                 ])
                 ->attachData($this->pdf->output(), 'credenciales_alumno.pdf', [
                     'mime' => 'application/pdf',
-                    'disposition' => 'attachment',  // Asegúrate de que sea attachment para que sea descargable
-                ]);
+                    'disposition' => 'attachment',
+                ])
+                ->withSwiftMessage(function ($message) use ($logoPath) {
+                    $message->embed(\Swift_Image::fromPath($logoPath)->setId('logo-csl'));
+                });
 }
 
-    
-    
 }

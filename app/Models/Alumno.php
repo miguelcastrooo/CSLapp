@@ -19,7 +19,6 @@ class Alumno extends Model
 
     public $timestamps = true; 
 
-    // Relación con las plataformas a través de la tabla intermedia alumno_plataforma
     public function plataformas()
     {
         return $this->belongsToMany(Plataforma::class, 'alumno_plataforma')
@@ -39,12 +38,9 @@ class Alumno extends Model
 
     public function contactos()
     {
-        return $this->belongsToMany(Contacto::class, 'alumno_contacto')
-                    ->withTimestamps();
-    }
+        return $this->hasMany(Contacto::class, 'alumno_id');
+    }    
 
-    
-    // Relación con el modelo AlumnoPlataforma
     public function alumnoPlataforma()
     {
         return $this->hasMany(AlumnoPlataforma::class);
@@ -55,13 +51,8 @@ class Alumno extends Model
         return $this->hasMany(Hermano::class);
     }
 
-    public function contactoAlumno()
-    {
-        return $this->hasOne(ContactosAlumno::class);
-    }
-
     public function familiares()
     {
-        return $this->hasMany(Familiar::class); // Ajusta esto según la relación que tengas
+        return $this->hasMany(Familiar::class);
     }
 }

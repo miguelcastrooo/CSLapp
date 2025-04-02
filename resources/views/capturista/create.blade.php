@@ -443,7 +443,7 @@ agregarHermanoButton.addEventListener('click', function() {
     <div class="row mb-3">
         <div class="col-md-6">
             <label for="hermano${hermanoCount}nombre" class="form-label"><strong>Nombre del Hermano ${hermanoCount}</strong></label>
-            <input type="text" class="form-control" id="hermano${hermanoCount}nombre" name="hermano${hermanoCount}nombre" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" placeholder="Ej. Juan Pérez">
+            <input type="text" class="form-control" id="hermano${hermanoCount}nombre" name="hermano${hermanoCount}nombre" placeholder="Ej. Juan Pérez">
         </div>
 
         <div class="col-md-6">

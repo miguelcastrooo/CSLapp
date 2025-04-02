@@ -121,8 +121,6 @@ class AlumnoController extends Controller
     
     public function store(Request $request)
     {
-
-
     // Validación de los datos del formulario
     $request->validate([
     'nombre' => 'required',
@@ -179,22 +177,27 @@ class AlumnoController extends Controller
 
     // Buscar el último alumno registrado en el año actual con la matrícula más alta
     $ultimoAlumno = Alumno::where('matricula', 'like', "$año%")
-    ->orderBy('matricula', 'desc') // 🔹 CORREGIDO: Ahora ordenamos por matrícula, no por id
-    ->first();  
+        ->orderBy('matricula', 'desc') // Ordenamos por matrícula, no por ID
+        ->first();  
 
     if ($ultimoAlumno) {
-    // Asegurar que extraemos solo los últimos 4 dígitos numéricos correctamente
-    preg_match('/\d{4}$/', $ultimoAlumno->matricula, $matches);
-    $ultimoNumero = isset($matches[0]) ? (int) $matches[0] : 1723;
+        // Extraer los últimos 4 dígitos numéricos de la matrícula del último alumno
+        preg_match('/\d{4}$/', $ultimoAlumno->matricula, $matches);
+        if (isset($matches[0])) {
+            $ultimoNumero = (int) $matches[0];
+        } else {
+            // Si no encontramos los 4 dígitos, comenzamos desde 1723
+            $ultimoNumero = 1723;
+        }
     } else {
-    // Si no hay registros del año actual, comenzar en 1724
-    $ultimoNumero = 1723;
+        // Si no hay registros del año actual, comenzamos en 1723
+        $ultimoNumero = 1723;
     }
 
     // Incrementar en 1 y formatear con 4 dígitos
     $nuevoNumero = str_pad($ultimoNumero + 1, 4, '0', STR_PAD_LEFT);
 
-    // Construir la matrícula final (Ejemplo: "251724")
+    // Construir la matrícula final (Ejemplo: "251724" para el siguiente alumno)
     $matricula = $año . $nuevoNumero;
 
     // Crear credenciales solo para Classroom y Moodle
@@ -431,7 +434,7 @@ public function relacionarContactos(Request $request, Alumno $alumno)
         $alumno = Alumno::findOrFail($id);
         $contactos = Contacto::where('alumno_id', $alumno->id)->get();
         $grados = Grado::where('nivel_educativo_id', $alumno->nivel_educativo_id)->get();
-        $nivel_id = NivelEducativo::all();  // O como se recupere el nivel
+        $niveles = NivelEducativo::all();  // Obtener todos los niveles educativos
         $hermanos = $alumno->hermanos; // Obtener los hermanos relacionados con el alumno
         $familiares = Familiar::where('alumno_id', $id)
     ->orderByRaw("CASE 
@@ -440,8 +443,8 @@ public function relacionarContactos(Request $request, Alumno $alumno)
         WHEN tipo_familiar = 'Tutor' THEN 3
         ELSE 4 END")
     ->get();
-       
-        return view('capturista.edit', compact('alumno', 'contactos', 'grados', 'nivel_id', 'hermanos', 'familiares'));
+
+        return view('capturista.edit', compact('alumno', 'contactos', 'grados', 'niveles', 'hermanos', 'familiares'));
     }
     
     
@@ -455,157 +458,187 @@ public function relacionarContactos(Request $request, Alumno $alumno)
     }   
 
     public function update(Request $request, $id)
-{
-    // Obtener el alumno a actualizar
-    $alumno = Alumno::find($id);
-
-    if (!$alumno) {
-        return redirect()->back()->with('error', 'Alumno no encontrado.');
-    }
-
-    // Validación de los campos
-    $validationRules = [
-        'matricula' => 'nullable|numeric|unique:alumnos,matricula,' . $id,
-        'nombre' => 'nullable|string|max:255',
-        'apellidopaterno' => 'nullable|string|max:255',
-        'apellidomaterno' => 'nullable|string|max:255',
-        'contacto1nombre' => 'nullable|string|max:255',
-        'telefono1' => 'nullable|digits:10',
-        'contacto1tipo_contacto' => 'nullable|string|max:255',
-        'correo1' => 'nullable|email',
-        'contacto2nombre' => 'nullable|string|max:255',
-        'telefono2' => 'nullable|digits:10',
-        'contacto2tipo_contacto' => 'nullable|string|max:255',
-        'correo2' => 'nullable|email',
-        'contacto3nombre' => 'nullable|string|max:255',
-        'telefono3' => 'nullable|digits:10',
-        'contacto3tipo_contacto' => 'nullable|string|max:255',
-        'correo3' => 'nullable|email',
-        'usuario_classroom' => 'nullable|string|max:255',
-        'contraseña_classroom' => 'nullable|string|max:255',
-        'usuario_moodle' => 'nullable|string|max:255',
-        'contraseña_moodle' => 'nullable|string|max:255',
-        'usuario_hmh' => 'nullable|string|max:255',
-        'contraseña_hmh' => 'nullable|string|max:255',
-        'usuario_mathletics' => 'nullable|string|max:255',
-        'contraseña_mathletics' => 'nullable|string|max:255',
-        'usuario_progrentis' => 'nullable|string|max:255',
-        'contraseña_progrentis' => 'nullable|string|max:255',
-        'nivel_educativo_id' => 'nullable|exists:nivel_educativo,id',
-        'grado_id' => 'nullable|exists:grados,id',
-        'fecha_inscripcion' => 'nullable|date',
-        'fecha_inicio' => 'nullable|date',
-        'seccion' => 'nullable|in:A,B', // Validación para la sección
-        // Agregar campos relacionados con familiares, si es necesario
-        'familiares' => 'nullable|array',
-        'familiares.*.nombre' => 'nullable|string|max:255',
-        'familiares.*.apellido_paterno' => 'nullable|string|max:255',
-        'familiares.*.apellido_materno' => 'nullable|string|max:255',
-        'familiares.*.fecha_nacimiento' => 'nullable|date',
-        'familiares.*.estado_civil' => 'nullable|string|max:255',
-        'familiares.*.domicilio' => 'nullable|string|max:255',
-        'familiares.*.telefono_fijo' => 'nullable|digits:10',
-        'familiares.*.celular' => 'nullable|digits:10',
-        'familiares.*.correo' => 'nullable|email',
-        'familiares.*.profesion' => 'nullable|string|max:255',
-        'familiares.*.ocupacion' => 'nullable|string|max:255',
-        'familiares.*.empresa_nombre' => 'nullable|string|max:255',
-        'familiares.*.empresa_telefono' => 'nullable|digits:10',
-        'familiares.*.empresa_domicilio' => 'nullable|string|max:255',
-        'familiares.*.empresa_ciudad' => 'nullable|string|max:255',
-        'familiares.*.tipo_familiar' => 'nullable|string|max:255', // Campo que especifica si es "Padre", "Madre", "Tutor", etc.
-    ];
-
-    $request->validate($validationRules);
-
-    // Asignación de la fecha de inicio
-    $fecha_inicio = $request->fecha_inicio ?? now()->toDateString();
-
-    // Generar las credenciales
-    $credenciales = $this->generarCredenciales(
-        $request->nombre ?? $alumno->nombre,
-        $request->apellidopaterno ?? $alumno->apellidopaterno,
-        $request->matricula ?? $alumno->matricula,
-        $request->fecha_inscripcion ?? $alumno->fecha_inscripcion
-    );
-
-    // Asignar los valores recibidos de la solicitud
-    $nivel_educativo_id = $request->nivel_educativo_id ?? $alumno->nivel_educativo_id;
-    $grado_id = $request->grado_id ?? $alumno->grado_id;
-    $seccion = $request->seccion ?? $alumno->seccion;
-
-    // Actualización del alumno
-    $alumno->update([
-        'matricula' => $request->matricula ?? $alumno->matricula,
-        'nombre' => $request->nombre ?? $alumno->nombre,
-        'apellidopaterno' => $request->apellidopaterno ?? $alumno->apellidopaterno,
-        'apellidomaterno' => $request->apellidomaterno ?? $alumno->apellidomaterno,
-        'usuario_classroom' => $credenciales['usuario_classroom'],
-        'contraseña_classroom' => $credenciales['contraseña_classroom'],
-        'usuario_moodle' => $credenciales['usuario_moodle'],
-        'contraseña_moodle' => $credenciales['contraseña_moodle'],
-        'usuario_hmh' => $request->usuario_hmh ?? $alumno->usuario_hmh,
-        'contraseña_hmh' => $request->contraseña_hmh ?? $alumno->contraseña_hmh,
-        'usuario_mathletics' => $request->usuario_mathletics ?? $alumno->usuario_mathletics,
-        'contraseña_mathletics' => $request->contraseña_mathletics ?? $alumno->contraseña_mathletics,
-        'usuario_progrentis' => $request->usuario_progrentis ?? $alumno->usuario_progrentis,
-        'contraseña_progrentis' => $request->contraseña_progrentis ?? $alumno->contraseña_progrentis,
-        'nivel_educativo_id' => $nivel_educativo_id,
-        'grado_id' => $grado_id,
-        'fecha_inscripcion' => $request->fecha_inscripcion ?? $alumno->fecha_inscripcion,
-        'fecha_inicio' => $fecha_inicio,
-        'seccion' => $seccion,
-    ]);
-
-    // Actualizar o crear las credenciales en alumno_plataforma
-    $this->actualizarPlataformas($request, $alumno);
-
-    // Actualizar familiares si es necesario
-    if ($request->has('familiares')) {
-        foreach ($request->familiares as $familiaresData) {
-            // Aquí puedes hacer lo que necesites para actualizar o crear los registros de familiares
-            // Ejemplo:
-            $familiar = Familiar::updateOrCreate(
-                ['alumno_id' => $alumno->id, 'tipo_familiar' => $familiaresData['tipo_familiar']],
-                $familiaresData
-            );
-        }
-    }
-
-    // Obtener los contactos del alumno, si tienes una relación definida
-    $contactos = $alumno->contactos;  // Esto asume que tienes una relación "contactos" en el modelo Alumno
-
-    // Enviar correo de notificación
-    $destinatarios = [
-        'coordinador_tecnologia@colegiosanluis.com',
-        'coordinadora_academica@colegiosanluis.com',
-    ];
-
-    // Añadir el coordinador de nivel educativo
-    switch ($nivel_educativo_id) {
-        case 1:
-            $destinatarios[] = 'coordinador.preescolar@colegiosanluis.com';
-            break;
-        case 2:
-            $destinatarios[] = 'coordinador.primaria@colegiosanluis.com';
-            break;
-        case 3:
-            $destinatarios[] = 'coordinador.secundaria@colegiosanluis.com';
-            break;
-    }
-
-    Mail::to($destinatarios)->send(new AlumnoUpdate($alumno, $contactos));
-
-    // Redirigir según el rol del usuario
-    if (auth()->user()->hasRole('SuperAdmin')) {
-        return redirect()->route('admin.selectadmin')->with('success', 'Alumno actualizado correctamente.');
-    }
-
-    return redirect()->route('capturista.selectsearch')->with('success', 'Alumno actualizado correctamente.');
-}
-
+    {    
+        // Obtener el alumno a actualizar
+        $alumno = Alumno::find($id);
     
-    public function actualizarPlataformas(Request $request, Alumno $alumno)
+        if (!$alumno) {
+            return redirect()->back()->with('error', 'Alumno no encontrado.');
+        }
+    
+        // Validación de los campos
+        $request->validate($this->getValidationRules($id));
+    
+        // Asignación de la fecha de inicio
+        $fecha_inicio = $request->fecha_inicio ?? now()->toDateString();
+    
+        // Generar las credenciales
+        $credenciales = $this->generarCredenciales(
+            $request->nombre ?? $alumno->nombre,
+            $request->apellidopaterno ?? $alumno->apellidopaterno,
+            $request->matricula ?? $alumno->matricula,
+            $request->fecha_inscripcion ?? $alumno->fecha_inscripcion
+        );
+    
+        // Asignar los valores recibidos de la solicitud
+        $alumno->update([
+            'matricula' => $request->matricula ?? $alumno->matricula,
+            'nombre' => $request->nombre ?? $alumno->nombre,
+            'apellidopaterno' => $request->apellidopaterno ?? $alumno->apellidopaterno,
+            'apellidomaterno' => $request->apellidomaterno ?? $alumno->apellidomaterno,
+            'usuario_classroom' => $credenciales['usuario_classroom'],
+            'contraseña_classroom' => $credenciales['contraseña_classroom'],
+            'usuario_moodle' => $credenciales['usuario_moodle'],
+            'contraseña_moodle' => $credenciales['contraseña_moodle'],
+            'usuario_hmh' => $request->usuario_hmh ?? $alumno->usuario_hmh,
+            'contraseña_hmh' => $request->contraseña_hmh ?? $alumno->contraseña_hmh,
+            'usuario_mathletics' => $request->usuario_mathletics ?? $alumno->usuario_mathletics,
+            'contraseña_mathletics' => $request->contraseña_mathletics ?? $alumno->contraseña_mathletics,
+            'usuario_progrentis' => $request->usuario_progrentis ?? $alumno->usuario_progrentis,
+            'contraseña_progrentis' => $request->contraseña_progrentis ?? $alumno->contraseña_progrentis,
+            'nivel_educativo_id' => $request->nivel_educativo_id ?? $alumno->nivel_educativo_id,
+            'grado_id' => $request->grado_id ?? $alumno->grado_id,
+            'fecha_inscripcion' => $request->fecha_inscripcion ?? $alumno->fecha_inscripcion,
+            'fecha_inicio' => $fecha_inicio,
+            'seccion' => $request->seccion ?? $alumno->seccion,
+            'lugar_nacimiento' => $request->lugar_nacimiento ?? $alumno->lugar_nacimiento,
+            'fecha_nacimiento' => $request->fecha_nacimiento ?? $alumno->fecha_nacimiento,
+            'edad_anios' => $request->edad_anios ?? $alumno->edad_anios,
+            'edad_meses' => $request->edad_meses ?? $alumno->edad_meses,
+            'sexo' => $request->sexo ?? $alumno->sexo,
+            'domicilio' => $request->domicilio ?? $alumno->domicilio,
+            'cp' => $request->cp ?? $alumno->cp,
+            'cerrada' => $request->cerrada ?? $alumno->cerrada,
+            'colonia' => $request->colonia ?? $alumno->colonia,
+            'ciudad' => $request->ciudad ?? $alumno->ciudad,
+            'estado' => $request->estado ?? $alumno->estado,
+            'enfermedades_alergias' => $request->enfermedades_alergias ?? $alumno->enfermedades_alergias,
+            'pediatra_nombre' => $request->pediatra_nombre ?? $alumno->pediatra_nombre,
+            'pediatra_telefono' => $request->pediatra_telefono ?? $alumno->pediatra_telefono,
+            'no_domicilio' => $request->no_domicilio ?? $alumno->no_domicilio,
+        ]);
+    
+        // Actualizar plataformas
+        $this->actualizarPlataformas($request, $alumno);
+    
+        // Actualizar familiares
+        $this->actualizarFamiliares($request, $alumno);
+    
+        // Actualizar hermanos
+        $this->actualizarHermanos($request, $alumno);
+    
+        // Actualizar contactos
+        $this->actualizarContactos($request, $alumno);
+    
+        // Obtener los contactos del alumno
+        $contactos = $alumno->contactos;
+    
+        // Enviar correo de notificación
+        $this->enviarCorreoNotificacion($alumno, $contactos);
+    
+        // Redirigir según el rol del usuario
+        if (auth()->user()->hasRole('SuperAdmin')) {
+            return redirect()->route('admin.selectadmin')->with('success', 'Alumno actualizado correctamente.');
+        }
+    
+        return back()->with('success', 'Alumno actualizado correctamente.');
+    }
+    
+    private function getValidationRules($id)
+    {
+        return [
+            'matricula' => 'nullable|numeric|unique:alumnos,matricula,' . $id,
+            'nombre' => 'nullable|string|max:255',
+            'apellidopaterno' => 'nullable|string|max:255',
+            'apellidomaterno' => 'nullable|string|max:255',
+            'usuario_classroom' => 'nullable|string|max:255',
+            'contraseña_classroom' => 'nullable|string|max:255',
+            'usuario_moodle' => 'nullable|string|max:255',
+            'contraseña_moodle' => 'nullable|string|max:255',
+            'usuario_hmh' => 'nullable|string|max:255',
+            'contraseña_hmh' => 'nullable|string|max:255',
+            'usuario_mathletics' => 'nullable|string|max:255',
+            'contraseña_mathletics' => 'nullable|string|max:255',
+            'usuario_progrentis' => 'nullable|string|max:255',
+            'contraseña_progrentis' => 'nullable|string|max:255',
+            'nivel_educativo_id' => 'nullable|exists:nivel_educativo,id',
+            'grado_id' => 'nullable|exists:grados,id',
+            'fecha_inscripcion' => 'nullable|date',
+            'fecha_inicio' => 'nullable|date',
+            'seccion' => 'nullable|in:A,B',
+            'lugar_nacimiento' => 'nullable|string|max:255',
+            'fecha_nacimiento' => 'nullable|date',
+            'edad_anios' => 'nullable|numeric',
+            'edad_meses' => 'nullable|numeric',
+            'sexo' => 'required|in:Masculino,Femenino,Sin Definir',
+            'domicilio' => 'nullable|string|max:255',
+            'cp' => 'nullable|string|max:5',
+            'cerrada' => 'nullable|string|max:255',
+            'colonia' => 'nullable|string|max:255',
+            'ciudad' => 'nullable|string|max:255',
+            'estado' => 'nullable|string|max:255',
+            'enfermedades_alergias' => 'nullable|string|max:255',
+            'pediatra_nombre' => 'nullable|string|max:255',
+            'pediatra_telefono' => 'nullable|digits:10',
+            'no_domicilio' => 'nullable|string|max:255',
+            'familiares' => 'nullable|array',
+            'familiares.*.nombre' => 'nullable|string|max:255',
+            'familiares.*.apellido_paterno' => 'nullable|string|max:255',
+            'familiares.*.apellido_materno' => 'nullable|string|max:255',
+            'familiares.*.fecha_nacimiento' => 'nullable|date',
+            'familiares.*.estado_civil' => 'nullable|string|max:255',
+            'familiares.*.domicilio' => 'nullable|string|max:255',
+            'familiares.*.no_domicilio' => 'nullable|string|max:255',
+            'familiares.*.cp' => 'nullable|string|max:5',
+            'familiares.*.colonia' => 'nullable|string|max:255',
+            'familiares.*.ciudad' => 'nullable|string|max:255',
+            'familiares.*.estado' => 'nullable|string|max:255',
+            'familiares.*.telefono_fijo' => 'nullable|digits:10',
+            'familiares.*.celular' => 'nullable|digits:10',
+            'familiares.*.correo' => 'nullable|email',
+            'familiares.*.profesion' => 'nullable|string|max:255',
+            'familiares.*.ocupacion' => 'nullable|string|max:255',
+            'familiares.*.empresa_nombre' => 'nullable|string|max:255',
+            'familiares.*.empresa_telefono' => 'nullable|digits:10',
+            'familiares.*.empresa_domicilio' => 'nullable|string|max:255',
+            'familiares.*.empresa_ciudad' => 'nullable|string|max:255',
+            'familiares.*.tipo_familiar' => 'string|in:Padre,Madre,Tutor|max:255',
+            'hermanos' => 'nullable|array',
+            'hermanos.*.nombre' => 'nullable|string|max:255',
+            'hermanos.*.apellido_paterno' => 'nullable|string|max:255',
+            'hermanos.*.apellido_materno' => 'nullable|string|max:255',
+            'hermanos.*.edad' => 'nullable|numeric',
+            'contactos.*.nombre' => 'nullable|string|max:255',
+            'contactos.*.telefono' => 'nullable|string|max:15',
+            'contactos.*.tipo_contacto' => 'nullable|string|max:255',
+            'contactos.*.correo' => 'nullable|email',
+        ];
+    }
+        
+    private function enviarCorreoNotificacion($alumno, $contactos)
+    {
+        $destinatarios = [
+            'coordinador_tecnologia@colegiosanluis.com',
+            'coordinadora_academica@colegiosanluis.com',
+        ];
+    
+        switch ($alumno->nivel_educativo_id) {
+            case 1:
+                $destinatarios[] = 'coordinador.preescolar@colegiosanluis.com';
+                break;
+            case 2:
+                $destinatarios[] = 'coordinador.primaria@colegiosanluis.com';
+                break;
+            case 3:
+                $destinatarios[] = 'coordinador.secundaria@colegiosanluis.com';
+                break;
+        }
+    
+        Mail::to($destinatarios)->send(new AlumnoUpdate($alumno, $contactos));
+    }
+    
+    
+    private function actualizarPlataformas(Request $request, Alumno $alumno)
     {
         $plataformas = $request->input('plataformas', []);
     
@@ -616,60 +649,105 @@ public function relacionarContactos(Request $request, Alumno $alumno)
                     ['usuario' => $datos['usuario'], 'contraseña' => $datos['contraseña']]
                 );
             }
-        }
-    
-        return redirect()->back()->with('success', 'Datos actualizados correctamente');
+        }    
     }
     
-    private function actualizarContactos(Request $request, Alumno $alumno)
-{
-    // Aquí actualizamos o creamos los contactos
-    for ($i = 1; $i <= 3; $i++) {
-        $contactoNombre = 'contacto' . $i . 'nombre';
-        $contactoTelefono = 'telefono' . $i;
-        $contactoTipo = 'contacto' . $i . 'tipo_contacto';
-        $contactoCorreo = 'correo' . $i;
-
-        // Buscar si el contacto ya existe
-        $contactoExistente = Contacto::where('alumno_id', $alumno->id)
-            ->where('tipo_contacto', $request->$contactoTipo)
-            ->first();
-
-        // Si existe, actualizamos los campos
-        if ($contactoExistente) {
-            $contactoExistente->update([
-                'nombre' => $request->$contactoNombre ?? $contactoExistente->nombre,
-                'telefono' => $request->$contactoTelefono ?? $contactoExistente->telefono,
-                'correo' => $request->$contactoCorreo ?? $contactoExistente->correo,
-                'tipo_contacto' => $request->$contactoTipo ?? $contactoExistente->tipo_contacto,
-            ]);
-        } else {
-            // Si no existe, creamos un nuevo contacto
-            if ($request->$contactoNombre || $request->$contactoTelefono || $request->$contactoCorreo) {
-                Contacto::create([
-                    'alumno_id' => $alumno->id,
-                    'nombre' => $request->$contactoNombre,
-                    'telefono' => $request->$contactoTelefono,
-                    'correo' => $request->$contactoCorreo,
-                    'tipo_contacto' => $request->$contactoTipo,
-                ]);
+    private function actualizarFamiliares(Request $request, Alumno $alumno)
+    {
+        $familiaresEnviados = collect($request->input('familiares', []));
+        
+        foreach ($familiaresEnviados as $familiar) {
+            // Verificar si el familiar tiene un id
+            if (isset($familiar['id']) && $familiar['id'] > 0) {
+                // Buscar si el familiar ya existe para el alumno
+                $registroExistente = $alumno->familiares()->where('id', $familiar['id'])->first();
+                if ($registroExistente) {
+                    // Si existe, actualizarlo
+                    $registroExistente->update([
+                        'nombre' => $familiar['nombre'],
+                        'apellido_paterno' => $familiar['apellido_paterno'],
+                        'apellido_materno' => $familiar['apellido_materno'],
+                        'fecha_nacimiento' => $familiar['fecha_nacimiento'],
+                        'estado_civil' => $familiar['estado_civil'],
+                        'domicilio' => $familiar['domicilio'],
+                        'no_domicilio' => $familiar['no_domicilio'],
+                        'cp' => $familiar['cp'],
+                        'colonia' => $familiar['colonia'],
+                        'ciudad' => $familiar['ciudad'],
+                        'estado' => $familiar['estado'],
+                        'telefono_fijo' => $familiar['telefono_fijo'],
+                        'celular' => $familiar['celular'],
+                        'correo' => $familiar['correo'],
+                        'profesion' => $familiar['profesion'],
+                        'ocupacion' => $familiar['ocupacion'],
+                        'empresa_nombre' => $familiar['empresa_nombre'],
+                        'empresa_telefono' => $familiar['empresa_telefono'],
+                        'empresa_domicilio' => $familiar['empresa_domicilio'],
+                        'empresa_ciudad' => $familiar['empresa_ciudad'],
+                        'tipo_familiar' => $familiar['tipo_familiar'],
+                    ]);
                 }
             }
         }
-    }   
+    }    
     
-    public function indexBaja()
+    private function actualizarHermanos(Request $request, Alumno $alumno)
     {
-        $alumnos = Alumno::with('grado')
-            ->where('status', 1)  // Solo los alumnos con status 1
-            ->orderBy('created_at', 'desc') // Ordena por la fecha de creación en orden descendente
-            ->get();
-            
-        $niveles = NivelEducativo::all();
-        $grados = Grado::all();
-
-        return view('capturista.baja', compact('alumnos', 'niveles', 'grados'));
+        $hermanosEnviados = collect($request->input('hermanos', []));
+        
+        foreach ($hermanosEnviados as $hermano) {
+            // Verificar si el hermano tiene un id
+            if (isset($hermano['id']) && $hermano['id'] > 0) {
+                // Buscar si el hermano ya existe para el alumno
+                $registroExistente = $alumno->hermanos()->where('id', $hermano['id'])->first();
+                if ($registroExistente) {
+                    // Si existe, actualizarlo
+                    $registroExistente->update([
+                        'nombre' => $hermano['nombre'],
+                        'apellido_paterno' => $hermano['apellido_paterno'],
+                        'apellido_materno' => $hermano['apellido_materno'],
+                        'edad' => $hermano['edad'],
+                    ]);
+                }
+            }
+        }
     }
+    
+
+private function actualizarContactos(Request $request, Alumno $alumno)
+{
+    $contactosEnviados = collect($request->input('contactos', []));
+    
+    foreach ($contactosEnviados as $contacto) {
+        // Verificar si el contacto tiene un id
+        if (isset($contacto['id']) && $contacto['id'] > 0) {
+            // Buscar si el contacto ya existe para el alumno
+            $registroExistente = $alumno->contactos()->where('id', $contacto['id'])->first();
+            if ($registroExistente) {
+                // Si existe, actualizarlo
+                $registroExistente->update([
+                    'nombre' => $contacto['nombre'],
+                    'telefono' => $contacto['telefono'],
+                    'correo' => $contacto['correo'],
+                    'tipo_contacto' => $contacto['tipo_contacto'],
+                ]);
+            }
+        }
+    }
+}
+        
+public function indexBaja()
+{
+    $alumnos = Alumno::with('grado')
+        ->where('status', 1)  // Solo los alumnos con status 1
+        ->orderBy('created_at', 'desc') // Ordena por la fecha de creación en orden descendente
+        ->paginate(15); // Pagina con 10 registros por página
+
+    $niveles = NivelEducativo::all();
+    $grados = Grado::all();
+
+    return view('capturista.baja', compact('alumnos', 'niveles', 'grados'));
+}
 
 
     public function darBaja(Request $request)
@@ -815,8 +893,8 @@ public function relacionarContactos(Request $request, Alumno $alumno)
     // Obtener todos los alumnos archivados y cargar las relaciones 'nivelEducativo' y 'grado'
     $alumnosArchivados = AlumnoArchivado::with(['nivelEducativo', 'grado'])
     ->where('status', 0)  // Solo los alumnos con status 1
-    ->orderBy('created_at', 'desc') // Ordena por la fecha de creación en orden descendente
-    ->get();
+    ->orderBy('created_at', 'desc')
+    ->paginate(10); // Paginación de 10 registros por página
 
     // Obtener todos los niveles educativos y grados
     $niveles = NivelEducativo::all();
@@ -827,8 +905,8 @@ public function relacionarContactos(Request $request, Alumno $alumno)
 }
 
     
-public function reactivar($id)
-{
+    public function reactivar($id)
+    {
     DB::transaction(function () use ($id) {
         // Obtener el alumno archivado
         $alumnoArchivado = DB::table('alumnos_archivados')->where('id', $id)->first();
@@ -943,7 +1021,7 @@ public function reactivar($id)
         DB::table('alumnos_archivados')->where('id', $id)->delete();
     });
 
-    return redirect()->route('alumnos.archivados')->with('success', 'Alumno reactivado correctamente.');
-}
+        return redirect()->route('alumnos.archivados')->with('success', 'Alumno reactivado correctamente.');
+    }
 
 }

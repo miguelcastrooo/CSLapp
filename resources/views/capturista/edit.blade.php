@@ -97,7 +97,7 @@
         <div class="card-body">
             <h5 class="card-title text-primary">Datos del Alumno</h5>
 
-            <input type="hidden" name="nivel_educativo_id" value="{{ old('nivel_educativo_id', $nivel_id) }}">
+            <input type="hidden" name="nivel_educativo_id" value="{{ old('nivel_educativo_id', $alumno->nivel_educativo_id) }}">
 
             <!-- Sección 1: Datos Básicos -->
             <div class="section mb-4">
@@ -219,6 +219,7 @@
                 <label for="hermano{{ $index+1 }}edad" class="form-label"><strong>Edad del Hermano {{ $index+1 }}</strong></label>
                 <input type="number" class="form-control" id="hermano{{ $index+1 }}edad" name="hermanos[{{ $index }}][edad]" value="{{ old('hermanos.' . $index . '.edad', $hermano->edad) }}" min="0" max="50" readonly>
             </div>
+            <input type="hidden" name="hermanos[{{ $index }}][id]" value="{{ $hermano->id }}">
         </div>
     @endforeach
                 <div class="row mb-3">
@@ -261,189 +262,207 @@
                         <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" value="{{ old('fecha_inicio', $alumno->fecha_inicio) }}" readonly>
                         </div>
                     </div>
+                    @if (Auth::user()->hasRole('SuperAdmin') )
+                    <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label for="grado_id" class="form-label"><strong>NivelEducativo</strong></label>
+                        <select class="form-select" id="nivel_educativo_id" name="nivel_educativo_id" required disabled>
+                            <option value="">Selecciona un Nivel</option>
+                                @foreach($niveles as $nivel)
+                                    <option value="{{ $nivel->id }}" 
+                                        {{ old('nivel_educativo_id', $alumno->nivel_educativo_id) == $nivel->id ? 'selected' : '' }}>
+                                        {{ $nivel->nombre }}
+                                    </option>
+                                @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="seccion" class="form-label"><strong>Seccion</strong></label>
+                        <input type="text" class="form-control" id="seccion" name="seccion" value="{{ old('seccion', $alumno->seccion) }}" readonly>
+                    </div>
+                    @endif
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-                <!-- Información de Contactos dentro de una tarjeta -->
-                <div class="card shadow-sm mb-4" style="background-color: #f8f9fa;">
-                    <div class="card-body">
-                        <h5 class="card-title text-primary">Información de Contactos</h5>
-
-                        @foreach ($contactos as $index => $contacto)
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label for="contacto{{ $index + 1 }}nombre" class="form-label"><strong>Nombre del Contacto {{ $index + 1 }}</strong></label>
-                                    <input type="text" class="form-control" id="contacto{{ $index + 1 }}nombre" name="contacto{{ $index + 1 }}nombre" value="{{ old('contacto'.$index.'nombre', $contacto->nombre) }}" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" readonly>
-                                </div>
-
-                                <div class="col-md-6">
-                                    <label for="telefono{{ $index + 1 }}" class="form-label"><strong>Teléfono del Contacto {{ $index + 1 }}</strong></label>
-                                    <input type="number" class="form-control" id="telefono{{ $index + 1 }}" name="telefono{{ $index + 1 }}" value="{{ old('telefono'.$index, $contacto->telefono) }}" maxlength="12" pattern="\d{12}" title="Debe ser un número de 12 dígitos" readonly>
-                                </div>
-                            </div>
-
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label for="correo{{ $index + 1 }}" class="form-label"><strong>Correo del Contacto {{ $index + 1 }}</strong></label>
-                                    <input type="email" class="form-control" id="correo{{ $index + 1 }}" name="correo{{ $index + 1 }}" value="{{ old('correo'.$index, $contacto->correo) }}" readonly>
-                                </div>
-
-                            <div class="col-md-6">
-                                <label for="contacto1tipo{{ $index + 1 }}" class="form-label"><strong>Tipo de Contacto {{ $index + 1 }}</strong></label>
-                                <input list="contactoTipos" class="form-control" id="contacto1tipo{{ $index + 1 }}" value="{{ old('tipo_contacto'.$index, $contacto->tipo_contacto) }}" name="contacto1tipo" required readonly>
-                            </div>
-                            </div>
-                        @endforeach
+        <!-- Información de Contactos dentro de una tarjeta -->
+        <div class="card shadow-sm mb-4" style="background-color: #f8f9fa;">
+            <div class="card-body">
+                <h5 class="card-title text-primary">Información de Contactos</h5>
+                @foreach ($contactos as $index => $contacto)
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="contacto{{ $index + 1 }}nombre" class="form-label"><strong>Nombre del Contacto {{ $index + 1 }}</strong></label>
+                            <input type="text" class="form-control" id="contacto{{ $index + 1 }}nombre" 
+                                name="contactos[{{ $index }}][nombre]" 
+                                value="{{ old('contactos.'.$index.'.nombre', $contacto->nombre) }}" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="telefono{{ $index + 1 }}" class="form-label"><strong>Teléfono del Contacto {{ $index + 1 }}</strong></label>
+                            <input type="number" class="form-control" id="telefono{{ $index + 1 }}" 
+                                name="contactos[{{ $index }}][telefono]" 
+                                value="{{ old('contactos.'.$index.'.telefono', $contacto->telefono) }}" 
+                                maxlength="12" pattern="\d{12}" title="Debe ser un número de 12 dígitos" readonly>
+                        </div>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <pre>{{ print_r($familiares->toArray(), true) }}</pre>
-        @foreach($familiares as $familiar)
-    <div class="card shadow-sm mb-4" style="background-color: #f8f9fa;">
-        <div class="card-body">
-        <h5 class="card-title text-primary">Datos de {{ ucfirst(strtolower($familiar->tipo_familiar)) }}</h5>
-
-            <!-- Campos de datos personales -->
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <label class="form-label"><strong>Nombre Completo</strong></label>
-                    <input type="text" class="form-control" name="familiares[{{ $familiar->tipo_familiar }}][nombre]" 
-                        value="{{ old('familiares.'.$familiar->tipo_familiar.'.nombre', $familiar->nombre ?? '') }}" required readonly>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label"><strong>Apellido Paterno</strong></label>
-                    <input type="text" class="form-control" name="familiares[{{ $familiar->tipo_familiar }}][apellido_paterno]" 
-                        value="{{ old('familiares.'.$familiar->tipo_familiar.'.apellido_paterno', $familiar->apellido_paterno ?? '') }}" required readonly>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label"><strong>Apellido Materno</strong></label>
-                    <input type="text" class="form-control" name="familiares[{{ $familiar->tipo_familiar }}][apellido_materno]" 
-                        value="{{ old('familiares.'.$familiar->tipo_familiar.'.apellido_materno', $familiar->apellido_materno ?? '') }}" required readonly>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label"><strong>Fecha de Nacimiento</strong></label>
-                    <input type="date" class="form-control" name="familiares[{{ $familiar->tipo_familiar }}][fecha_nacimiento]" 
-                        value="{{ old('familiares.'.$familiar->tipo_familiar.'.fecha_nacimiento', $familiar->fecha_nacimiento ?? '') }}" required readonly>
-                </div>
-            </div>
-
-            <!-- Campos de estado civil y domicilio -->
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <label class="form-label"><strong>Estado Civil</strong></label>
-                    <select class="form-select" name="familiares[{{ $familiar->tipo_familiar }}][estado_civil]" required disabled>
-                        <option value="">Selecciona estado civil</option>
-                        <option value="Soltero" {{ old('familiares.'.$familiar->tipo_familiar.'.estado_civil', $familiar->estado_civil ?? '') == 'Soltero' ? 'selected' : '' }}>Soltero</option>
-                        <option value="Casado" {{ old('familiares.'.$familiar->tipo_familiar.'.estado_civil', $familiar->estado_civil ?? '') == 'Casado' ? 'selected' : '' }}>Casado</option>
-                        <option value="Divorciado" {{ old('familiares.'.$familiar->tipo_familiar.'.estado_civil', $familiar->estado_civil ?? '') == 'Divorciado' ? 'selected' : '' }}>Divorciado</option>
-                        <option value="Viudo" {{ old('familiares.'.$familiar->tipo_familiar.'.estado_civil', $familiar->estado_civil ?? '') == 'Viudo' ? 'selected' : '' }}>Viudo</option>
-                    </select>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label"><strong>Domicilio</strong></label>
-                    <input type="text" class="form-control" name="familiares[{{ $familiar->tipo_familiar }}][domicilio]" 
-                        value="{{ old('familiares.'.$familiar->tipo_familiar.'.domicilio', $familiar->domicilio ?? '') }}" required readonly>
-                </div>
-            </div>
-
-            <!-- Campos de dirección -->
-            <div class="row mb-3">
-                <div class="col-md-2">
-                    <label class="form-label"><strong>Colonia</strong></label>
-                    <input type="text" class="form-control" name="familiares[{{ $familiar->tipo_familiar }}][colonia]" 
-                        value="{{ old('familiares.'.$familiar->tipo_familiar.'.colonia', $familiar->colonia ?? '') }}" required readonly>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label"><strong>No.Domicilio</strong></label>
-                    <input type="number" class="form-control" name="familiares[{{ $familiar->tipo_familiar }}][no_domicilio]" 
-                        value="{{ old('familiares.'.$familiar->tipo_familiar.'.no_domicilio', $familiar->no_domicilio ?? '') }}" required readonly>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label"><strong>C.P.</strong></label>
-                    <input type="number" class="form-control" name="familiares[{{ $familiar->tipo_familiar }}][cp]" 
-                        value="{{ old('familiares.'.$familiar->tipo_familiar.'.cp', $familiar->cp ?? '') }}" required readonly>
-                </div>
-
-                <div class="col-md-3">
-                    <label class="form-label"><strong>Ciudad</strong></label>
-                    <input type="text" class="form-control" name="familiares[{{ $familiar->tipo_familiar }}][ciudad]" 
-                        value="{{ old('familiares.'.$familiar->tipo_familiar.'.ciudad', $familiar->ciudad ?? '') }}" required readonly>
-                </div>
-
-                <div class="col-md-3">
-                    <label class="form-label"><strong>Estado</strong></label>
-                    <input type="text" class="form-control" name="familiares[{{ $familiar->tipo_familiar }}][estado]" 
-                        value="{{ old('familiares.'.$familiar->tipo_familiar.'.estado', $familiar->estado ?? '') }}" required readonly>
-                </div>
-            </div>
-
-            <!-- Campos de contacto -->
-            <div class="row mb-3">
-                <div class="col-md-4">
-                    <label class="form-label"><strong>Teléfono Celular</strong></label>
-                    <input type="number" class="form-control" name="familiares[{{ $familiar->tipo_familiar }}][celular]" 
-                        value="{{ old('familiares.'.$familiar->tipo_familiar.'.celular', $familiar->celular ?? '') }}" pattern="\d{10}" required placeholder="Ej. 1234567890" readonly>
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label"><strong>Teléfono Fijo</strong></label>
-                    <input type="number" class="form-control" name="familiares[{{ $familiar->tipo_familiar }}][telefono_fijo]" 
-                        value="{{ old('familiares.'.$familiar->tipo_familiar.'.telefono_fijo', $familiar->telefono_fijo ?? '') }}" pattern="\d{10}" required placeholder="Ej. 1234567890" readonly>
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label"><strong>Correo</strong></label>
-                    <input type="email" class="form-control" name="familiares[{{ $familiar->tipo_familiar }}][correo]" 
-                        value="{{ old('familiares.'.$familiar->tipo_familiar.'.correo', $familiar->correo ?? '') }}" required placeholder="Ej. ejemplo@correo.com" readonly>
-                </div>
-            </div>
-
-            <!-- Campos de trabajo -->
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <label class="form-label"><strong>Profesión</strong></label>
-                    <input type="text" class="form-control" name="familiares[{{ $familiar->tipo_familiar }}][profesion]" 
-                        value="{{ old('familiares.'.$familiar->tipo_familiar.'.profesion', $familiar->profesion ?? '') }}" required readonly>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label"><strong>Ocupación</strong></label>
-                    <input type="text" class="form-control" name="familiares[{{ $familiar->tipo_familiar }}][ocupacion]" 
-                        value="{{ old('familiares.'.$familiar->tipo_familiar.'.ocupacion', $familiar->ocupacion ?? '') }}" required readonly>
-                </div>
-            </div>
-
-            <!-- Campos de empresa -->
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <label class="form-label"><strong>Nombre de la Empresa</strong></label>
-                    <input type="text" class="form-control" name="familiares[{{ $familiar->tipo_familiar }}][empresa_nombre]" 
-                        value="{{ old('familiares.'.$familiar->tipo_familiar.'.empresa_nombre', $familiar->empresa_nombre ?? '') }}" required readonly>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label"><strong>Teléfono de la Empresa</strong></label>
-                    <input type="number" class="form-control" name="familiares[{{ $familiar->tipo_familiar }}][empresa_telefono]" 
-                        value="{{ old('familiares.'.$familiar->tipo_familiar.'.empresa_telefono', $familiar->empresa_telefono ?? '') }}" pattern="\d{10}" required placeholder="Ej. 1234567890" readonly>
-                </div>
-            </div>
-
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <label class="form-label"><strong>Domicilio de la Empresa</strong></label>
-                    <input type="text" class="form-control" name="familiares[{{ $familiar->tipo_familiar }}][empresa_domicilio]" 
-                        value="{{ old('familiares.'.$familiar->tipo_familiar.'.empresa_domicilio', $familiar->empresa_domicilio ?? '') }}" required readonly>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label"><strong>Ciudad de la Empresa</strong></label>
-                    <input type="text" class="form-control" name="familiares[{{ $familiar->tipo_familiar }}][empresa_ciudad]" 
-                        value="{{ old('familiares.'.$familiar->tipo_familiar.'.empresa_ciudad', $familiar->empresa_ciudad ?? '') }}" required readonly>
-                </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="correo{{ $index + 1 }}" class="form-label"><strong>Correo del Contacto {{ $index + 1 }}</strong></label>
+                            <input type="email" class="form-control" id="correo{{ $index + 1 }}" 
+                                name="contactos[{{ $index }}][correo]" 
+                                value="{{ old('contactos.'.$index.'.correo', $contacto->correo) }}" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="contacto1tipo{{ $index + 1 }}" class="form-label"><strong>Tipo de Contacto {{ $index + 1 }}</strong></label>
+                            <input list="contactoTipos" class="form-control" id="contacto1tipo{{ $index + 1 }}" 
+                                name="contactos[{{ $index }}][tipo_contacto]" 
+                                value="{{ old('contactos.'.$index.'.tipo_contacto', $contacto->tipo_contacto) }}" required readonly>
+                        </div>
+                        <input type="hidden" name="contactos[{{ $index }}][id]" value="{{ $contacto->id }}">
+                    </div>
+                @endforeach
             </div>
         </div>
     </div>
-@endforeach
+</div>
+
+    @foreach($familiares as $familiar)
+        <div class="card shadow-sm mb-4" style="background-color: #f8f9fa;">
+            <div class="card-body">
+            <h5 class="card-title text-primary">Datos de {{ ucfirst(strtolower($familiar->tipo_familiar)) }}</h5>
+                <!-- Campos de datos personales -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label"><strong>Nombre Completo</strong></label>
+                        <input type="text" class="form-control" name="familiares[{{ $loop->index }}][nombre]" 
+                            value="{{ old('familiares.'.$familiar->tipo_familiar.'.nombre', $familiar->nombre ?? '') }}" required readonly>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label"><strong>Apellido Paterno</strong></label>
+                        <input type="text" class="form-control" name="familiares[{{ $loop->index }}][apellido_paterno]" 
+                            value="{{ old('familiares.'.$familiar->tipo_familiar.'.apellido_paterno', $familiar->apellido_paterno ?? '') }}" required readonly>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label"><strong>Apellido Materno</strong></label>
+                        <input type="text" class="form-control" name="familiares[{{ $loop->index }}][apellido_materno]" 
+                            value="{{ old('familiares.'.$familiar->tipo_familiar.'.apellido_materno', $familiar->apellido_materno ?? '') }}" required readonly>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label"><strong>Fecha de Nacimiento</strong></label>
+                        <input type="date" class="form-control" name="familiares[{{ $loop->index }}][fecha_nacimiento]" 
+                            value="{{ old('familiares.'.$familiar->tipo_familiar.'.fecha_nacimiento', $familiar->fecha_nacimiento ?? '') }}" required readonly>
+                    </div>
+                </div>
+                <!-- Campos de estado civil y domicilio -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label"><strong>Estado Civil</strong></label>
+                        <select class="form-select" name="familiares[{{ $loop->index }}][estado_civil]" required disabled>
+                            <option value="">Selecciona estado civil</option>
+                            <option value="Soltero" {{ old('familiares.'.$familiar->tipo_familiar.'.estado_civil', $familiar->estado_civil ?? '') == 'Soltero' ? 'selected' : '' }}>Soltero</option>
+                            <option value="Casado" {{ old('familiares.'.$familiar->tipo_familiar.'.estado_civil', $familiar->estado_civil ?? '') == 'Casado' ? 'selected' : '' }}>Casado</option>
+                            <option value="Divorciado" {{ old('familiares.'.$familiar->tipo_familiar.'.estado_civil', $familiar->estado_civil ?? '') == 'Divorciado' ? 'selected' : '' }}>Divorciado</option>
+                            <option value="Viudo" {{ old('familiares.'.$familiar->tipo_familiar.'.estado_civil', $familiar->estado_civil ?? '') == 'Viudo' ? 'selected' : '' }}>Viudo</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label"><strong>Domicilio</strong></label>
+                        <input type="text" class="form-control" name="familiares[{{ $loop->index }}][domicilio]" 
+                            value="{{ old('familiares.'.$familiar->tipo_familiar.'.domicilio', $familiar->domicilio ?? '') }}" required readonly>
+                    </div>
+                </div>
+                <!-- Campos de dirección -->
+                <div class="row mb-3">
+                    <div class="col-md-2">
+                        <label class="form-label"><strong>Colonia</strong></label>
+                        <input type="text" class="form-control" name="familiares[{{ $loop->index }}][colonia]"
+                            value="{{ old('familiares.'.$familiar->tipo_familiar.'.colonia', $familiar->colonia ?? '') }}" required readonly>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label"><strong>No.Domicilio</strong></label>
+                        <input type="number" class="form-control" name="familiares[{{ $loop->index }}][no_domicilio]"
+                            value="{{ old('familiares.'.$familiar->tipo_familiar.'.no_domicilio', $familiar->no_domicilio ?? '') }}" required readonly>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label"><strong>C.P.</strong></label>
+                        <input type="number" class="form-control"name="familiares[{{ $loop->index }}][cp]"
+                            value="{{ old('familiares.'.$familiar->tipo_familiar.'.cp', $familiar->cp ?? '') }}" required readonly>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label"><strong>Ciudad</strong></label>
+                        <input type="text" class="form-control" name="familiares[{{ $loop->index }}][ciudad]"
+                            value="{{ old('familiares.'.$familiar->tipo_familiar.'.ciudad', $familiar->ciudad ?? '') }}" required readonly>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label"><strong>Estado</strong></label>
+                        <input type="text" class="form-control" name="familiares[{{ $loop->index }}][estado]"
+                            value="{{ old('familiares.'.$familiar->tipo_familiar.'.estado', $familiar->estado ?? '') }}" required readonly>
+                    </div>
+                </div>
+                <!-- Campos de contacto -->
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label"><strong>Teléfono Celular</strong></label>
+                        <input type="number" class="form-control" name="familiares[{{ $loop->index }}][celular]"
+                            value="{{ old('familiares.'.$familiar->tipo_familiar.'.celular', $familiar->celular ?? '') }}" pattern="\d{10}" required placeholder="Ej. 1234567890" readonly>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label"><strong>Teléfono Fijo</strong></label>
+                        <input type="number" class="form-control" name="familiares[{{ $loop->index }}][telefono_fijo]"
+                            value="{{ old('familiares.'.$familiar->tipo_familiar.'.telefono_fijo', $familiar->telefono_fijo ?? '') }}" pattern="\d{10}" required placeholder="Ej. 1234567890" readonly>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label"><strong>Correo</strong></label>
+                        <input type="email" class="form-control" name="familiares[{{ $loop->index }}][correo]"
+                            value="{{ old('familiares.'.$familiar->tipo_familiar.'.correo', $familiar->correo ?? '') }}" required placeholder="Ej. ejemplo@correo.com" readonly>
+                    </div>
+                </div>
+                <!-- Campos de trabajo -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label"><strong>Profesión</strong></label>
+                        <input type="text" class="form-control" name="familiares[{{ $loop->index }}][profesion]"
+                            value="{{ old('familiares.'.$familiar->tipo_familiar.'.profesion', $familiar->profesion ?? '') }}" required readonly>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label"><strong>Ocupación</strong></label>
+                        <input type="text" class="form-control" name="familiares[{{ $loop->index }}][ocupacion]" 
+                            value="{{ old('familiares.'.$familiar->tipo_familiar.'.ocupacion', $familiar->ocupacion ?? '') }}" required readonly>
+                    </div>
+                </div>
+                <!-- Campos de empresa -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label"><strong>Nombre de la Empresa</strong></label>
+                        <input type="text" class="form-control" name="familiares[{{ $loop->index }}][empresa_nombre]"
+                            value="{{ old('familiares.'.$familiar->tipo_familiar.'.empresa_nombre', $familiar->empresa_nombre ?? '') }}" required readonly>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label"><strong>Teléfono de la Empresa</strong></label>
+                        <input type="number" class="form-control"name="familiares[{{ $loop->index }}][empresa_telefono]"
+                            value="{{ old('familiares.'.$familiar->tipo_familiar.'.empresa_telefono', $familiar->empresa_telefono ?? '') }}" pattern="\d{10}" required placeholder="Ej. 1234567890" readonly>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label"><strong>Domicilio de la Empresa</strong></label>
+                        <input type="text" class="form-control" name="familiares[{{ $loop->index }}][empresa_domicilio]" 
+                            value="{{ old('familiares.'.$familiar->tipo_familiar.'.empresa_domicilio', $familiar->empresa_domicilio ?? '') }}" required readonly>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label"><strong>Ciudad de la Empresa</strong></label>
+                        <input type="text" class="form-control" name="familiares[{{ $loop->index }}][empresa_ciudad]"
+                            value="{{ old('familiares.'.$familiar->tipo_familiar.'.empresa_ciudad', $familiar->empresa_ciudad ?? '') }}" required readonly>
+                    </div>
+                </div>
+                <input type="hidden" name="familiares[{{ $loop->index }}][id]" value="{{ $familiar->id }}">
+                <input type="hidden" name="familiares[{{ $loop->index }}][tipo_familiar]" value="{{ $familiar->tipo_familiar }}">
+            </div>
+        </div>
+    @endforeach
 
       
     </form>
