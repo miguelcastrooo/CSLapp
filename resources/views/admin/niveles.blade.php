@@ -154,26 +154,31 @@
             const alumnosTable = document.getElementById('alumnosTableBody');
 
             function applyFilters() {
-                const grado = gradoFilter.value; // Filtra por ID de Grado
-                const seccion = seccionFilter.value.toLowerCase(); // Filtra por Sección (A o B)
-                const search = searchBox.value.toLowerCase(); // Búsqueda por nombre o matrícula
+                const grado = gradoFilter.value;
+                const seccion = seccionFilter.value.toLowerCase();
+                const search = searchBox.value.toLowerCase();
 
-                Array.from(alumnosTable.getElementsByTagName('tr')).forEach(row => {
-                    const rowGrado = row.getAttribute('data-grado'); // Obtener el grado de la fila
-                    const rowSeccion = row.getAttribute('data-seccion')?.toLowerCase(); // Obtener la sección de la fila
-                    const rowText = row.innerText.toLowerCase(); // Obtener todo el texto de la fila
+                const rows = document.querySelectorAll('#alumnosTableBody tr[data-grado]');
+                
+                rows.forEach(row => {
+                    const rowGrado = row.getAttribute('data-grado');
+                    const rowSeccion = row.getAttribute('data-seccion');
+                    
+                    // Get text content from specific columns (matricula, nombre, etc.)
+                    const matricula = row.querySelector('td:nth-child(1)')?.textContent.toLowerCase() || '';
+                    const nombre = row.querySelector('td:nth-child(2)')?.textContent.toLowerCase() || '';
+                    const searchText = matricula + ' ' + nombre;
 
-                    // Comparar si las filas coinciden con los filtros
-                    const gradoMatch = grado === '' || rowGrado === grado;
-                    const seccionMatch = seccion === '' || rowSeccion.includes(seccion);
-                    const searchMatch = search === '' || rowText.includes(search);
+                    const gradoMatch = !grado || rowGrado === grado;
+                    const seccionMatch = !seccion || rowSeccion === seccion;
+                    const searchMatch = !search || searchText.includes(search);
 
-                    // Mostrar u ocultar la fila en base a las coincidencias
-                    row.style.display = (gradoMatch && seccionMatch && searchMatch) ? '' : 'none';
+                    // Show/hide the entire row group
+                    const shouldShow = gradoMatch && seccionMatch && searchMatch;
+                    row.style.display = shouldShow ? '' : 'none';
                 });
             }
 
-            // Aplicar filtros cuando cambian los inputs
             gradoFilter.addEventListener('change', applyFilters);
             seccionFilter.addEventListener('change', applyFilters);
             searchBox.addEventListener('input', applyFilters);

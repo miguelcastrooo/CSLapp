@@ -21,6 +21,8 @@ use Illuminate\Support\Facades\Mail;
 use App\Models\Familiar;
 use Illuminate\Support\Facades\DB;
 use App\Models\AlumnoArchivado;
+use App\Mail\PruebaMail;
+
 
 
 class AlumnoController extends Controller
@@ -66,27 +68,41 @@ class AlumnoController extends Controller
     }
 
     public function search(Request $request)
-    {
-        $query = $request->get('search');
-        $nivel = $request->get('nivel');  // Obtener el nivel desde el query
-    
-        $alumnos = Alumno::with('nivelEducativo')  // Cargar relación
-            ->when($nivel, function ($q) use ($nivel) {
-                return $q->where('nivel_educativo_id', $nivel);  // Filtrar por nivel
-            })
-            ->when($query, function ($q) use ($query) {
-                return $q->where('matricula', 'like', "%{$query}%")
-                        ->orWhere('nombre', 'like', "%{$query}%")
-                        ->orWhere('apellidopaterno', 'like', "%{$query}%")
-                        ->orWhere('apellidomaterno', 'like', "%{$query}%");
-            })
-            ->orderBy('created_at', 'desc')  // Ordenar por la fecha de creación, más reciente primero
-            ->paginate(10); // Agregar paginación de 10 elementos por página
-    
-        return response()->json($alumnos);
-    }
-    
-        
+{
+    $raw     = $request->get('search', '');
+    $nivel   = $request->get('nivel');
+
+    // 1. Normaliza: quita espacios extra y separa por palabras
+    $tokens = collect(preg_split('/\s+/', trim($raw)))
+                ->filter();                   // elimina strings vacíos
+
+    $alumnos = Alumno::with(['nivelEducativo', 'grado'])
+
+        // 2. Filtro por nivel (si viene)
+        ->when($nivel, fn ($q) => $q->where('nivel_educativo_id', $nivel))
+
+        // 3. Filtro por cada token
+        ->when($tokens->isNotEmpty(), function ($q) use ($tokens) {
+            $q->where(function ($outer) use ($tokens) {
+                foreach ($tokens as $word) {
+                    $outer->where(function ($inner) use ($word) {
+                        $like = "%{$word}%";
+                        $inner->where('matricula',       'like', $like)
+                              ->orWhere('nombre',        'like', $like)
+                              ->orWhere('apellidopaterno','like', $like)
+                              ->orWhere('apellidomaterno','like', $like);
+                    });
+                }
+            });
+        })
+
+        ->orderBy('created_at', 'desc')
+        ->paginate(10);
+
+    return response()->json($alumnos);
+}
+
+           
     public function selectSearch()
     {
         $niveles = NivelEducativo::all();
@@ -538,7 +554,7 @@ public function relacionarContactos(Request $request, Alumno $alumno)
     
         // Redirigir según el rol del usuario
         if (auth()->user()->hasRole('SuperAdmin')) {
-            return redirect()->route('admin.selectadmin')->with('success', 'Alumno actualizado correctamente.');
+            return redirect()->route('alumnos.edit', ['alumno' => $alumno->id])->with('success', 'Alumno actualizado correctamente.');
         }
     
         return back()->with('success', 'Alumno actualizado correctamente.');
@@ -694,15 +710,23 @@ public function relacionarContactos(Request $request, Alumno $alumno)
     private function actualizarHermanos(Request $request, Alumno $alumno)
     {
         $hermanosEnviados = collect($request->input('hermanos', []));
-        
+    
         foreach ($hermanosEnviados as $hermano) {
-            // Verificar si el hermano tiene un id
             if (isset($hermano['id']) && $hermano['id'] > 0) {
-                // Buscar si el hermano ya existe para el alumno
+                // Actualizar hermano existente
                 $registroExistente = $alumno->hermanos()->where('id', $hermano['id'])->first();
                 if ($registroExistente) {
-                    // Si existe, actualizarlo
                     $registroExistente->update([
+                        'nombre' => $hermano['nombre'],
+                        'apellido_paterno' => $hermano['apellido_paterno'],
+                        'apellido_materno' => $hermano['apellido_materno'],
+                        'edad' => $hermano['edad'],
+                    ]);
+                }
+            } else {
+                // Crear nuevo hermano (no tiene ID)
+                if (!empty($hermano['nombre']) || !empty($hermano['apellido_paterno']) || !empty($hermano['apellido_materno']) || !empty($hermano['edad'])) {
+                    $alumno->hermanos()->create([
                         'nombre' => $hermano['nombre'],
                         'apellido_paterno' => $hermano['apellido_paterno'],
                         'apellido_materno' => $hermano['apellido_materno'],
@@ -711,21 +735,30 @@ public function relacionarContactos(Request $request, Alumno $alumno)
                 }
             }
         }
-    }
-    
+    }    
 
-private function actualizarContactos(Request $request, Alumno $alumno)
-{
-    $contactosEnviados = collect($request->input('contactos', []));
-    
-    foreach ($contactosEnviados as $contacto) {
-        // Verificar si el contacto tiene un id
-        if (isset($contacto['id']) && $contacto['id'] > 0) {
-            // Buscar si el contacto ya existe para el alumno
-            $registroExistente = $alumno->contactos()->where('id', $contacto['id'])->first();
-            if ($registroExistente) {
-                // Si existe, actualizarlo
-                $registroExistente->update([
+    private function actualizarContactos(Request $request, Alumno $alumno)
+    {
+        // Recoger los datos de contactos del formulario
+        $contactosEnviados = collect($request->input('contactos', []));
+        
+        foreach ($contactosEnviados as $contacto) {
+            // Verificar si el contacto tiene un id (si es un contacto existente)
+            if (isset($contacto['id']) && $contacto['id'] > 0) {
+                // Buscar si el contacto ya existe para el alumno
+                $registroExistente = $alumno->contactos()->where('id', $contacto['id'])->first();
+                if ($registroExistente) {
+                    // Si existe, actualizarlo
+                    $registroExistente->update([
+                        'nombre' => $contacto['nombre'],
+                        'telefono' => $contacto['telefono'],
+                        'correo' => $contacto['correo'],
+                        'tipo_contacto' => $contacto['tipo_contacto'],
+                    ]);
+                }
+            } else {
+                // Si el contacto no tiene un id, significa que es un contacto nuevo
+                $alumno->contactos()->create([
                     'nombre' => $contacto['nombre'],
                     'telefono' => $contacto['telefono'],
                     'correo' => $contacto['correo'],
@@ -734,14 +767,14 @@ private function actualizarContactos(Request $request, Alumno $alumno)
             }
         }
     }
-}
+    
         
 public function indexBaja()
 {
     $alumnos = Alumno::with('grado')
         ->where('status', 1)  // Solo los alumnos con status 1
         ->orderBy('created_at', 'desc') // Ordena por la fecha de creación en orden descendente
-        ->paginate(15); // Pagina con 10 registros por página
+        ->get(); // Pagina con 10 registros por página
 
     $niveles = NivelEducativo::all();
     $grados = Grado::all();
@@ -763,12 +796,20 @@ public function indexBaja()
         DB::transaction(function () use ($id, $motivo) {
             $alumno = Alumno::findOrFail($id);
     
-            // Guardar en el historial de bajas
+           // Guardar en el historial de bajas
             DB::table('bajas_alumnos')->insert([
-                'alumno_id' => $alumno->id,
-                'motivo' => $motivo,
-                'fecha_baja' => now(),
+                'alumno_id'          => $alumno->id,
+                'matricula'          => $alumno->matricula,
+                'nombre_completo'    => "{$alumno->nombre} {$alumno->apellidopaterno} {$alumno->apellidomaterno}",
+                'nivel_educativo_id' => $alumno->nivel_educativo_id,
+                'grado_id'           => $alumno->grado_id,
+                'seccion'            => $alumno->seccion,
+                'motivo'             => $motivo,
+                'fecha_baja'         => now(),
+                'created_at'         => now(),
+                'updated_at'         => now(),
             ]);
+
             // Mover datos a la tabla de archivados
             DB::table('alumnos_archivados')->insert([
                 'id' => $alumno->id,
@@ -894,7 +935,7 @@ public function indexBaja()
     $alumnosArchivados = AlumnoArchivado::with(['nivelEducativo', 'grado'])
     ->where('status', 0)  // Solo los alumnos con status 1
     ->orderBy('created_at', 'desc')
-    ->paginate(10); // Paginación de 10 registros por página
+    ->get(); // Paginación de 10 registros por página
 
     // Obtener todos los niveles educativos y grados
     $niveles = NivelEducativo::all();
@@ -1023,5 +1064,15 @@ public function indexBaja()
 
         return redirect()->route('alumnos.archivados')->with('success', 'Alumno reactivado correctamente.');
     }
+
+    public function enviarCorreoPrueba()
+{
+    $correoDestino = 'miguelangel.castromesta@outlook.com';
+
+    Mail::to($correoDestino)->send(new PruebaMail());
+
+    return redirect()->back()->with('success', 'Correo enviado correctamente.');
+}
+
 
 }

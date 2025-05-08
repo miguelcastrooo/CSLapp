@@ -60,7 +60,7 @@
             <div class="d-flex justify-content-center align-items-center flex-column">
     <!-- Logo y nombre del colegio -->
     <div class="text-center mb-3">
-        <center><img src="{{ asset('img/san-luis_512%20(1).webp') }}" alt="Icono" style="width: 100px; height: 100px; margin-bottom: 10px;"></center>
+        <center><img src="{{ asset('img/sanluis.webp') }}" alt="Icono" style="width: 100px; height: 100px; margin-bottom: 10px;"></center>
         <h3 class="text-white">
             <a class="nav-link text-white" href="{{ route('dashboard') }}">
                 Colegio San Luis

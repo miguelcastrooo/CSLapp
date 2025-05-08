@@ -119,7 +119,7 @@
     <div class="login-card">
         <!-- Sección de la imagen con información -->
         <div class="info-section">
-            <img src="{{ asset('img/san-luis_512%20(1).webp') }}" alt="Colegio San Luis">
+            <img src="{{ asset('img/sanluis.webp') }}" alt="Colegio San Luis">
             <h2>Colegio San Luis</h2>
             <p>Educación con valores, innovación y tecnología para el desarrollo integral de nuestros estudiantes.</p>
         </div>

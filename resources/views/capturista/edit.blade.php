@@ -222,6 +222,13 @@
             <input type="hidden" name="hermanos[{{ $index }}][id]" value="{{ $hermano->id }}">
         </div>
     @endforeach
+    <div id="hermanos-adicionales"></div>
+
+<div class="d-flex justify-content-center">
+    <button type="button" class="btn btn-primary" id="agregar-hermano">Agregar otro hermano</button>
+</div>
+<p class="text-muted mt-2">Puedes agregar hasta 5 hermanos. Los campos de hermano son opcionales.</p>
+
                 <div class="row mb-3">
                     <div class="col-md-4">
                         <label for="enfermedades_alergias" class="form-label"><strong>Enfermedades o Alergias</strong></label>
@@ -324,6 +331,13 @@
                         <input type="hidden" name="contactos[{{ $index }}][id]" value="{{ $contacto->id }}">
                     </div>
                 @endforeach
+                 <!-- Agregar Contactos Adicionales -->
+                 <div id="contactos-adicionales"></div>
+
+                    <div class="d-flex justify-content-center">
+                        <button type="button" class="btn btn-primary" id="agregar-contacto">Agregar otro contacto</button>
+                    </div>
+
             </div>
         </div>
     </div>
@@ -463,8 +477,29 @@
             </div>
         </div>
     @endforeach
+<!-- Card para agrupar las tarjetas de los familiares -->
+@php
+    $familiaresCount = $alumno->familiares->count();  // Obtiene el número de familiares ya registrados
+@endphp
 
-      
+<!-- Solo muestra la card si hay menos de 3 familiares -->
+@if ($familiaresCount < 3)
+    <div class="card shadow-sm mb-4" style="background-color: #f8f9fa;">
+        <div class="card-body">
+            <h5 class="card-title text-primary">Agregar Familiares</h5>
+
+            <!-- Verifica si ya hay menos de 3 familiares registrados -->
+             <center>
+            <div id="agregar-familiares">
+                <button type="button" class="btn btn-primary" id="agregar-familiares-btn">Agregar Familiares</button>
+            </div>
+            </center>
+
+            <!-- Sección donde se agregarán los familiares -->
+            <div id="familiares-container" class="mt-3"></div>
+        </div>
+    </div>
+@endif
     </form>
 </div>
 <br><br>
@@ -543,5 +578,250 @@ function cargarGrados(nivelEducativoId) {
         gradoSelect.innerHTML = '<option value="" disabled selected>Seleccione un Grado</option>';
     }
 }
+let hermanoCount = {{ $alumno->hermanos->count() }};
+    let nuevoHermanoIndex = {{ $alumno->hermanos->count() }};
+    const maxHermanos = 5;
+    const agregarHermanoButton = document.getElementById('agregar-hermano');
+    const hermanosAdicionales = document.getElementById('hermanos-adicionales');
+
+    agregarHermanoButton.addEventListener('click', function () {
+        if (hermanoCount < maxHermanos) {
+            hermanoCount++;
+            nuevoHermanoIndex++;
+
+            const hermanoDiv = document.createElement('div');
+            hermanoDiv.classList.add('card', 'shadow-sm', 'mb-4');
+            hermanoDiv.style.backgroundColor = '#f8f9fa';
+
+            hermanoDiv.innerHTML = `
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="card-title text-primary mb-0">Hermano ${hermanoCount}</h5>
+                        <button type="button" class="btn btn-danger btn-sm eliminar-hermano">Eliminar</button>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label"><strong>Nombre del Hermano</strong></label>
+                            <input type="text" class="form-control" name="hermanos[${nuevoHermanoIndex}][nombre]" placeholder="Ej. Juan Pérez">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label"><strong>Apellido Paterno</strong></label>
+                            <input type="text" class="form-control" name="hermanos[${nuevoHermanoIndex}][apellido_paterno]" placeholder="Ej. Pérez">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label"><strong>Apellido Materno</strong></label>
+                            <input type="text" class="form-control" name="hermanos[${nuevoHermanoIndex}][apellido_materno]" placeholder="Ej. Gómez">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label"><strong>Edad</strong></label>
+                            <input type="number" class="form-control" name="hermanos[${nuevoHermanoIndex}][edad]" min="0" max="50">
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Agregamos la funcionalidad al botón de eliminar
+            hermanoDiv.querySelector('.eliminar-hermano').addEventListener('click', function () {
+                hermanosAdicionales.removeChild(hermanoDiv);
+                hermanoCount--;
+
+                // Mostrar el botón agregar si se bajó del máximo
+                if (hermanoCount < maxHermanos) {
+                    agregarHermanoButton.classList.remove('d-none');
+                }
+            });
+
+            hermanosAdicionales.appendChild(hermanoDiv);
+
+            if (hermanoCount === maxHermanos) {
+                agregarHermanoButton.classList.add('d-none');
+            }
+        }
+    });
+    let contactoCount = 0; // Comienza en 0
+const maxContactos = 3;
+const agregarContactoButton = document.getElementById('agregar-contacto');
+const contactosAdicionales = document.getElementById('contactos-adicionales');
+
+agregarContactoButton.addEventListener('click', function () {
+    if (contactoCount < maxContactos) {
+        const index = contactoCount;
+        contactoCount++;
+
+        const contactoDiv = document.createElement('div');
+        contactoDiv.classList.add('card', 'shadow-sm', 'mb-4');
+        contactoDiv.style.backgroundColor = '#f8f9fa';
+        contactoDiv.innerHTML = `
+            <div class="card-body">
+                <h5 class="card-title text-primary">Contacto ${index + 1}</h5>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label"><strong>Nombre</strong></label>
+                        <input type="text" class="form-control" name="contactos[${index}][nombre]">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label"><strong>Teléfono</strong></label>
+                        <input type="number" class="form-control" name="contactos[${index}][telefono]" pattern="\\d{10,12}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label"><strong>Correo</strong></label>
+                        <input type="email" class="form-control" name="contactos[${index}][correo]" placeholder="Ej. contacto@correo.com">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label"><strong>Tipo de Contacto</strong></label>
+                        <input list="contactoTipos" class="form-control" name="contactos[${index}][tipo_contacto]">
+                    </div>
+                </div>
+            </div>
+        `;
+        contactosAdicionales.appendChild(contactoDiv);
+
+        if (contactoCount === maxContactos) {
+            agregarContactoButton.classList.add('d-none');
+        }
+    }
+});
+// Función para agregar las tres tarjetas de familiares
+document.getElementById('agregar-familiares').addEventListener('click', function() {
+    const familiaresContainer = document.getElementById('familiares-container');
+    const botonAgregar = document.getElementById('agregar-familiares');
+    
+    // Verificar si ya se han agregado las tres tarjetas
+    if (familiaresContainer.children.length === 3) {
+        return;  // Si ya hay 3 tarjetas, no hacer nada
+    }
+
+    // Tipos de familiares
+    const tiposFamiliares = ['Padre', 'Madre', 'Tutor'];
+
+    // Limpiar el contenedor antes de agregar los nuevos familiares (si no se han agregado)
+    familiaresContainer.innerHTML = '';
+
+    // Agregar las tres tarjetas de familiares
+    tiposFamiliares.forEach(tipo => {
+        const cardDiv = document.createElement('div');
+        cardDiv.classList.add('card', 'shadow-sm', 'mb-4');
+        cardDiv.style.backgroundColor = '#f8f9fa';
+        cardDiv.innerHTML = `
+            <div class="card-body">
+                <h5 class="card-title text-primary">Datos de ${tipo}</h5>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label"><strong>Nombre Completo</strong></label>
+                        <input type="text" class="form-control" name="familiares[${tipo}][nombre]" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label"><strong>Apellido Paterno</strong></label>
+                        <input type="text" class="form-control" name="familiares[${tipo}][apellido_paterno]" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label"><strong>Apellido Materno</strong></label>
+                        <input type="text" class="form-control" name="familiares[${tipo}][apellido_materno]" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label"><strong>Fecha de Nacimiento</strong></label>
+                        <input type="date" class="form-control" name="familiares[${tipo}][fecha_nacimiento]" required>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label"><strong>Estado Civil</strong></label>
+                        <select class="form-select" name="familiares[${tipo}][estado_civil]" required>
+                            <option value="">Selecciona estado civil</option>
+                            <option value="Soltero">Soltero</option>
+                            <option value="Casado">Casado</option>
+                            <option value="Divorciado">Divorciado</option>
+                            <option value="Viudo">Viudo</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label"><strong>Domicilio</strong></label>
+                        <input type="text" class="form-control" name="familiares[${tipo}][domicilio]" required>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-2">
+                        <label class="form-label"><strong>Colonia</strong></label>
+                        <input type="text" class="form-control" name="familiares[${tipo}][colonia]" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label"><strong>No.Domicilio</strong></label>
+                        <input type="number" class="form-control" name="familiares[${tipo}][no_domicilio]" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label"><strong>C.P.</strong></label>
+                        <input type="number" class="form-control" name="familiares[${tipo}][cp]" required>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label"><strong>Ciudad</strong></label>
+                        <input type="text" class="form-control" name="familiares[${tipo}][ciudad]" required>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label"><strong>Estado</strong></label>
+                        <input type="text" class="form-control" name="familiares[${tipo}][estado]" required>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label"><strong>Teléfono Celular</strong></label>
+                        <input type="number" class="form-control" name="familiares[${tipo}][celular]" pattern="\d{10}" required placeholder="Ej. 1234567890">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label"><strong>Teléfono Fijo</strong></label>
+                        <input type="number" class="form-control" name="familiares[${tipo}][telefono_fijo]" pattern="\d{10}" required placeholder="Ej. 1234567890">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label"><strong>Correo</strong></label>
+                        <input type="email" class="form-control" name="familiares[${tipo}][correo]" required placeholder="Ej. ejemplo@correo.com">
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label"><strong>Profesión</strong></label>
+                        <input type="text" class="form-control" name="familiares[${tipo}][profesion]" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label"><strong>Ocupación</strong></label>
+                        <input type="text" class="form-control" name="familiares[${tipo}][ocupacion]" required>
+                    </div>
+                </div>
+
+                <!-- Campos de la Empresa -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label"><strong>Nombre de la Empresa</strong></label>
+                        <input type="text" class="form-control" name="familiares[${tipo}][empresa_nombre]" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label"><strong>Teléfono de la Empresa</strong></label>
+                        <input type="number" class="form-control" name="familiares[${tipo}][empresa_telefono]" pattern="\d{10}" required placeholder="Ej. 1234567890">
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label"><strong>Domicilio de la Empresa</strong></label>
+                        <input type="text" class="form-control" name="familiares[${tipo}][empresa_domicilio]" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label"><strong>Ciudad de la Empresa</strong></label>
+                        <input type="text" class="form-control" name="familiares[${tipo}][empresa_ciudad]" required>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+
+        // Agregar la card al contenedor
+        familiaresContainer.appendChild(cardDiv);
+    });
+
+    // Ocultar el botón después de agregar las tres tarjetas
+    botonAgregar.style.display = 'none';
+});
 </script>
 @endsection

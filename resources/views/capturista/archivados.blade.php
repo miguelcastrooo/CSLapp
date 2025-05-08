@@ -76,9 +76,6 @@
     </table>
 </div>
 
-<div class="d-flex justify-content-center mt-3">
-    {{ $alumnosArchivados->links() }}
-</div>
 </div>
 
 {{-- Script de filtros dinámicos --}}

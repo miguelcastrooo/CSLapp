@@ -10,28 +10,21 @@ use App\Models\NivelEducativo;
 use App\Models\NivelPlataforma;
 use App\Models\Plataforma;
 use Illuminate\Database\Seeder;
+use App\Models\Contacto;
+use App\Models\Familiar;
+use App\Models\Hermano;
+
 
 class DatabaseSeeder extends Seeder
 {
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
-    {
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test' . now()->timestamp . '@example.com',
-        ]);
-        
+{
+    $this->call([
+        AlumnoSeeder::class,
+        ContactoSeeder::class,
+        HermanoSeeder::class,
+        FamiliarSeeder::class,
+    ]);
+}
 
-        // Llamar a los seeders
-        $this->call([
-            AlumnoPlataformaSeeder::class,
-            AlumnosSeeder::class,
-            GradoSeeder::class,
-            NivelEducativoSeeder::class,
-            NivelPlataformaSeeder::class,
-            PlataformaSeeder::class,
-        ]);
-    }
 }

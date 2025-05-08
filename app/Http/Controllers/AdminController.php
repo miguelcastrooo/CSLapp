@@ -326,34 +326,48 @@ public function enviarCorreoATodos($nivel)
 
         // Método para listar todos los niveles educativos
     // Listar todos los niveles educativos
-    public function nivelesIndex()
-    {
-        // Trae todos los niveles
-        $niveles = NivelEducativo::all();
-        
-        // Pasamos los niveles a la vista
-        return view('admin.niveles', compact('niveles'));
-    }
-    
-    public function nivelesShow($nivelId)
+    public function nivelesShow(Request $request, $nivelId)
     {
         // Obtener el nivel educativo según el ID
         $nivelEducativo = NivelEducativo::findOrFail($nivelId);
     
         // Obtener los grados que pertenecen a este nivel educativo, ordenados de más reciente a más antiguo
         $grados = Grado::where('nivel_educativo_id', $nivelEducativo->id)
-                       ->orderBy('created_at', 'desc')  // Ordena por fecha de creación (de más reciente a más antiguo)
+                       ->orderBy('created_at', 'desc')
                        ->get();
     
-        // Obtener los alumnos relacionados con este nivel e incluir las plataformas asociadas, ordenados de más reciente a más antiguo
-        $alumnos = Alumno::with('alumnoPlataforma')  // Cargar las plataformas
-                         ->where('nivel_educativo_id', $nivelEducativo->id)
-                         ->orderBy('created_at', 'desc')  // Ordena por fecha de creación (de más reciente a más antiguo)
-                         ->paginate(10); // Ajusta el número de elementos por página
+        // Filtrar los alumnos según los parámetros de búsqueda
+        $query = Alumno::with(['grado', 'alumnoPlataforma.plataforma'])
+                       ->where('nivel_educativo_id', $nivelEducativo->id);
     
-        // Pasar los datos a la vista
-        return view('admin.niveles', compact('nivelEducativo', 'alumnos', 'grados'));
+        if ($request->has('grado') && $request->grado != '') {
+            $query->where('grado_id', $request->grado);
+        }
+    
+        if ($request->has('seccion') && $request->seccion != '') {
+            $query->where('seccion', 'like', '%' . $request->seccion . '%');
+        }
+    
+        if ($request->has('buscar') && $request->buscar != '') {
+            $search = $request->buscar;
+            $query->where(function ($q) use ($search) {
+                $q->where('matricula', 'like', '%' . $search . '%')
+                  ->orWhere('nombre', 'like', '%' . $search . '%')
+                  ->orWhere('apellidopaterno', 'like', '%' . $search . '%')
+                  ->orWhere('apellidomaterno', 'like', '%' . $search . '%');
+            });
+        }
+    
+        // Obtener los alumnos filtrados, paginados
+        $alumnos = $query->orderBy('created_at', 'desc')->paginate(10);
+    
+        // Obtener secciones únicas desde los alumnos
+        $seccionesUnicas = $alumnos->pluck('seccion')->unique()->filter()->values();
+    
+        return view('admin.niveles', compact('nivelEducativo', 'alumnos', 'grados', 'seccionesUnicas'));
     }
+    
+    
 
     public function selectAdmin()
     {
@@ -399,68 +413,163 @@ public function enviarCorreoATodos($nivel)
 }
 
 
-public function promoverGrupo(Request $request)
+public function promoverGrupoAutomatico(Request $request)
 {
-    // Validar los datos recibidos
-    $request->validate([
-        'grado_id' => 'required|exists:grado,id',
-        'nivel_educativo_id' => 'required|exists:nivel_educativo,id',
-        'nuevo_grado_id' => 'required|exists:grado,id',
-        'nuevo_nivel_id' => 'required|exists:nivel_educativo,id',
-    ]);
+    try {
+        // Obtener los IDs de grados y niveles seleccionados
+        $gradoIds = $request->input('grado_ids');
+        $nivelIds = $request->input('nivel_educativo_ids');
 
-    // Verificar que el nuevo grado pertenece al nuevo nivel
-    $nuevoGrado = Grado::find($request->nuevo_grado_id);
-    if (!$nuevoGrado || $nuevoGrado->nivel_educativo_id != $request->nuevo_nivel_id) {
-        return redirect()->back()->with('error', 'El grado seleccionado no pertenece al nivel educativo seleccionado.');
+        // Validar que se hayan seleccionado grados y niveles
+        if (empty($gradoIds) || empty($nivelIds)) {
+            return response()->json(['error' => 'Debe seleccionar al menos un grado y un nivel.'], 400);
+        }
+
+        // Mover los alumnos a los nuevos grados y niveles
+        $alumnos = Alumno::whereIn('grado_id', $gradoIds)
+                         ->whereIn('nivel_educativo_id', $nivelIds)
+                         ->get();
+
+        // Si no hay alumnos para mover, devolver error
+        if ($alumnos->isEmpty()) {
+            return response()->json(['error' => 'No hay alumnos para promover con los filtros seleccionados.'], 404);
+        }
+
+        // Lógica para promover los alumnos
+        foreach ($alumnos as $alumno) {
+            // Obtener el nivel educativo actual
+            $nivel = NivelEducativo::find($alumno->nivel_educativo_id);
+
+            // Lógica para cambiar el nivel educativo y el grado
+            if ($nivel) {
+                // Si el alumno está en Preescolar
+                if ($nivel->nombre == 'Preescolar') {
+                    // Solo promover de 3° Kinder a Primaria Inferior (1°)
+                    if ($alumno->grado_id == 4) { // 3° Kinder
+                        $nuevoNivel = NivelEducativo::where('nombre', 'Primaria Inferior')->first();
+                        if ($nuevoNivel) {
+                            $alumno->nivel_educativo_id = $nuevoNivel->id;
+                            $nuevoGrado = Grado::where('nivel_educativo_id', $nuevoNivel->id)
+                                               ->where('nombre', '1°')
+                                               ->first();
+                            if ($nuevoGrado) {
+                                $alumno->grado_id = $nuevoGrado->id;
+                            }
+                        }
+                    }
+                }
+                // Si el alumno está en Primaria Inferior
+                elseif ($nivel->nombre == 'Primaria Inferior') {
+                    // Solo promover de 3° a 4° (Primaria Superior)
+                    if ($alumno->grado_id == 3) { // 3° Primaria Inferior
+                        $nuevoNivel = NivelEducativo::where('nombre', 'Primaria Superior')->first();
+                        if ($nuevoNivel) {
+                            $alumno->nivel_educativo_id = $nuevoNivel->id;
+                            $nuevoGrado = Grado::where('nivel_educativo_id', $nuevoNivel->id)
+                                               ->where('nombre', '4°')
+                                               ->first();
+                            if ($nuevoGrado) {
+                                $alumno->grado_id = $nuevoGrado->id;
+                            }
+                        }
+                    }
+                    // Si el alumno está en 4°, 5° o 6° de Primaria Inferior, solo subir el grado dentro de Primaria Inferior
+                    elseif (in_array($alumno->grado_id, [1, 2, 3])) {
+                        // Verificar el siguiente grado en Primaria Inferior
+                        $nuevoGrado = Grado::where('nivel_educativo_id', $nivel->id)
+                                           ->where('nombre', $this->getNextGrade($alumno->grado_id))
+                                           ->first();
+                        if ($nuevoGrado) {
+                            $alumno->grado_id = $nuevoGrado->id;
+                        }
+                    }
+                }
+                // Si el alumno está en Primaria Superior
+                elseif ($nivel->nombre == 'Primaria Superior') {
+                    // Solo promover de 6° a 1° de Secundaria
+                    if ($alumno->grado_id == 6) { // 6° Primaria Superior
+                        $nuevoNivel = NivelEducativo::where('nombre', 'Secundaria')->first();
+                        if ($nuevoNivel) {
+                            $alumno->nivel_educativo_id = $nuevoNivel->id;
+                            $nuevoGrado = Grado::where('nivel_educativo_id', $nuevoNivel->id)
+                                               ->where('nombre', '1° Secundaria')
+                                               ->first();
+                            if ($nuevoGrado) {
+                                $alumno->grado_id = $nuevoGrado->id;
+                            }
+                        }
+                    } else {
+                        // Subir de grado dentro de Primaria Superior
+                        $nuevoGrado = Grado::where('nivel_educativo_id', $nivel->id)
+                                           ->where('nombre', $this->getNextGrade($alumno->grado_id))
+                                           ->first();
+                        if ($nuevoGrado) {
+                            $alumno->grado_id = $nuevoGrado->id;
+                        }
+                    }
+                }
+                // Si el alumno está en Secundaria, no hacer nada
+            }
+
+            // Guardar el alumno con los cambios de nivel y grado
+            $alumno->save();
+        }
+
+        // Si todo va bien, responder éxito
+        return response()->json(['message' => 'Los alumnos fueron promovidos correctamente.']);
+    } catch (\Exception $e) {
+        // Capturar cualquier error y devolver un mensaje
+        return response()->json(['error' => 'Error al mover los alumnos: ' . $e->getMessage()], 500);
     }
-
-    // Obtener a los alumnos del grado y nivel actual
-    $alumnos = Alumno::where('grado_id', $request->grado_id)
-                    ->where('nivel_educativo_id', $request->nivel_educativo_id)
-                    ->get();
-
-    // Verificar si hay alumnos para mover
-    if ($alumnos->isEmpty()) {
-        return redirect()->back()->with('error', 'No hay alumnos en ese grado y nivel.');
-    }
-
-    // Actualizar el grado y nivel de los alumnos seleccionados
-    $alumnos->each(function ($alumno) use ($request) {
-        // Actualizamos el grado y el nivel educativo de cada alumno
-        $alumno->update([
-            'grado_id' => $request->nuevo_grado_id,
-            'nivel_educativo_id' => $request->nuevo_nivel_id,
-        ]);
-    });
-
-    // Redirigir con un mensaje de éxito
-    return redirect()->route('admin.index')->with('success', 'Grupo movido correctamente.');
 }
- 
-   
-    public function mostrarFormularioMoverGrupos(Request $request)
-    {
-        // Obtener todos los grados y niveles educativos
-        $grados = Grado::all();
-        $niveles = NivelEducativo::all();
-    
-        // Filtros de grado y nivel
-        $grado_id = $request->grado_id;
-        $nivel_educativo_id = $request->nivel_educativo_id;
-    
-        // Obtener los alumnos filtrados por grado y nivel educativo, si se han proporcionado
-        $alumnos = Alumno::when($grado_id, function ($query) use ($grado_id) {
-                            return $query->where('grado_id', $grado_id);
-                        })
-                        ->when($nivel_educativo_id, function ($query) use ($nivel_educativo_id) {
-                            return $query->where('nivel_educativo_id', $nivel_educativo_id);
-                        })
-                        ->paginate(10);  // Paginación de 10 alumnos por página
-    
-        // Pasar los datos a la vista
-        return view('admin.movergrupos', compact('grados', 'niveles', 'alumnos', 'grado_id', 'nivel_educativo_id'));
+
+// Función para obtener el siguiente grado basado en el grado actual
+private function getNextGrade($currentGrade)
+{
+    // Definir todos los grados en orden
+    $grades = [
+        'BabiesRoom', '1° Kinder', '2° Kinder', '3° Kinder',
+        '1°', '2°', '3°', '4°', '5°', '6°',
+        '1° Secundaria', '2° Secundaria', '3° Secundaria'
+    ];
+
+    $currentKey = array_search($currentGrade, $grades);
+
+    // Si no se encuentra el grado actual o es el último grado en la lista
+    if ($currentKey === false || $currentKey == count($grades) - 1) {
+        return null;  // No hay siguiente grado disponible
     }
+
+    return $grades[$currentKey + 1];
+}
+
+
+
+    
+public function mostrarFormularioMoverGrupos(Request $request)
+{
+    // Obtener todos los grados y niveles educativos
+    $grados = Grado::all();
+    $niveles = NivelEducativo::all();
+
+    // Filtros de grado y nivel
+    $grado_id = $request->grado_id;
+    $nivel_educativo_id = $request->nivel_educativo_id;
+
+    // Obtener los alumnos filtrados por grado y nivel educativo, si se han proporcionado
+    $alumnos = Alumno::when($grado_id, function ($query) use ($grado_id) {
+                        return $query->where('grado_id', $grado_id);
+                    })
+                    ->when($nivel_educativo_id, function ($query) use ($nivel_educativo_id) {
+                        return $query->where('nivel_educativo_id', $nivel_educativo_id);
+                    })
+                    ->orderBy('created_at', 'desc')  // Ordenar desde el más reciente
+                    ->get();  // Paginación de 10 alumnos por página
+
+    // Pasar los datos a la vista
+    return view('admin.movergrupos', compact('grados', 'niveles', 'alumnos', 'grado_id', 'nivel_educativo_id'));
+}
+
     
     
     public function obtenerGradosYNiveles(Request $request)

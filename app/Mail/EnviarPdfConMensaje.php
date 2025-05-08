@@ -42,24 +42,26 @@ class EnviarPdfConMensaje extends Mailable
      * @return $this
      */
     public function build()
-{
-    $logoPath = public_path('img/csl.png'); // Ruta absoluta al logo
+    {
+        $logoPath = public_path('img/csl.png'); // Ruta absoluta al logo
 
-    return $this->view('emails.pdfConMensaje')
-                ->subject($this->asunto)
-                ->from('control.escolar@colegiosanluis.com.mx')
-                ->with([
-                    'mensaje' => $this->mensaje,
-                    'alumno' => $this->alumno,
-                    'familiar' => $this->familiar,
-                ])
-                ->attachData($this->pdf->output(), 'credenciales_alumno.pdf', [
-                    'mime' => 'application/pdf',
-                    'disposition' => 'attachment',
-                ])
-                ->withSwiftMessage(function ($message) use ($logoPath) {
-                    $message->embed(\Swift_Image::fromPath($logoPath)->setId('logo-csl'));
-                });
+        return $this->view('emails.pdfConMensaje')
+                    ->subject($this->asunto)
+                    ->from('control.escolar@colegiosanluis.com.mx')
+                    ->with([
+                        'mensaje' => $this->mensaje,
+                        'alumno' => $this->alumno,
+                        'familiar' => $this->familiar,
+                    ])
+                    // Adjuntar el archivo PDF
+                    ->attachData($this->pdf->output(), 'credenciales_alumno.pdf', [
+                        'mime' => 'application/pdf',
+                        'disposition' => 'attachment',
+                    ])
+                    // Incrustar el logo como CID
+                    ->withSwiftMessage(function ($message) use ($logoPath) {
+                        $message->embed(\Swift_Image::fromPath($logoPath)->setId('logo-csl'));
+                    });
+    }
 }
 
-}

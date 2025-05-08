@@ -119,7 +119,7 @@
     <div class="register-card">
         <!-- Sección de la imagen con información -->
         <div class="info-section">
-            <img src="{{asset('img/san-luis_512%20(1).webp') }}" alt="Colegio San Luis">
+            <img src="{{asset('img/sanluis.webp') }}" alt="Colegio San Luis">
             <h2>Bienvenido al Colegio San Luis</h2>
             <p>Forma parte de nuestra comunidad educativa y desarrolla tu máximo potencial en un entorno de aprendizaje innovador y con valores.</p>
         </div>

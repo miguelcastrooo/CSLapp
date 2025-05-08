@@ -8,9 +8,8 @@
     <tr>
                 <th>Matricula</th>
                 <th>Nivel Educativo</th>
-                <th>Nombre</th>
-                <th>Apellido Paterno</th>
-                <th>Apellido Materno</th>
+                <th>Alumno</th>
+                <th>Grado y Seccion</th>
                 <th>Ver</th>
             </tr>
         </thead>
@@ -21,8 +20,21 @@
 
     <!-- Contenedor de la paginación -->
     <div id="pagination-links" class="mt-4 d-flex justify-content-center">
-        <!-- Los enlaces de paginación irán aquí -->
-    </div>
+    <ul class="pagination" id="pagination">
+        <!-- Botón de "Anterior" -->
+        <li class="page-item" id="prevBtn">
+            <a class="page-link" href="#">Anterior</a>
+        </li>
+
+        <!-- Los botones de paginación se llenarán dinámicamente aquí -->
+        
+        <!-- Botón de "Siguiente" -->
+        <li class="page-item" id="nextBtn">
+            <a class="page-link" href="#">Siguiente</a>
+        </li>
+    </ul>
+</div>
+
 </div>
 
 <script>
@@ -50,9 +62,8 @@
                             <tr>
                                 <td>${alumno.matricula}</td>
                                 <td>${alumno.nivel_educativo ? alumno.nivel_educativo.nombre : 'Sin Nivel'}</td>
-                                <td>${alumno.nombre}</td>
-                                <td>${alumno.apellidopaterno}</td>
-                                <td>${alumno.apellidomaterno}</td>
+                                <td>${alumno.nombre} ${alumno.apellidopaterno} ${alumno.apellidomaterno}</td>
+<td>${alumno.grado ? alumno.grado.nombre : 'Sin Grado'} - ${alumno.seccion ?? 'Sin Sección'}</td>
                                 <td class="d-none">${alumno.created_at}</td>
                                 <td>
                                     <a href="{{ url('alumnos') }}/${alumno.id}/edit" class="btn btn-primary">Detalles del Alumno</a>
@@ -68,7 +79,7 @@
 
                 // Crear los enlaces de paginación
                 let paginationHTML = '<nav><ul class="pagination">';
-                
+
                 // Página anterior
                 if (data.prev_page_url) {
                     paginationHTML += `<li class="page-item"><a href="#" class="page-link" onclick="changePage(${data.current_page - 1})">&laquo; Anterior</a></li>`;
@@ -76,10 +87,23 @@
                     paginationHTML += `<li class="page-item disabled"><a href="#" class="page-link">&laquo; Anterior</a></li>`;
                 }
 
-                // Páginas numeradas
-                for (let i = 1; i <= data.last_page; i++) {
+                // Páginas numeradas (limitar a 10 páginas visibles)
+                let startPage = Math.max(1, data.current_page - 4);
+                let endPage = Math.min(data.last_page, data.current_page + 5);
+
+                if (startPage > 1) {
+                    paginationHTML += `<li class="page-item"><a href="#" class="page-link" onclick="changePage(1)">1</a></li>`;
+                    if (startPage > 2) paginationHTML += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                }
+
+                for (let i = startPage; i <= endPage; i++) {
                     let activeClass = data.current_page === i ? ' active' : '';
                     paginationHTML += `<li class="page-item${activeClass}"><a href="#" class="page-link" onclick="changePage(${i})">${i}</a></li>`;
+                }
+
+                if (endPage < data.last_page) {
+                    if (endPage < data.last_page - 1) paginationHTML += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                    paginationHTML += `<li class="page-item"><a href="#" class="page-link" onclick="changePage(${data.last_page})">${data.last_page}</a></li>`;
                 }
 
                 // Página siguiente

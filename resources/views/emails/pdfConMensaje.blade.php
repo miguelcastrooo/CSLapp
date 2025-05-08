@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Datos de Acceso a Plataformas</title>
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -50,10 +49,10 @@
 </head>
 <body>
     <div class="container">
-    <div class="container">
         <div class="header">
-        <img src="cid:logo-csl" alt="Logo Escuela" style="max-width: 150px;">
-        <h2>Datos de las Plataformas</h2>
+            <!-- Logo de la escuela usando CID -->
+            <img src="cid:logo-csl" alt="Logo Escuela" style="max-width: 150px;">
+            <h2>Datos de las Plataformas</h2>
         </div>
 
         <div class="text-center my-5">
@@ -66,7 +65,6 @@
             <p>Adjunto el documento con los datos de acceso. Haga clic en el siguiente enlace para descargarlo:</p>
             <a href="cid:credenciales_alumno.pdf" class="btn btn-primary">Descargar PDF</a>
 
-            
             <div class="mt-4">
                 <p>Saludos cordiales,</p>
                 <p><strong>La Administración Escolar</strong></p>

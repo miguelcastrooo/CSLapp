@@ -46,7 +46,7 @@
         <thead class="table-dark">
             <tr>
                 <th>Matrícula</th>
-                <th>Nombre</th>
+                <th>Alumno</th>
                 <th>Nivel Educativo</th>
                 <th>Grado</th>
                 <th>Sección</th>
@@ -59,7 +59,7 @@
                     data-grado="{{ $alumno->grado_id }}" 
                     data-seccion="{{ $alumno->seccion }}">
                     <td>{{ $alumno->matricula }}</td>
-                    <td>{{ $alumno->nombre }} {{ $alumno->apellidopaterno }}</td>
+                    <td>{{ $alumno->nombre }} {{ $alumno->apellidopaterno }} {{ $alumno->apellidomaterno }}</td>
                     <td>{{ $alumno->nivelEducativo->nombre ?? 'N/A' }}</td>
                     <td>{{ $alumno->grado->nombre ?? 'N/A' }}</td>
                     <td>{{ $alumno->seccion }}</td>
@@ -78,9 +78,6 @@
     </table>
 </div>
 
-<div class="d-flex justify-content-center mt-3">
-    {{ $alumnos->links() }}
-</div>
 
 <!-- Modal para capturar motivo de la baja -->
 <div class="modal fade" id="motivoBajaModal" tabindex="-1" role="dialog" aria-labelledby="motivoBajaModalLabel" aria-hidden="true">

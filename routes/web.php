@@ -43,6 +43,8 @@ Route::get('/alumnos/archivados', [AlumnoController::class, 'indexArchivados'])-
 Route::get('/alumnos/archivados/{id}/reactivar', [AlumnoController::class, 'reactivar'])->name('alumnos.reactivar');
 
 
+Route::get('/alumnos/enviar-correo', [AlumnoController::class, 'enviarCorreoPrueba']);
+
 
 
 
@@ -99,10 +101,13 @@ Route::post('/admin/assign-roles', [AdminController::class, 'saveAssignedRoles']
 // routes/web.php
 Route::delete('/admin/remove-role/{user}/{role}', [AdminController::class, 'removeRole'])->name('admin.removeRole');
 
+Route::post('/admin/promover-grupo-automatico', [AdminController::class, 'promoverGrupoAutomatico'])->name('admin.promover-grupo-automatico');
 
-
+Route::get('/admin/alumnos/filtrar', [AdminController::class, 'filtrarAlumnos'])->name('alumnos.filtrar'); 
 
 });
+//Envio de correos admisnitrativos despues de cada cambio
+
 
 // Rutas de perfil (Disponible para todos los usuarios autenticados)
 Route::middleware('auth')->group(function () {

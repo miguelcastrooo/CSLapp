@@ -52,7 +52,7 @@
     <nav class="navbar navbar-expand-lg fixed-top">
         <div class="container">
             <a class="navbar-brand" href="{{ url('/') }}">
-            <img src="{{ asset('img/san-luis_512%20(1).webp') }}" alt="Icono" style="width: 50px; height: 50px; margin-right: 10px;">
+            <img src="{{ asset('img/sanluis.webp') }}" alt="Icono" style="width: 50px; height: 50px; margin-right: 10px;">
             Colegio San Luis
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
