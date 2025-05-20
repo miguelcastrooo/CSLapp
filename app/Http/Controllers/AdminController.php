@@ -328,18 +328,19 @@ public function enviarCorreoATodos($nivel)
     // Listar todos los niveles educativos
     public function nivelesShow(Request $request, $nivelId)
     {
-        // Obtener el nivel educativo según el ID
+        // Obtener el nivel educativo
         $nivelEducativo = NivelEducativo::findOrFail($nivelId);
     
-        // Obtener los grados que pertenecen a este nivel educativo, ordenados de más reciente a más antiguo
+        // Grados del nivel
         $grados = Grado::where('nivel_educativo_id', $nivelEducativo->id)
                        ->orderBy('created_at', 'desc')
                        ->get();
     
-        // Filtrar los alumnos según los parámetros de búsqueda
+        // Query base
         $query = Alumno::with(['grado', 'alumnoPlataforma.plataforma'])
                        ->where('nivel_educativo_id', $nivelEducativo->id);
     
+        // Filtros opcionales (útiles si quieres precargar filtrado desde URL)
         if ($request->has('grado') && $request->grado != '') {
             $query->where('grado_id', $request->grado);
         }
@@ -358,16 +359,14 @@ public function enviarCorreoATodos($nivel)
             });
         }
     
-        // Obtener los alumnos filtrados, paginados
-        $alumnos = $query->orderBy('created_at', 'desc')->paginate(10);
+        // Quitar paginación
+        $alumnos = $query->orderBy('created_at', 'desc')->get();
     
-        // Obtener secciones únicas desde los alumnos
+        // Secciones únicas
         $seccionesUnicas = $alumnos->pluck('seccion')->unique()->filter()->values();
     
         return view('admin.niveles', compact('nivelEducativo', 'alumnos', 'grados', 'seccionesUnicas'));
     }
-    
-    
 
     public function selectAdmin()
     {
@@ -413,137 +412,59 @@ public function enviarCorreoATodos($nivel)
 }
 
 
-public function promoverGrupoAutomatico(Request $request)
+public function promover(Request $request)
 {
     try {
-        // Obtener los IDs de grados y niveles seleccionados
-        $gradoIds = $request->input('grado_ids');
-        $nivelIds = $request->input('nivel_educativo_ids');
+        $alumnoIds = $request->input('alumnos_ids');
 
-        // Validar que se hayan seleccionado grados y niveles
-        if (empty($gradoIds) || empty($nivelIds)) {
-            return response()->json(['error' => 'Debe seleccionar al menos un grado y un nivel.'], 400);
+        if (empty($alumnoIds)) {
+            return response()->json(['success' => false, 'message' => 'Debe seleccionar al menos un alumno.'], 400);
         }
 
-        // Mover los alumnos a los nuevos grados y niveles
-        $alumnos = Alumno::whereIn('grado_id', $gradoIds)
-                         ->whereIn('nivel_educativo_id', $nivelIds)
-                         ->get();
+        $alumnos = Alumno::whereIn('id', $alumnoIds)->get();
 
-        // Si no hay alumnos para mover, devolver error
         if ($alumnos->isEmpty()) {
-            return response()->json(['error' => 'No hay alumnos para promover con los filtros seleccionados.'], 404);
+            return response()->json(['success' => false, 'message' => 'No hay alumnos válidos para promover.'], 404);
         }
 
-        // Lógica para promover los alumnos
         foreach ($alumnos as $alumno) {
-            // Obtener el nivel educativo actual
-            $nivel = NivelEducativo::find($alumno->nivel_educativo_id);
+            $siguienteGrado = $this->getNextGrado($alumno);
 
-            // Lógica para cambiar el nivel educativo y el grado
-            if ($nivel) {
-                // Si el alumno está en Preescolar
-                if ($nivel->nombre == 'Preescolar') {
-                    // Solo promover de 3° Kinder a Primaria Inferior (1°)
-                    if ($alumno->grado_id == 4) { // 3° Kinder
-                        $nuevoNivel = NivelEducativo::where('nombre', 'Primaria Inferior')->first();
-                        if ($nuevoNivel) {
-                            $alumno->nivel_educativo_id = $nuevoNivel->id;
-                            $nuevoGrado = Grado::where('nivel_educativo_id', $nuevoNivel->id)
-                                               ->where('nombre', '1°')
-                                               ->first();
-                            if ($nuevoGrado) {
-                                $alumno->grado_id = $nuevoGrado->id;
-                            }
-                        }
-                    }
-                }
-                // Si el alumno está en Primaria Inferior
-                elseif ($nivel->nombre == 'Primaria Inferior') {
-                    // Solo promover de 3° a 4° (Primaria Superior)
-                    if ($alumno->grado_id == 3) { // 3° Primaria Inferior
-                        $nuevoNivel = NivelEducativo::where('nombre', 'Primaria Superior')->first();
-                        if ($nuevoNivel) {
-                            $alumno->nivel_educativo_id = $nuevoNivel->id;
-                            $nuevoGrado = Grado::where('nivel_educativo_id', $nuevoNivel->id)
-                                               ->where('nombre', '4°')
-                                               ->first();
-                            if ($nuevoGrado) {
-                                $alumno->grado_id = $nuevoGrado->id;
-                            }
-                        }
-                    }
-                    // Si el alumno está en 4°, 5° o 6° de Primaria Inferior, solo subir el grado dentro de Primaria Inferior
-                    elseif (in_array($alumno->grado_id, [1, 2, 3])) {
-                        // Verificar el siguiente grado en Primaria Inferior
-                        $nuevoGrado = Grado::where('nivel_educativo_id', $nivel->id)
-                                           ->where('nombre', $this->getNextGrade($alumno->grado_id))
-                                           ->first();
-                        if ($nuevoGrado) {
-                            $alumno->grado_id = $nuevoGrado->id;
-                        }
-                    }
-                }
-                // Si el alumno está en Primaria Superior
-                elseif ($nivel->nombre == 'Primaria Superior') {
-                    // Solo promover de 6° a 1° de Secundaria
-                    if ($alumno->grado_id == 6) { // 6° Primaria Superior
-                        $nuevoNivel = NivelEducativo::where('nombre', 'Secundaria')->first();
-                        if ($nuevoNivel) {
-                            $alumno->nivel_educativo_id = $nuevoNivel->id;
-                            $nuevoGrado = Grado::where('nivel_educativo_id', $nuevoNivel->id)
-                                               ->where('nombre', '1° Secundaria')
-                                               ->first();
-                            if ($nuevoGrado) {
-                                $alumno->grado_id = $nuevoGrado->id;
-                            }
-                        }
-                    } else {
-                        // Subir de grado dentro de Primaria Superior
-                        $nuevoGrado = Grado::where('nivel_educativo_id', $nivel->id)
-                                           ->where('nombre', $this->getNextGrade($alumno->grado_id))
-                                           ->first();
-                        if ($nuevoGrado) {
-                            $alumno->grado_id = $nuevoGrado->id;
-                        }
-                    }
-                }
-                // Si el alumno está en Secundaria, no hacer nada
+            if ($siguienteGrado) {
+                $alumno->grado_id = $siguienteGrado->id;
+                $alumno->nivel_educativo_id = $siguienteGrado->nivel_educativo_id;
+                $alumno->save();
             }
-
-            // Guardar el alumno con los cambios de nivel y grado
-            $alumno->save();
         }
 
-        // Si todo va bien, responder éxito
-        return response()->json(['message' => 'Los alumnos fueron promovidos correctamente.']);
+        return response()->json([
+            'success' => true,
+            'message' => 'Los alumnos fueron promovidos correctamente.'
+        ]);
+
     } catch (\Exception $e) {
-        // Capturar cualquier error y devolver un mensaje
-        return response()->json(['error' => 'Error al mover los alumnos: ' . $e->getMessage()], 500);
+        return response()->json([
+            'success' => false,
+            'message' => 'Error al promover alumnos: ' . $e->getMessage()
+        ], 500);
     }
+    return redirect()->back()->with('success', 'Los alumnos fueron promovidos correctamente.');
+
 }
 
-// Función para obtener el siguiente grado basado en el grado actual
-private function getNextGrade($currentGrade)
+private function getNextGrado(Alumno $alumno)
 {
-    // Definir todos los grados en orden
-    $grades = [
-        'BabiesRoom', '1° Kinder', '2° Kinder', '3° Kinder',
-        '1°', '2°', '3°', '4°', '5°', '6°',
-        '1° Secundaria', '2° Secundaria', '3° Secundaria'
-    ];
+    // Obtener el grado actual
+    $gradoActual = Grado::find($alumno->grado_id);
 
-    $currentKey = array_search($currentGrade, $grades);
+    if (!$gradoActual) return null;
 
-    // Si no se encuentra el grado actual o es el último grado en la lista
-    if ($currentKey === false || $currentKey == count($grades) - 1) {
-        return null;  // No hay siguiente grado disponible
-    }
-
-    return $grades[$currentKey + 1];
+    // Buscar el siguiente grado con ID mayor
+    $siguienteGrado = Grado::where('id', '>', $gradoActual->id)
+                           ->orderBy('id', 'asc')
+                           ->first();
+    return $siguienteGrado;
 }
-
-
 
     
 public function mostrarFormularioMoverGrupos(Request $request)

@@ -101,7 +101,7 @@ Route::post('/admin/assign-roles', [AdminController::class, 'saveAssignedRoles']
 // routes/web.php
 Route::delete('/admin/remove-role/{user}/{role}', [AdminController::class, 'removeRole'])->name('admin.removeRole');
 
-Route::post('/admin/promover-grupo-automatico', [AdminController::class, 'promoverGrupoAutomatico'])->name('admin.promover-grupo-automatico');
+Route::post('/admin/alumnos/promover', [AdminController::class, 'promover'])->name('admin.promover');
 
 Route::get('/admin/alumnos/filtrar', [AdminController::class, 'filtrarAlumnos'])->name('alumnos.filtrar'); 
 

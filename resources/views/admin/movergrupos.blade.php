@@ -2,6 +2,22 @@
 
 @section('content')
 
+ @if(session('success'))
+        <div class="alert alert-success">
+            {{ session('success') }}
+        </div>
+    @endif
+
+    @if ($errors->any())
+        <div class="alert alert-danger">
+            <ul>
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
 <div class="container-fluid">
     <h1 class="mb-4">Mover alumnos</h1>
 
@@ -59,6 +75,28 @@
         </div>
     </div>
 
+    <center>
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                <!-- Checkbox para seleccionar todos los resultados filtrados -->
+                <div class="mb-4">
+                    <input type="checkbox" id="select-all" onchange="selectAllAlumnos()"> Seleccionar todos los alumnos filtrados
+                </div>
+
+                <!-- Contador de alumnos seleccionados -->
+                <div class="mb-4">
+                    <strong>Total seleccionados:</strong> <span id="total-seleccionados">0</span>
+                </div>
+
+                <div class="mb-4">
+                    <button class="btn btn-success" id="promover-group" onclick="promover()">Promover</button>
+                </div>
+            </div>
+        </div>
+    </div><br>
+</center>
+
     <!-- Contenedor de la tabla con scroll horizontal -->
     <div class="table-responsive">
         <table class="table table-bordered table-striped table-hover">
@@ -92,35 +130,28 @@
 
     </div>
 
-    <div class="mb-4">
-    <button class="btn btn-success" id="promover-group" onclick="promoverGrupoAutomatico()">Promover</button>
-</div>
 
-    <!-- Checkbox para seleccionar todos los resultados filtrados -->
-    <div class="mb-4">
-        <input type="checkbox" id="select-all" onchange="selectAllAlumnos()"> Seleccionar todos los alumnos filtrados
-    </div>
 
-    <!-- Modal de Confirmación -->
-    <div class="modal" id="confirmModal" tabindex="-1" role="dialog" aria-labelledby="confirmModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="confirmModalLabel">Confirmación</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    ¿Está seguro de que desea mover los alumnos seleccionados?
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary" onclick="moveAlumnos()">Confirmar</button>
-                </div>
+    <!-- Modal de Confirmación Mejorado -->
+<div class="modal fade" id="confirmModal" tabindex="-1" role="dialog" aria-labelledby="confirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Promoción</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="confirmModalBody">
+                <!-- Aquí se inyecta el número de alumnos seleccionados -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="confirmPromoteBtn">Confirmar</button>
             </div>
         </div>
     </div>
+</div>
 
     <a href="{{ route('admin.selectadmin') }}" class="btn btn-primary mt-3">Volver</a>
 </div>
@@ -172,10 +203,10 @@
 
     </style>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
 <script>
     const gradosData = @json($grados);
 
-    // Cargar grados por niveles seleccionados
     function filterGrados() {
         const selectedNiveles = Array.from(document.querySelectorAll('.nivel-checkbox:checked'))
             .map(cb => cb.value);
@@ -198,7 +229,6 @@
         filterAlumnos();
     }
 
-    // Filtrar alumnos visibles según nivel, grado y sección
     function filterAlumnos() {
         const selectedNiveles = Array.from(document.querySelectorAll('.nivel-checkbox:checked')).map(cb => cb.value);
         const selectedGrados = Array.from(document.querySelectorAll('.grado-checkbox:checked')).map(cb => cb.value);
@@ -219,7 +249,6 @@
         toggleButtons();
     }
 
-    // Selecciona todos los alumnos filtrados
     function selectAllAlumnos() {
         const selectAll = document.getElementById('select-all').checked;
         document.querySelectorAll('.alumno-row').forEach(row => {
@@ -231,16 +260,23 @@
         toggleButtons();
     }
 
-    // Habilita o deshabilita el botón de promover
     function toggleButtons() {
         const promoteBtn = document.getElementById('promover-group');
-        const anyChecked = Array.from(document.querySelectorAll('.alumno-row'))
-            .some(row => row.style.display !== 'none' && row.querySelector('.alumno-checkbox').checked);
+        const checkboxes = Array.from(document.querySelectorAll('.alumno-checkbox'));
+        const anyChecked = checkboxes.some(cb => cb.checked && cb.closest('tr').style.display !== 'none');
         promoteBtn.disabled = !anyChecked;
+
+        actualizarContadorSeleccionados();
     }
 
-    // Ejecutar acción de promoción
-    function promoverGrupoAutomatico() {
+    function actualizarContadorSeleccionados() {
+        const count = Array.from(document.querySelectorAll('.alumno-checkbox'))
+            .filter(cb => cb.checked && cb.closest('tr').style.display !== 'none')
+            .length;
+        document.getElementById('total-seleccionados').textContent = count;
+    }
+
+    function promover() {
         const selectedIds = Array.from(document.querySelectorAll('.alumno-checkbox'))
             .filter(cb => cb.checked && cb.closest('tr').style.display !== 'none')
             .map(cb => cb.dataset.id);
@@ -250,17 +286,59 @@
             return;
         }
 
-        // Aquí va tu lógica AJAX o redirección para promover
-        console.log("IDs seleccionados para promover:", selectedIds);
-        alert("Promoción simulada de " + selectedIds.length + " alumno(s).");
+        document.getElementById('confirmModalBody').innerText = `¿Está seguro de promover a ${selectedIds.length} alumno(s)?`;
+        document.getElementById('confirmPromoteBtn').dataset.ids = selectedIds.join(',');
+
+        $('#confirmModal').modal('show');
     }
 
-    // Escuchar cambios en los checkboxes individuales
+    document.getElementById('confirmPromoteBtn').addEventListener('click', function () {
+        const ids = this.dataset.ids.split(',');
+
+        fetch("{{ route('admin.promover') }}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({ alumnos_ids: ids })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Respuesta del servidor no fue OK');
+            }
+            return response.json();
+        })
+        .then(data => {
+            $('#confirmModal').modal('hide');
+            if (data.success) {
+                alert(data.message || 'Alumnos promovidos con éxito.');
+                location.reload();
+            } else {
+                alert(data.message || 'Ocurrió un error al promover.');
+            }
+        })
+        .catch(error => {
+            console.error("Error al promover:", error);
+            alert("Ocurrió un error inesperado al promover los alumnos.");
+        });
+    });
+
     document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.alumno-checkbox').forEach(cb => {
             cb.addEventListener('change', toggleButtons);
         });
+
+        actualizarContadorSeleccionados(); // Inicializa en 0 al cargar
+    });
+      document.addEventListener("DOMContentLoaded", function () {
+        const alert = document.getElementById('success-alert');
+        if (alert) {
+            setTimeout(() => {
+                const bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
+                bsAlert.close();
+            }, 4000); // 4000 milisegundos = 4 segundos
+        }
     });
 </script>
-
 @endsection

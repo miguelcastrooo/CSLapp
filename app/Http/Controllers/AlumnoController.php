@@ -189,26 +189,22 @@ class AlumnoController extends Controller
     $fecha_inicio = $request->fecha_inicio ?? now()->toDateString();
 
     // Obtener los últimos dos dígitos del año actual (Ejemplo: "25" para 2025)
-    $año = now()->format('y'); 
+$año = now()->format('y');
 
-    // Buscar el último alumno registrado en el año actual con la matrícula más alta
-    $ultimoAlumno = Alumno::where('matricula', 'like', "$año%")
-        ->orderBy('matricula', 'desc') // Ordenamos por matrícula, no por ID
-        ->first();  
+// Buscar el último alumno registrado en el año actual con la matrícula más alta
+$ultimoAlumno = Alumno::where('matricula', 'like', "$año%")
+    ->orderBy('matricula', 'desc')
+    ->first();
 
-    if ($ultimoAlumno) {
-        // Extraer los últimos 4 dígitos numéricos de la matrícula del último alumno
-        preg_match('/\d{4}$/', $ultimoAlumno->matricula, $matches);
-        if (isset($matches[0])) {
-            $ultimoNumero = (int) $matches[0];
-        } else {
-            // Si no encontramos los 4 dígitos, comenzamos desde 1723
-            $ultimoNumero = 1723;
-        }
-    } else {
-        // Si no hay registros del año actual, comenzamos en 1723
-        $ultimoNumero = 1723;
-    }
+if ($ultimoAlumno && preg_match("/^$año(\d{4})$/", $ultimoAlumno->matricula, $matches)) {
+    $ultimoNumero = (int) $matches[1];
+} else {
+    $ultimoNumero = 1723;
+}
+
+// Generar la nueva matrícula
+$nuevaMatricula = $año . str_pad($ultimoNumero + 1, 4, '0', STR_PAD_LEFT);
+
 
     // Incrementar en 1 y formatear con 4 dígitos
     $nuevoNumero = str_pad($ultimoNumero + 1, 4, '0', STR_PAD_LEFT);
