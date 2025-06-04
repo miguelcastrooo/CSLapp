@@ -93,7 +93,7 @@
                             <td>{{ $plataforma->pivot->usuario ?? 'N/A' }}</td>
                             <td>{{ $plataforma->pivot->contraseña ?? 'N/A' }}</td>
 
-                            @if (in_array($nivel->first()->nombre, ['Primaria Inferior', 'Primaria Superior']))
+                            @if (in_array($nivel->first()->nombre, ['Primaria Inferior', 'Primaria Superior','Secundaria']))
                                 <!-- Campos adicionales para Primaria Baja y Alta -->
                                 <td>{{ $plataforma->pivot->usuario_hmh ?? 'N/A' }}</td>
                                 <td>{{ $plataforma->pivot->contraseña_hmh ?? 'N/A' }}</td>

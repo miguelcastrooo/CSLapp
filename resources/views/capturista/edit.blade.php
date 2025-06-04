@@ -105,17 +105,23 @@
                     
                 </div>
                 <div class="row mb-3">
-                    <div class="col-md-4">
+                    @if (Auth::user()->hasRole('SuperAdmin'))
+                     <div class="col-md-3">
+                        <label for="nombre" class="form-label"><strong>Matricula</strong></label>
+                        <input type="number" class="form-control" id="matricula" name="matricula" value="{{ old('matricula', $alumno->matricula) }}" readonly>
+                    </div>
+                    @endif
+                    <div class="col-md-3">
                         <label for="nombre" class="form-label"><strong>Nombre</strong></label>
                         <input type="text" class="form-control" id="nombre" name="nombre" value="{{ old('nombre', $alumno->nombre) }}" required pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" inputmode="text" style="text-transform: capitalize;" placeholder="Escribe el nombre" title="El nombre solo debe contener letras y espacios y comenzar con mayúscula." readonly>
                     </div>
 
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label for="apellidopaterno" class="form-label"><strong>Apellido Paterno</strong></label>
                         <input type="text" class="form-control" id="apellidopaterno" name="apellidopaterno" value="{{ old('apellidopaterno', $alumno->apellidopaterno) }}" required pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" inputmode="text" style="text-transform: capitalize;" placeholder="Escribe su Apellido Paterno" title="El apellido paterno solo debe contener letras y espacios y comenzar con mayúscula." readonly>
                     </div>
 
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label for="apellidomaterno" class="form-label"><strong>Apellido Materno</strong></label>
                         <input type="text" class="form-control" id="apellidomaterno" name="apellidomaterno" value="{{ old('apellidomaterno', $alumno->apellidomaterno) }}" required pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" style="text-transform: capitalize;" placeholder="Escribe su Apellido Materno" title="El apellido materno solo debe contener letras y espacios y comenzar con mayúscula." readonly>
                     </div>

@@ -56,7 +56,7 @@ class AlumnoController extends Controller
     
         // Redirigir según el rol
         if ($user->hasRole('SuperAdmin')) {
-            return view('admin.index', compact('alumnos', 'niveles'));
+            return view('capturista.index', compact('alumnos', 'niveles'));
         }
     
         if ($user->hasRole('ControlEscolar')) {
@@ -1060,15 +1060,5 @@ public function indexBaja()
 
         return redirect()->route('alumnos.archivados')->with('success', 'Alumno reactivado correctamente.');
     }
-
-    public function enviarCorreoPrueba()
-{
-    $correoDestino = 'miguelangel.castromesta@outlook.com';
-
-    Mail::to($correoDestino)->send(new PruebaMail());
-
-    return redirect()->back()->with('success', 'Correo enviado correctamente.');
-}
-
 
 }

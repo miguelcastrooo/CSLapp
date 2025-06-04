@@ -326,90 +326,104 @@ public function enviarCorreoATodos($nivel)
 
         // Método para listar todos los niveles educativos
     // Listar todos los niveles educativos
-    public function nivelesShow(Request $request, $nivelId)
-    {
-        // Obtener el nivel educativo
-        $nivelEducativo = NivelEducativo::findOrFail($nivelId);
-    
-        // Grados del nivel
-        $grados = Grado::where('nivel_educativo_id', $nivelEducativo->id)
-                       ->orderBy('created_at', 'desc')
-                       ->get();
-    
-        // Query base
+
+public function nivelesShow(Request $request, $nivelId)
+{
+    $nivelEducativo = NivelEducativo::findOrFail($nivelId);
+
+    $grados = Grado::where('nivel_educativo_id', $nivelEducativo->id)
+                   ->orderBy('created_at', 'desc')
+                   ->get();
+
+    // Si la petición es AJAX, devolvemos sólo JSON con los alumnos filtrados
+    if ($request->ajax()) {
         $query = Alumno::with(['grado', 'alumnoPlataforma.plataforma'])
                        ->where('nivel_educativo_id', $nivelEducativo->id);
-    
-        // Filtros opcionales (útiles si quieres precargar filtrado desde URL)
-        if ($request->has('grado') && $request->grado != '') {
-            $query->where('grado_id', $request->grado);
+
+        if ($request->has('grados') && is_array($request->grados)) {
+            $query->whereIn('grado_id', $request->grados);
         }
-    
-        if ($request->has('seccion') && $request->seccion != '') {
-            $query->where('seccion', 'like', '%' . $request->seccion . '%');
+
+        if ($request->has('secciones') && is_array($request->secciones)) {
+            $query->whereIn('seccion', $request->secciones);
         }
-    
-        if ($request->has('buscar') && $request->buscar != '') {
-            $search = $request->buscar;
+
+        if ($request->filled('buscar')) {
+            $search = strtolower($request->buscar);
             $query->where(function ($q) use ($search) {
-                $q->where('matricula', 'like', '%' . $search . '%')
-                  ->orWhere('nombre', 'like', '%' . $search . '%')
-                  ->orWhere('apellidopaterno', 'like', '%' . $search . '%')
-                  ->orWhere('apellidomaterno', 'like', '%' . $search . '%');
+                $q->whereRaw('LOWER(matricula) LIKE ?', ["%{$search}%"])
+                  ->orWhereRaw('LOWER(nombre) LIKE ?', ["%{$search}%"])
+                  ->orWhereRaw('LOWER(apellidopaterno) LIKE ?', ["%{$search}%"])
+                  ->orWhereRaw('LOWER(apellidomaterno) LIKE ?', ["%{$search}%"]);
             });
         }
-    
-        // Quitar paginación
+
+        // Filtro por plataforma
+        if ($request->filled('plataforma')) {
+            $plataforma = strtolower($request->plataforma);
+            $query->whereHas('alumnoPlataforma.plataforma', function ($q) use ($plataforma) {
+                $q->whereRaw('LOWER(nombre) = ?', [$plataforma]);
+            });
+        }
+
         $alumnos = $query->orderBy('created_at', 'desc')->get();
-    
-        // Secciones únicas
-        $seccionesUnicas = $alumnos->pluck('seccion')->unique()->filter()->values();
-    
-        return view('admin.niveles', compact('nivelEducativo', 'alumnos', 'grados', 'seccionesUnicas'));
+
+        return response()->json($alumnos);
     }
+
+    // Vista normal (no AJAX)
+    $alumnos = Alumno::with(['grado', 'alumnoPlataforma.plataforma'])
+                     ->where('nivel_educativo_id', $nivelEducativo->id)
+                     ->orderBy('created_at', 'desc')
+                     ->get();
+
+    $seccionesUnicas = $alumnos->pluck('seccion')->unique()->filter()->values();
+
+    return view('admin.niveles', compact('nivelEducativo', 'alumnos', 'grados', 'seccionesUnicas'));
+}
+
+
 
     public function selectAdmin()
     {
-
         // Obtener los niveles educativos desde la base de datos
-        $niveles = NivelEducativo::all();  // Esto obtiene todos los niveles educativos
-        
+        $niveles = NivelEducativo::all();  // Esto obtiene todos los niveles educativos   
         // Devolver la vista con los niveles
         return view('admin.selectadmin', compact('niveles'));
     }
 
     public function showNivelAlumnos(Request $request, $nivelId)
-{
-    // Buscar el nivel educativo específico
-    $nivel = NivelEducativo::findOrFail($nivelId);
+    {
+        // Buscar el nivel educativo específico
+        $nivel = NivelEducativo::findOrFail($nivelId);
 
-    // Obtener los grados disponibles para el nivel educativo
-    $grados = Grado::where('nivel_educativo_id', $nivelId)->get();
+        // Obtener los grados disponibles para el nivel educativo
+        $grados = Grado::where('nivel_educativo_id', $nivelId)->get();
 
-    // Inicializar la consulta para los alumnos y ordenarla por la fecha de creación (más reciente primero)
-    $alumnos = Alumno::where('nivel_educativo_id', $nivelId)->orderBy('created_at', 'desc');
+        // Inicializar la consulta para los alumnos y ordenarla por la fecha de creación (más reciente primero)
+        $alumnos = Alumno::where('nivel_educativo_id', $nivelId)->orderBy('created_at', 'desc');
 
-    // Aplicar filtros de grado y sección si se pasan desde la vista
-    if ($request->has('grado') && $request->grado != '') {
-        $alumnos = $alumnos->where('grado_id', $request->grado);
+        // Aplicar filtros de grado y sección si se pasan desde la vista
+        if ($request->has('grado') && $request->grado != '') {
+            $alumnos = $alumnos->where('grado_id', $request->grado);
+        }
+
+        if ($request->has('seccion') && $request->seccion != '') {
+            $alumnos = $alumnos->where('seccion', 'like', '%' . $request->seccion . '%');
+        }
+
+        // Obtener los alumnos filtrados y paginados
+        $alumnos = $alumnos->paginate(10);
+
+        // Obtener las secciones del grado seleccionado (si hay un grado seleccionado)
+        $secciones = null;
+        if ($request->has('grado') && $request->grado != '') {
+            $secciones = Seccion::where('grado_id', $request->grado)->get();  // Asumiendo que tienes una relación en la tabla 'secciones'
+        }
+
+        // Devolver la vista con el nivel, grados, secciones y alumnos filtrados
+        return view('admin.index', compact('nivel', 'alumnos', 'grados', 'secciones'));
     }
-
-    if ($request->has('seccion') && $request->seccion != '') {
-        $alumnos = $alumnos->where('seccion', 'like', '%' . $request->seccion . '%');
-    }
-
-    // Obtener los alumnos filtrados y paginados
-    $alumnos = $alumnos->paginate(10);
-
-    // Obtener las secciones del grado seleccionado (si hay un grado seleccionado)
-    $secciones = null;
-    if ($request->has('grado') && $request->grado != '') {
-        $secciones = Seccion::where('grado_id', $request->grado)->get();  // Asumiendo que tienes una relación en la tabla 'secciones'
-    }
-
-    // Devolver la vista con el nivel, grados, secciones y alumnos filtrados
-    return view('admin.index', compact('nivel', 'alumnos', 'grados', 'secciones'));
-}
 
 
 public function promover(Request $request)

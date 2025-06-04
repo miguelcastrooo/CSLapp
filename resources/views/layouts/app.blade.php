@@ -6,174 +6,181 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>CSL</title>
-
     <link rel="icon" href="{{ asset('img/san-luis_512%20(1).webp') }}" type="image/x-icon">
 
-    <link href="{{ asset('css/bootstrap.min.css') }}" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    
-    <!-- Carga de estilos con Vite -->
+   <!-- Bootstrap CSS (solo CDN) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+<!-- Bootstrap Bundle JS (solo CDN) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+
+    <!-- FontAwesome -->
+    <link href="{{ asset('fontawesome/css/all.min.css') }}" rel="stylesheet">
+
+    <!-- Vite -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     @yield('styles')
-    <link href="{{ asset('fontawesome/css/all.min.css') }}" rel="stylesheet">
 
     <style>
-            html, body {
+        html, body {
             height: 100%;
             margin: 0;
             padding: 0;
         }
-
         body {
             min-height: 100vh;
-            background: linear-gradient(to right, rgba(255, 255, 255, 0.8), rgba(218, 236, 23, 0.8), rgba(44, 100, 51, 0.8), rgba(96, 61, 44, 0.8));
-            background-size: cover; /* Asegura que el fondo se expanda */
-            background-attachment: fixed; /* Mantiene el fondo fijo mientras se desplaza */
-            color: #333;
-            display: flex;
-            flex-direction: column;
+            background: linear-gradient(-45deg,
+                rgba(44, 100, 51, 0.8),
+                rgba(255, 255, 255, 0.8),
+                rgba(255, 193, 7, 0.7));
+            background-size: 400% 400%;
+            animation: animatedBackground 12s ease infinite;
+            color: #2e2e2e;
         }
-
-        .d-flex {
-            flex-grow: 1;
+        @keyframes animatedBackground {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
         .sidebar {
-            width: 250px;
+            width: 260px;
             height: 100vh;
             position: fixed;
             top: 0;
             left: 0;
-            background-color: black;
-            color: white;
-            overflow-y: auto; /* Permite el desplazamiento vertical */
-            max-height: 100vh; /* Ajusta la altura para permitir el scroll */
+            background: linear-gradient(180deg, #1f1f1f, #3c3c3c);
+            color: #fff;
+            padding: 1rem;
+            overflow-y: auto;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            animation: fadeInSidebar 0.6s ease forwards;
+        }
+        .sidebar.hidden {
+            transform: translateX(-300px);
+            opacity: 0;
+            pointer-events: none;
+        }
+        @keyframes fadeInSidebar {
+            from { opacity: 0; transform: translateX(-30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .sidebar a {
+            color: #ddd;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            transition: background 0.3s ease, color 0.3s ease, transform 0.2s ease;
+        }
+        .sidebar a:hover {
+            background: #ffc107;
+            color: #000;
+            transform: scale(1.05);
+            box-shadow: 0 0 8px #ffc107aa;
+        }
+        .sidebar .nav-link i {
+            margin-right: 0.75rem;
+            font-size: 1.1rem;
+            transition: color 0.3s ease;
+        }
+        .sidebar a:hover .nav-link i {
+            color: #000;
+        }
+        .sidebar .profile-img {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 2px solid #2c6433;
+            transition: border-color 0.3s ease, transform 0.3s ease;
+        }
+        .sidebar .profile-img:hover {
+            border-color: #ffc107;
+            transform: scale(1.1);
+            box-shadow: 0 0 10px #ffc107aa;
+        }
+        .sidebar .logo {
+            width: 100px;
+            height: auto;
+            margin-bottom: 10px;
+            filter: drop-shadow(0 0 3px #2c6433);
+            transition: filter 0.3s ease;
+        }
+        .sidebar .logo:hover {
+            filter: drop-shadow(0 0 6px #ffc107);
+        }
+        .sidebar .section-title {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            color: #aaa;
+            letter-spacing: 1px;
+        }
+        .btn-logout {
+            background-color: #dc3545;
+            border: none;
+            width: 100%;
+            margin-top: 1rem;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        .btn-logout:hover {
+            background-color: #c82333;
+            transform: scale(1.05);
+            box-shadow: 0 0 8px #c82333aa;
+        }
+        .main-content {
+            margin-left: 260px;
+            padding: 20px;
+            transition: margin-left 0.3s ease;
+        }
+        .main-content.expanded {
+            margin-left: 0;
+        }
+        #toggle-sidebar-btn {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 1050;
+            background-color: #ffc107;
+            border: none;
+            color: #000;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0 0 8px #ffc107aa;
+            transition: background-color 0.3s ease;
+        }
+        #toggle-sidebar-btn:hover {
+            background-color: #e0a800;
         }
     </style>
 </head>
 <body class="font-sans antialiased">
-    <div class="d-flex">
-        <!-- Sidebar -->
-        <div class="sidebar">
-            <div class="p-3">
-            <div class="d-flex justify-content-center align-items-center flex-column">
-    <!-- Logo y nombre del colegio -->
-    <div class="text-center mb-3">
-        <center><img src="{{ asset('img/sanluis.webp') }}" alt="Icono" style="width: 100px; height: 100px; margin-bottom: 10px;"></center>
-        <h3 class="text-white">
-            <a class="nav-link text-white" href="{{ route('dashboard') }}">
-                Colegio San Luis
-            </a>
-        </h3>
-    </div>
 
-    <!-- Foto de perfil -->
-    <div class="d-flex justify-content-center">
-        @if(Auth::user()->profile_picture)
-            <img src="{{ asset(Auth::user()->profile_picture) }}" 
-                 alt="Foto de perfil" 
-                 class="rounded-circle img-thumbnail" 
-                 style="width: 100px; height: 100px; object-fit: cover;">
-        @else
-            <i class="fas fa-user-circle fa-5x text-light"></i> <!-- Ícono si no hay foto -->
-        @endif
-    </div>
-</div>
+    <!-- Botón para ocultar/mostrar sidebar -->
+    <button id="toggle-sidebar-btn" aria-label="Toggle sidebar">
+        <i class="fas fa-bars"></i>
+    </button>
 
-                <div class="mt-5">
-                    <h6 class="text-center text-white">Bienvenido, {{ Auth::user()->name }}</h6>
-                    <div class="d-flex justify-content-center">
-                        <a href="{{ route('profile.edit') }}" class="btn btn-light btn-sm">
-                            <i class="fas fa-user-circle"></i> Mi Perfil
-                        </a>
-                    </div>
-                </div>
-            </div>
+    <!-- Sidebar usando el componente -->
+    <x-sidebar />
 
-            <ul class="nav flex-column">
-                @if (Auth::user()->hasRole('SuperAdmin') || Auth::user()->hasRole('ControlEscolar'))
-                    <li class="nav-item">
-                        <a class="nav-link text-white" href="{{ route('admin.select') }}">
-                            <i class="fas fa-cogs"></i> Plataformas
-                        </a>
-                    </li>
-                @endif
+    <!-- Contenido Principal -->
+    <div class="main-content">
+        @isset($header)
+            <header class="bg-white shadow mb-3 p-3 rounded">
+                {{ $header }}
+            </header>
+        @endisset
 
-                @if (Auth::user()->hasRole('SuperAdmin'))
-                    <li class="nav-item">
-                        <a class="nav-link text-white" href="{{ route('admin.grupos.form') }}">
-                            <i class="fas fa-user-plus"></i> Mover Grupos
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-white" href="{{ route('admin.assignRoles') }}">
-                            <i class="fas fa-user-cog"></i> Asignar Roles
-                        </a>
-                    </li>
-                    <!--<li class="nav-item">
-                        <a class="nav-link text-white" href="{{ route('admin.selectadmin') }}">
-                            <i class="fas fa-user"></i> Administrar Alumnos
-                        </a>
-                    </li>-->
-                @endif
-
-                @if (Auth::user()->hasRole('SuperAdmin') || Auth::user()->hasRole('CoordinacionPreescolar') || Auth::user()->hasRole('CoordinacionPrimaria') || Auth::user()->hasRole('CoordinacionSecundaria'))
-                    <li class="nav-item">
-                        <a class="nav-link text-white" href="{{ route('admin.selectGrado') }}">
-                            <i class="fas fa-user-plus"></i> Plataformas Alumno
-                        </a>
-                    </li>
-                @endif
-
-                @if (Auth::user()->hasRole('SuperAdmin') || Auth::user()->hasRole('ControlEscolar'))
-                    <li class="nav-item">
-                        <a class="nav-link text-white" href="{{ route('capturista.selectsearch') }}">
-                            <i class="fas fa-search"></i> Ver Alumnos
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-white" href="{{ route('alumnos.select') }}">
-                            <i class="fas fa-user-plus"></i> Registrar Alumno
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-white" href="{{ route('index.baja') }}">
-                            <i class="fas fa-user-minus"></i> Dar de Baja un Alumno
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-white" href="{{ route('alumnos.archivados') }}">
-                            <i class="fas fa-redo"></i> Alumnos Archivados
-                        </a>
-                    </li>
-                @endif   
-            </ul>
-
-            <div class="d-flex justify-content-center mt-2">
-                <a class="btn btn-danger btn-sm" href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                    <i class="fas fa-sign-out-alt"></i> Cerrar sesión
-                </a>
-            </div>
-            <br><br>
-        </div>
-
-        <!-- Main Content -->
-        <div class="container-fluid" style="margin-left: 250px;">
-            <!-- Page Heading -->
-            @isset($header)
-                <header class="bg-white shadow">
-                    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                        {{ $header }}
-                    </div>
-                </header>
-            @endisset
-
-            <!-- Page Content -->
-            <main>
-                @yield('content')
-            </main>
-        </div>
+        <main>
+            @yield('content')
+        </main>
     </div>
 
     <!-- Logout Form -->
@@ -182,8 +189,21 @@
     </form>
 
     @stack('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>
+
+    <!-- Bootstrap Bundle JS (CDN con fallback local) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+            onerror="this.onerror=null;this.src='{{ asset('js/bootstrap.bundle.min.js') }}';"></script>
+
+    <!-- Script para toggle de sidebar -->
+    <script>
+        const toggleBtn = document.getElementById('toggle-sidebar-btn');
+        const sidebar = document.querySelector('.sidebar');
+        const mainContent = document.querySelector('.main-content');
+
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('hidden');
+            mainContent.classList.toggle('expanded');
+        });
+    </script>
 </body>
 </html>

@@ -19,7 +19,7 @@
     @endif
 
 <div class="container-fluid">
-    <h1 class="mb-4">Mover alumnos</h1>
+    <center><h1 class="mb-4">Mover alumnos</h1></center>
 
     <!-- Filtros de Grado, Sección y Nivel -->
     <div class="filters mb-4">
