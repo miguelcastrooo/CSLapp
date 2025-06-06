@@ -31,7 +31,7 @@
             <!-- Botones de acción -->
             <div class="d-flex justify-content-between">
                 <button type="submit" class="btn btn-primary" id="updateBtn" style="display:none;"><i class="fas fa-save"></i> Actualizar Alumno</button>
-                <a href="{{ route(auth()->user()->hasRole('ControlEscolar') ? 'capturista.selectsearch' : 'admin.selectadmin') }}" class="btn btn-secondary">
+                    <a href="{{ route('capturista.selectsearch') }}" class="btn btn-secondary">
                     <i class="fas fa-arrow-left"></i> Volver
                 </a>
 

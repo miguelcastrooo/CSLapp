@@ -18,7 +18,7 @@
 
 <h1 class="text-center mb-4" style="color: #333;">{{ $nivelEducativo->nombre }} - Información de Alumnos</h1><br>
 
-<!-- Filtros -->
+<!-- Filtros 
 <div class="filters mb-4">
     <div class="card">
         <div class="card-header bg-dark text-white">
@@ -26,7 +26,6 @@
         </div>
         <div class="card-body">
             <div class="row">
-                <!-- Grado -->
                 <div class="col-md-4">
                     <div class="form-group">
                         <label for="gradoSelect" class="font-weight-bold"><strong>Filtrar por Grado</strong></label>
@@ -39,7 +38,6 @@
                     </div>
                 </div>
 
-                <!-- Sección -->
                 <div class="col-md-4">
                     <div class="form-group">
                         <label class="font-weight-bold"><strong>Filtrar por Sección</strong></label>
@@ -56,7 +54,6 @@
                     </div>
                 </div>
 
-                <!-- Plataforma -->
                 @php
                 $plataformas = $alumnos->flatMap(function($alumno) {
                     return $alumno->alumnoPlataforma->map(function($ap) {
@@ -76,7 +73,6 @@
                     </div>
                 </div>
 
-                <!-- Buscar -->
                 <div class="col-md-4 mt-3">
                     <div class="form-group">
                         <label for="searchBox" class="font-weight-bold"><strong>Buscar Alumno</strong></label>
@@ -86,7 +82,7 @@
             </div>
         </div>
     </div>
-</div>
+</div>-->
 
 <a href="{{ route('admin.select') }}" class="btn btn-primary">Volver</a>
 

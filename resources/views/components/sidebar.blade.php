@@ -34,10 +34,12 @@
             <li class="nav-item"><a class="nav-link" href="{{ route('admin.grupos.form') }}"><i class="fas fa-people-arrows"></i> Mover Alumnos</a></li>
             <li class="nav-item"><a class="nav-link" href="{{ route('admin.assignRoles') }}"><i class="fas fa-user-cog"></i> Asignar Roles</a></li>
         @endif
+         <!-- 
         @if (Auth::user()->hasRole('SuperAdmin') || Auth::user()->hasRole('CoordinacionPreescolar') || Auth::user()->hasRole('CoordinacionPrimaria') || Auth::user()->hasRole('CoordinacionSecundaria'))
             <li class="nav-item"><a class="nav-link" href="{{ route('admin.selectGrado') }}"><i class="fas fa-user-graduate"></i> Plataformas Alumno</a></li>
             <li class="nav-item"><a class="nav-link" href="{{ route('calificaciones.index') }}"><i class="fas fa-graduation-cap"></i> Calificaciones</a></li>
         @endif
+        -->
         @if (Auth::user()->hasRole('SuperAdmin') || Auth::user()->hasRole('ControlEscolar'))
             <li class="nav-item"><a class="nav-link" href="{{ route('capturista.selectsearch') }}"><i class="fas fa-users-viewfinder"></i> Ver Alumnos</a></li>
             <li class="nav-item"><a class="nav-link" href="{{ route('alumnos.select') }}"><i class="fas fa-user-plus"></i> Registrar Alumno</a></li>
