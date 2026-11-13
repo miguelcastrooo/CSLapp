@@ -14,6 +14,7 @@ class NivelEducativo extends Model
     // Los atributos que son asignables de forma masiva
     protected $fillable = [
         'nombre', // Por ejemplo, 'Primaria Baja', 'Secundaria Alta', etc.
+        'activo',
     ];
 
     // Los atributos que no deben ser asignados de forma masiva

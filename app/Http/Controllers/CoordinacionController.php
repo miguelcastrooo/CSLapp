@@ -2,108 +2,63 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Grado;
 use App\Models\Alumno;
+use App\Models\Grado;
+use App\Models\NivelEducativo;
+use App\Support\NivelAccess;
 
 class CoordinacionController extends Controller
 {
     public function selectGrado()
     {
-        $user = auth()->user(); // Obtener usuario autenticado
-    
-        // Definir los IDs de nivel educativo para cada rol
-        $niveles = [];
-    
-        if ($user->hasRole('CoordinacionPreescolar')) {
-            $niveles = [1]; // ID del nivel "Preescolar"
-        } elseif ($user->hasRole('CoordinacionPrimaria')) {
-            $niveles = [2, 3]; // ID del nivel "Primaria" (Baja y Alta)
-        } elseif ($user->hasRole('CoordinacionSecundaria')) {
-            $niveles = [4]; // ID del nivel "Secundaria"
-        } else {
-            // Si es SuperAdmin u otro rol, mostrar todos los grados
-            $grados = Grado::all();
-            return view('coordinacion.grados.select', compact('grados'));
-        }
-    
-        // Filtrar grados por nivel educativo
-        $grados = Grado::whereIn('nivel_educativo_id', $niveles)->get();
-    
-        // Pasar los grados filtrados a la vista
+        $nivelIds = NivelAccess::allowedIds(auth()->user());
+        $grados = Grado::whereIn('nivel_educativo_id', $nivelIds)->get();
+
         return view('coordinacion.grados.select', compact('grados'));
     }
-    
 
     public function showGradoAlumnos($gradoId)
-{
-    $user = auth()->user(); // Obtener usuario autenticado
+    {
+        $grado = Grado::findOrFail($gradoId);
+        NivelAccess::ensureCanAccess(auth()->user(), $grado->nivel_educativo_id);
+        $alumnos = Alumno::where('grado_id', $grado->id)->paginate(10);
 
-    // Definir los IDs de nivel educativo según el rol
-    $niveles = [];
-
-    if ($user->hasRole('CoordinacionPreescolar')) {
-        $niveles = [1]; // ID del nivel "Preescolar"
-    } elseif ($user->hasRole('CoordinacionPrimaria')) {
-        $niveles = [2, 3]; // ID del nivel "Primaria" (Baja y Alta)
-    } elseif ($user->hasRole('CoordinacionSecundaria')) {
-        $niveles = [4]; // ID del nivel "Secundaria"
+        return view('coordinacion.grados.alumnos', compact('grado', 'alumnos'));
     }
 
-    // Obtener el grado seleccionado
-    $grado = Grado::findOrFail($gradoId);
+    public function show($id)
+    {
+        $alumno = Alumno::findOrFail($id);
+        NivelAccess::ensureCanAccess(auth()->user(), $alumno->nivel_educativo_id);
 
-    // Verificar si el grado seleccionado pertenece a un nivel que el usuario puede ver
-    if (!in_array($grado->nivel_educativo_id, $niveles)) {
-        abort(403, 'No tienes permisos para ver este grado.');
+        return view('admin.show', compact('alumno'));
     }
 
-    // Obtener los alumnos asociados al grado
-    $alumnos = Alumno::where('grado_id', $gradoId)->paginate(10);
+    public function showAlumno($id)
+    {
+        $alumno = Alumno::findOrFail($id);
+        NivelAccess::ensureCanAccess(auth()->user(), $alumno->nivel_educativo_id);
+        $grado = $alumno->grado;
 
-    return view('coordinacion.grados.alumnos', compact('grado', 'alumnos'));
-}
+        return view('coordinacion.show', compact('alumno', 'grado'));
+    }
 
-public function show($id)
-{
-    // Obtener el alumno por ID
-    $alumno = Alumno::findOrFail($id);
+    public function gradosShow($gradoId)
+    {
+        $grado = Grado::findOrFail($gradoId);
+        NivelAccess::ensureCanAccess(auth()->user(), $grado->nivel_educativo_id);
 
-    // Pasar el alumno a la vista
-    return view('admin.show', compact('alumno'));
-}
-public function showAlumno($id)
-{
-    // Buscar al alumno por su ID
-    $alumnos = Alumno::findOrFail($id); // Esto lanza un 404 si no encuentra el alumno
+        return view('coordinacion.grados.show', compact('grado'));
+    }
 
-    // Obtener el grado del alumno (si se necesita)
-    $grado = $alumno->grado;
+    public function mostrarAlumnos($nivelId)
+    {
+        $nivelEducativo = NivelEducativo::findOrFail($nivelId);
+        NivelAccess::ensureCanAccess(auth()->user(), $nivelEducativo->id);
+        $alumnos = Alumno::where('nivel_educativo_id', $nivelEducativo->id)
+            ->with('alumnoPlataforma')
+            ->paginate(10);
 
-    // Pasar los datos a la vista
-    return view('coordinacion.show', compact('alumno', 'grado'));
-}
-
-
-public function gradosShow($gradoId)
-{
-    $grado = Grado::findOrFail($gradoId);
-    return view('coordinacion.grados.show', compact('grado'));
-}
-
-public function mostrarAlumnos($nivelId)
-{
-    // Obtener el nivel educativo
-    $nivelEducativo = NivelEducativo::findOrFail($nivelId);
-
-    // Obtener los alumnos que pertenecen a ese nivel
-    $alumnos = Alumno::where('nivel_id', $nivelId)
-                     ->with('alumnoPlataforma') // Asegurar que se carguen las plataformas
-                     ->paginate(10);
-
-    // Pasar los datos a la vista
-    return view('coordinacion.grados.alumnos', compact('nivelEducativo', 'alumnos'));
-}
-
-
+        return view('coordinacion.grados.alumnos', compact('nivelEducativo', 'alumnos'));
+    }
 }

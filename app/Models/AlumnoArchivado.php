@@ -12,6 +12,11 @@ class AlumnoArchivado extends Model
     // Especifica la tabla si el nombre no sigue la convención plural
     protected $table = 'alumnos_archivados';
 
+    protected $casts = [
+        'fecha_archivo' => 'datetime',
+        'fecha_egreso' => 'datetime',
+    ];
+
     // Relación con NivelEducativo
     public function nivelEducativo()
     {

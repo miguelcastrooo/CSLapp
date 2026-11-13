@@ -1,84 +1,27 @@
 @extends('layouts.app')
 
+@section('title', 'Alumnos | Instituto Horizonte')
+
 @section('content')
+    <div class="csl-module-header"><h1>Consulta de alumnos</h1><p>Selecciona un nivel o busca por nombre y matrícula.</p></div>
+    <x-task-guide title="Encuentra un expediente" description="Puedes entrar por nivel o usar la búsqueda general." :steps="['Selecciona un nivel para ver su lista.', 'O escribe un nombre o matrícula.', 'Abre el expediente que necesites consultar.']" />
 
-@if(session('success'))
-    <div class="alert alert-success">
-        {{ session('success') }}
-    </div>
-@endif
-
-<div class="container">
-    <h1 class="text-center mb-4">Busqueda por Nivel Educativo</h1>
-    
-    <div class="row justify-content-center">
+    <div class="row row-cards mb-4">
         @foreach ($niveles as $nivel)
             @php
-                // Asignar un color si no está en la base de datos
-                $colores = [
-                    'Preescolar' => '#FF5733',
-                    'Primaria Inferior' => '#FFC300',
-                    'Primaria Superior' => '#28B463',
-                    'Secundaria' => '#1976D2'
-                ];
-                $color = $nivel->color ?? ($colores[$nivel->nombre] ?? '#007bff');
-
-                // Asignar iconos para cada nivel
-                $iconos = [
-                    'Preescolar' => 'fas fa-child',
-                    'Primaria Inferior' => 'fas fa-book',
-                    'Primaria Superior' => 'fas fa-graduation-cap',
-                    'Secundaria' => 'fas fa-school'
-                ];
-                $icono = $iconos[$nivel->nombre] ?? 'fas fa-users';
+                $iconos = ['Preescolar' => 'fa-child-reaching', 'Primaria Baja' => 'fa-book-open', 'Primaria Alta' => 'fa-graduation-cap', 'Secundaria' => 'fa-school'];
+                $icono = $iconos[$nivel->nombre] ?? 'fa-users';
             @endphp
-
-            <div class="col-12 col-sm-6 col-md-3 d-flex align-items-stretch">
-                <!-- Redirige al index filtrando por el nivel -->
-                <a href="{{ route('capturista.index', ['nivel' => $nivel->id]) }}" class="btn text-white mb-3 shadow-lg w-100 p-3" 
-                   style="background-color: {{ $color }}; border-radius: 10px; font-size: 1.2rem; display: flex; align-items: center; justify-content: center;">
-                    <i class="{{ $icono }} fa-2x mr-2"></i> 
-                    {{ $nivel->nombre }}
+            <div class="col-sm-6 col-xl-3">
+                <a href="{{ route('capturista.index', ['nivel' => $nivel->id]) }}" class="card csl-choice-card">
+                    <div class="card-body d-flex align-items-center gap-3"><span class="csl-choice-icon"><i class="fas {{ $icono }}"></i></span><div><h2 class="h3 mb-1">{{ $nivel->nombre }}</h2><p class="text-secondary mb-0 small">Ver alumnos del nivel</p></div></div>
                 </a>
             </div>
         @endforeach
     </div>
 
-    <!-- Usando el componente de búsqueda -->
-    @component('components.search')
-    @endcomponent
-</div>
-
-<!-- Scripts -->
-@section('scripts')
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script>
-$(document).ready(function(){
-    $('#search').on('keyup', function(){
-        let searchTerm = $(this).val().trim(); // Usamos .trim() para eliminar espacios al inicio y al final
-
-        // Realizamos la búsqueda solo si hay algo escrito
-        if (searchTerm.length > 0) {
-            $.ajax({
-                url: '{{ route('alumnos.search') }}',
-                method: 'GET',
-                data: { search: searchTerm },
-                success: function(data){
-                    // Mostrar los resultados en la vista sin recargar la página
-                    $('#search-results').html(data);
-                },
-                error: function(){
-                    // Mostrar un mensaje de error si la solicitud falla
-                    $('#search-results').html('<p>Error al realizar la búsqueda.</p>');
-                }
-            });
-        } else {
-            // Si no hay búsqueda, limpiar los resultados
-            $('#search-results').empty();
-        }
-    });
-});
-</script>
-
-@endsection
+    <div class="card csl-data-card">
+        <div class="card-header"><div><h2 class="card-title mb-1">Búsqueda general</h2><div class="text-secondary">Filtra la lista sin salir de esta pantalla.</div></div></div>
+        <div class="card-body"><x-search :grados="$grados" :secciones="$secciones" /></div>
+    </div>
 @endsection

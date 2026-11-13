@@ -1,13 +1,6 @@
 @extends('layouts.app')
 
 @section('content')
-    @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            {{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
-
     @php
         // Obtener el nivel desde la URL para mostrar el título correcto
         $nivel = request('nivel');
@@ -18,17 +11,16 @@
         }
     @endphp
 
-    <!-- Título con solo el botón de volver -->
-    <div class="d-flex justify-content-between align-items-center mb-4 pt-4 ps-3 pe-3">
-        <h1 class="me-4">Lista de Alumnos de @if($nivelEducativo) {{ $nivelEducativo->nombre }} @else Todos los Niveles @endif</h1>
-
-        <!-- Solo el ícono de volver -->
-        <a href="javascript:history.back()" class="btn btn-danger btn-lg ms-4">
-            <i class="fas fa-arrow-left fa-2x"></i>
-        </a>
+    <div class="csl-module-header d-flex justify-content-between align-items-center gap-3 flex-wrap">
+        <div>
+            <h1>Alumnos@if($nivelEducativo) de {{ $nivelEducativo->nombre }}@endif</h1>
+            <p>Busca por nombre, apellidos o matrícula.</p>
+        </div>
+        <a href="{{ route('capturista.selectsearch') }}" class="btn btn-secondary"><i class="fas fa-arrow-left me-2"></i>Volver a niveles</a>
     </div>
 
-    <!-- Componente de búsqueda -->
-    @component('components.search', ['nivel' => $nivel])
-    @endcomponent
+    <div class="card csl-data-card"><div class="card-body p-3 p-md-4">
+        @component('components.search', ['nivel' => $nivel, 'grados' => $grados, 'secciones' => $secciones])
+        @endcomponent
+    </div></div>
 @endsection

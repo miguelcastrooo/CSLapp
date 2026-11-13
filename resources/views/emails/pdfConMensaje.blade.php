@@ -62,8 +62,7 @@
 
             <p class="lead">Si tiene alguna duda o necesita asistencia adicional, no dude en contactarnos.</p>
 
-            <p>Adjunto el documento con los datos de acceso. Haga clic en el siguiente enlace para descargarlo:</p>
-            <a href="cid:credenciales_alumno.pdf" class="btn btn-primary">Descargar PDF</a>
+            <p>Adjunto encontrará el documento con los datos de acceso.</p>
 
             <div class="mt-4">
                 <p>Saludos cordiales,</p>

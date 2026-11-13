@@ -1,42 +1,23 @@
 @extends('layouts.app')
 
+@section('title', 'Registrar alumno | Instituto Horizonte')
+
 @section('content')
-<br><br><br><br>
-<div class="container">
-    <h1 class="text-center mb-4">Selecciona el Nivel Educativo para registrar al Alumno</h1>
-    <div class="row justify-content-center">
+    <div class="csl-module-header"><h1>Registrar alumno</h1><p>Selecciona el nivel educativo para iniciar el registro.</p></div>
+    <x-task-guide title="Antes de comenzar" description="Elige el nivel al que ingresará el alumno." :steps="['Selecciona el nivel educativo.', 'Completa los datos obligatorios del expediente.', 'Revisa la información antes de guardar.']" />
+
+    <div class="row row-cards">
         @foreach ($niveles as $nivel)
             @php
-                // Asignar un color si no está en la base de datos
-                $colores = [
-                    'Preescolar' => '#FF5733',
-                    'Primaria Inferior' => '#FFC300',
-                    'Primaria Superior' => '#28B463',
-                    'Secundaria' => '#1976D2'
-                ];
-                $color = $nivel->color ?? ($colores[$nivel->nombre] ?? '#007bff');
-
-                // Asignar iconos para cada nivel
-                $iconos = [
-                    'Preescolar' => 'fas fa-child',
-                    'Primaria Inferior' => 'fas fa-book',
-                    'Primaria Superior' => 'fas fa-graduation-cap',
-                    'Secundaria' => 'fas fa-school'
-                ];
-                $icono = $iconos[$nivel->nombre] ?? 'fas fa-users';
+                $iconos = ['Preescolar' => 'fa-child-reaching', 'Primaria Baja' => 'fa-book-open', 'Primaria Alta' => 'fa-graduation-cap', 'Secundaria' => 'fa-school'];
+                $icono = $iconos[$nivel->nombre] ?? 'fa-users';
             @endphp
-
-                          <div class="col-12 col-sm-6 col-md-3 d-flex align-items-stretch">
-    <div class="card text-white mb-4 shadow-lg w-100" style="background-color: {{ $color }}; border-radius: 15px;">
-        <div class="card-body text-center d-flex flex-column">
-            <i class="{{ $icono }} fa-3x mb-3"></i>
-            <h3 class="card-title text-truncate" style="font-size: 1.2rem; max-width: 100%;">{{ $nivel->nombre }}</h3>
-            <p class="card-text flex-grow-1">Selecciona este nivel para ver más detalles</p>
-            <a href="{{ route('alumnos.create', ['nivel' => $nivel->id]) }}" class="btn btn-light mt-auto">Seleccionar</a>
-        </div>
-    </div>
-</div>
+            <div class="col-sm-6 col-xl-3">
+                <a href="{{ route('alumnos.create', ['nivel' => $nivel->id]) }}" class="card csl-choice-card">
+                    <div class="card-body"><span class="csl-choice-icon"><i class="fas {{ $icono }}"></i></span><h2 class="h3 mt-4 mb-1">{{ $nivel->nombre }}</h2><p class="text-secondary mb-0">Crear un nuevo expediente de alumno.</p></div>
+                    <div class="card-footer bg-transparent border-top-0 pt-0"><span class="text-success fw-semibold">Seleccionar <i class="fas fa-arrow-right ms-1"></i></span></div>
+                </a>
+            </div>
         @endforeach
     </div>
-</div>
 @endsection

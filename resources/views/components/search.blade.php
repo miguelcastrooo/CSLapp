@@ -1,15 +1,39 @@
-<div class="container">
-    <p>Escribe en el campo de búsqueda para filtrar alumnos por matrícula, nombre o apellidos:</p>
+<div>
+    <div class="input-icon mb-4">
+        <span class="input-icon-addon"><i class="fas fa-magnifying-glass"></i></span>
+        <input type="text" id="search" value="{{ request('search', '') }}" class="form-control" placeholder="Buscar por matrícula, nombre o apellidos..." aria-label="Buscar alumnos">
+    </div>
 
-    <input type="text" id="search" class="form-control mb-3" placeholder="Buscar alumnos...">
+    <div class="row g-2 mb-4">
+        <div class="col-md-6">
+            <label class="form-label small" for="filter-grado">Grado</label>
+            <select id="filter-grado" class="form-select">
+                <option value="">Todos los grados</option>
+                @foreach($grados ?? collect() as $grado)
+                    <option value="{{ $grado->id }}" data-nivel="{{ $grado->nivel_educativo_id }}">{{ $grado->nivelEducativo?->nombre }} · {{ $grado->nombre }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label small" for="filter-seccion">Sección</label>
+            <select id="filter-seccion" class="form-select" disabled>
+                <option value="">Primero selecciona un grado</option>
+                @foreach($secciones ?? collect() as $seccion)
+                    <option value="{{ $seccion->nombre }}" data-grado="{{ $seccion->grado_id }}">{{ $seccion->nombre }}</option>
+                @endforeach
+            </select>
+        </div>
+    </div>
 
-    <table class="table table-striped mt-4">
-    <thead class="table-dark">
+    <div class="table-responsive">
+    <table class="table table-vcenter table-hover">
+    <thead>
     <tr>
-                <th>Matricula</th>
+                <th>Matrícula</th>
                 <th>Nivel Educativo</th>
                 <th>Alumno</th>
                 <th>Grado y Seccion</th>
+                <th>Estado del expediente</th>
                 <th>Ver</th>
             </tr>
         </thead>
@@ -17,6 +41,7 @@
             <!-- Los alumnos se mostrarán aquí después de la búsqueda -->
         </tbody>
     </table>
+    </div>
 
     <!-- Contenedor de la paginación -->
     <div id="pagination-links" class="mt-4 d-flex justify-content-center">
@@ -33,7 +58,6 @@
             <a class="page-link" href="#">Siguiente</a>
         </li>
     </ul>
-</div>
 
 </div>
 
@@ -41,12 +65,23 @@
     document.addEventListener('DOMContentLoaded', function () {
         const urlParams = new URLSearchParams(window.location.search);
         const nivel = urlParams.get('nivel'); // Captura el ID de nivel
+        const initialQuery = urlParams.get('search') ?? '';
+        const gradoFilter = document.getElementById('filter-grado');
+        const seccionFilter = document.getElementById('filter-seccion');
+        const sectionOptions = [...seccionFilter.options].slice(1);
+        const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;' })[character]);
 
         // Función para actualizar la lista de alumnos
         function updateAlumnosList(query = '', page = 1) {
-            let url = `{{ route('alumnos.search') }}?search=${query}&page=${page}`;
+            let url = `{{ route('alumnos.search') }}?search=${encodeURIComponent(query)}&page=${page}`;
             if (nivel) {
                 url += `&nivel=${nivel}`; // Agregar nivel si está presente
+            }
+            if (gradoFilter.value) {
+                url += `&grado=${encodeURIComponent(gradoFilter.value)}`;
+            }
+            if (seccionFilter.value) {
+                url += `&seccion=${encodeURIComponent(seccionFilter.value)}`;
             }
 
             fetch(url, {
@@ -58,21 +93,29 @@
                 let resultsHTML = '';
                 if (data.data.length > 0) {
                     data.data.forEach(alumno => {
+                        const pendientes = [];
+                        if (alumno.contactos_count < 1) pendientes.push('sin contacto');
+                        if (alumno.familiares_count < 1) pendientes.push('sin familiar');
+                        if (alumno.alumno_plataforma_count < 1) pendientes.push('sin plataforma');
+                        const estado = pendientes.length
+                            ? `<span class="badge bg-yellow-lt text-dark">Pendiente: ${escapeHtml(pendientes.join(', '))}</span>`
+                            : '<span class="badge bg-green-lt text-success">Completo</span>';
                         resultsHTML += ` 
                             <tr>
-                                <td>${alumno.matricula}</td>
-                                <td>${alumno.nivel_educativo ? alumno.nivel_educativo.nombre : 'Sin Nivel'}</td>
-                                <td>${alumno.nombre} ${alumno.apellidopaterno} ${alumno.apellidomaterno}</td>
-<td>${alumno.grado ? alumno.grado.nombre : 'Sin Grado'} - ${alumno.seccion ?? 'Sin Sección'}</td>
+                                <td>${escapeHtml(alumno.matricula)}</td>
+                                <td>${escapeHtml(alumno.nivel_educativo ? alumno.nivel_educativo.nombre : 'Sin nivel')}</td>
+                                <td>${escapeHtml(alumno.nombre)} ${escapeHtml(alumno.apellidopaterno)} ${escapeHtml(alumno.apellidomaterno)}</td>
+<td>${escapeHtml(alumno.grado ? alumno.grado.nombre : 'Sin grado')} - ${escapeHtml(alumno.seccion ?? 'Sin sección')}</td>
+                                <td>${estado}</td>
                                 <td class="d-none">${alumno.created_at}</td>
                                 <td>
-                                    <a href="{{ url('alumnos') }}/${alumno.id}/edit" class="btn btn-primary">Detalles del Alumno</a>
+                                    <a href="{{ url('alumnos') }}/${alumno.id}/edit" class="btn btn-primary">Ver expediente</a>
                                 </td>
                             </tr>
                         `;
                     });
                 } else {
-                    resultsHTML = '<tr><td colspan="6">No se encontraron resultados.</td></tr>';
+                    resultsHTML = '<tr><td colspan="7">No se encontraron resultados.</td></tr>';
                 }
 
                 document.getElementById('alumnos-list').innerHTML = resultsHTML;
@@ -119,7 +162,7 @@
             })
             .catch(error => {
                 console.error('Error al realizar la búsqueda:', error);
-                document.getElementById('alumnos-list').innerHTML = '<tr><td colspan="6">Error al buscar alumnos.</td></tr>';
+                document.getElementById('alumnos-list').innerHTML = '<tr><td colspan="7">Error al buscar alumnos.</td></tr>';
             });
         }
 
@@ -129,6 +172,20 @@
             updateAlumnosList(query, 1);  // Reiniciar la página a 1 cuando se realice una nueva búsqueda
         });
 
+        gradoFilter.addEventListener('change', function() {
+            const selectedGrade = this.value;
+            seccionFilter.innerHTML = '<option value="">Todas las secciones</option>';
+            sectionOptions
+                .filter(option => option.dataset.grado === selectedGrade)
+                .forEach(option => seccionFilter.add(option.cloneNode(true)));
+            seccionFilter.disabled = !selectedGrade;
+            updateAlumnosList(document.getElementById('search').value, 1);
+        });
+
+        seccionFilter.addEventListener('change', function() {
+            updateAlumnosList(document.getElementById('search').value, 1);
+        });
+
         // Función para cambiar de página
         window.changePage = function(page) {
             let query = document.getElementById('search').value;
@@ -136,6 +193,6 @@
         };
 
         // Mostrar todos los alumnos al entrar a la vista
-        updateAlumnosList('');  // Llamada con un query vacío para cargar todos los resultados
+        updateAlumnosList(initialQuery);  // Conserva la búsqueda iniciada desde el tablero
     });
 </script>

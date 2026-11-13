@@ -1,9 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container">
-
-<div class="container">
+<div class="container-xl">
     <!-- Mostrar mensaje de éxito -->
     @if(session('success'))
         <div class="alert alert-success">
@@ -11,10 +9,11 @@
         </div>
     @endif
     
-    <h2>Dar de Baja a un Alumno</h2>
+    <div class="csl-module-header"><h1>Dar de baja a un alumno</h1><p>Localiza el expediente y registra un motivo claro antes de archivarlo.</p></div>
+    <x-task-guide title="Antes de dar de baja" description="Esta acción retira al alumno de los listados activos, pero conserva su expediente." :steps="['Filtra o busca al alumno.', 'Confirma que es el expediente correcto.', 'Escribe un motivo claro antes de guardar.']" />
 
     {{-- Filtros dinámicos --}}
-    <div class="row mb-3">
+    <div class="card csl-filter-card mb-4"><div class="card-body"><div class="row g-3">
         <div class="col-md-3">
             <select id="nivelFilter" class="form-control">
                 <option value="">Filtrar por Nivel</option>
@@ -38,10 +37,10 @@
         <div class="col-md-3">
             <input type="text" id="searchBox" class="form-control" placeholder="Buscar por nombre o matrícula...">
         </div>
-    </div>
+    </div></div></div>
 
     {{-- Tabla de alumnos --}}
-    <div class="table-responsive">
+    <div class="card csl-data-card"><div class="table-responsive">
     <table class="table table-striped table-bordered" id="alumnosTable" style="background: white;">
         <thead class="table-dark">
             <tr>
@@ -76,7 +75,7 @@
             @endforeach
         </tbody>
     </table>
-</div>
+</div></div>
 
 
 <!-- Modal para capturar motivo de la baja -->
@@ -85,9 +84,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="motivoBajaModalLabel">Motivo de la Baja</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
             <form id="motivoBajaForm" method="POST" action="{{ route('alumno.baja') }}">
                 @csrf
@@ -107,14 +104,12 @@
     </div>
 </div>
 
+</div>
 
 {{-- Script de filtros dinámicos --}}
 <!-- Cargar jQuery desde CDN -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-<!-- Cargar Bootstrap desde CDN -->
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const nivelFilter = document.getElementById("nivelFilter");
@@ -173,8 +168,6 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 $(document).ready(function () {
-    console.log("jQuery cargado correctamente.");
-
     // Evento cuando el modal se abre
     $('#motivoBajaModal').on('show.bs.modal', function (event) {
         var button = $(event.relatedTarget);
@@ -189,13 +182,7 @@ $(document).ready(function () {
     // Habilitar el botón cuando se escribe en el textarea
     $(document).on('input keyup', '#motivo_baja', function () {
         var motivo = $(this).val().trim();
-        console.log('Texto ingresado:', motivo); // Verificar si detecta el texto
         $('#confirmarBaja').prop('disabled', motivo === '');
-    });
-
-    // Depuración: Verificar si jQuery está capturando los eventos correctamente
-    $('#motivo_baja').on('input keyup', function () {
-        console.log("Evento capturado: ", $(this).val());
     });
 
     // Cerrar el modal correctamente en Bootstrap 5

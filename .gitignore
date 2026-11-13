@@ -5,7 +5,13 @@
 /public/storage
 /storage/*.key
 /storage/pail
+/storage/app/backups
+/storage/app/public/profiles
 /vendor
+/output
+/referencias
+# Las fotos de perfiles se guardan en storage; esta regla evita incluir por accidente una foto local anterior.
+/public/img/*_pfpadm.jpg
 .env
 .env.backup
 .env.production

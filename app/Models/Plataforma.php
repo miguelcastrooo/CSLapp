@@ -11,7 +11,7 @@ class Plataforma extends Model
 
     protected $table = 'plataformas'; 
 
-    protected $fillable = ['nombre'];
+    protected $fillable = ['nombre', 'activo'];
 
     public function alumnos()
     {

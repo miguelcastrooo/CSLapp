@@ -13,7 +13,12 @@ class Grado extends Model
     protected $table = 'grados';
 
     // Si deseas definir qué atributos pueden ser asignados en masa
-    protected $fillable = ['name', 'nivel_educativo_id'];
+    protected $fillable = ['nombre', 'nivel_educativo_id', 'orden_promocion', 'activo'];
+
+    public function nivelEducativo()
+    {
+        return $this->belongsTo(NivelEducativo::class, 'nivel_educativo_id');
+    }
 
     // Relación con Plataforma
     public function plataformas()

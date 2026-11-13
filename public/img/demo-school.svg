@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title>Emblema de ejemplo</title>
+  <rect width="64" height="64" rx="14" fill="#2f67ae"/>
+  <path d="M14 24 32 14l18 10-18 10-18-10Zm6 8v13l12 7 12-7V32l-12 7-12-7Z" fill="#e8f1ff"/>
+  <path d="M50 25v14" stroke="#f5c56b" stroke-width="3" stroke-linecap="round"/>
+</svg>

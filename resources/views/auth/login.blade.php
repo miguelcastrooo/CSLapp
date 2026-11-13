@@ -5,15 +5,15 @@
 @section('styles')
     <style>
         body {
-            background: linear-gradient(to right, rgb(255, 255, 255), rgb(218, 236, 23), rgb(44, 100, 51));
-            color: white;
+            background: #f3f6fa;
+            color: #243442;
         }
 
         .login-container {
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: calc(100vh - 70px);
             padding: 20px;
         }
 
@@ -21,25 +21,24 @@
             display: flex;
             flex-direction: row;
             background: #ffffff;
-            border-radius: 12px;
+            border-radius: 16px;
             overflow: hidden;
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
-            max-width: 800px;
+            box-shadow: 0 12px 32px rgba(29, 52, 70, 0.12);
+            max-width: 900px;
             width: 100%;
         }
 
         /* Sección de la imagen con información */
         .info-section {
-            background: #2c6433;
             color: white;
-            padding: 30px;
             width: 50%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
         }
+
+        .login-carousel, .login-carousel .carousel-inner, .login-carousel .carousel-item { height: 100%; }
+        .login-carousel-slide { align-items: center; background-position: center; background-size: cover; display: flex; min-height: 520px; }
+        .login-carousel-overlay { background: linear-gradient(135deg, rgba(24, 68, 91, .93), rgba(23, 107, 98, .72)); min-height: 520px; padding: 36px; text-align: center; width: 100%; }
+        .login-carousel-overlay img { width: 92px; }
+        .login-carousel-overlay p { margin: 0 auto; max-width: 300px; }
 
         .info-section img {
             width: 100px;
@@ -66,33 +65,34 @@
             text-align: center;
             font-size: 1.5rem;
             font-weight: bold;
-            color: #0f2027;
+            color: #183444;
         }
 
         .form-control {
-            border-radius: 8px;
-            border: 1px solid #ced4da;
+            border-radius: 9px;
+            border: 1px solid #b9c9d6;
+            min-height: 46px;
         }
 
         .form-control:focus {
-            border-color: #007bff;
-            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+            border-color: #238478;
+            box-shadow: 0 0 0 .2rem rgba(35, 132, 120, .15);
         }
 
         .btn-primary {
-            background-color: #007bff;
+            background-color: #176b62;
             border: none;
-            border-radius: 8px;
+            border-radius: 9px;
             padding: 10px;
             font-size: 1rem;
         }
 
         .btn-primary:hover {
-            background-color: #0056b3;
+            background-color: #14534d;
         }
 
         .text-muted a {
-            color: #007bff;
+            color: #176b62;
             text-decoration: none;
         }
 
@@ -117,11 +117,15 @@
 @section('content')
 <div class="login-container">
     <div class="login-card">
-        <!-- Sección de la imagen con información -->
-        <div class="info-section">
-            <img src="{{ asset('img/sanluis.webp') }}" alt="Colegio San Luis">
-            <h2>Colegio San Luis</h2>
-            <p>Educación con valores, innovación y tecnología para el desarrollo integral de nuestros estudiantes.</p>
+        <div id="loginCarousel" class="carousel slide carousel-fade info-section login-carousel" data-bs-interval="false">
+            <div class="carousel-indicators"><button type="button" data-bs-target="#loginCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Mensaje 1"></button><button type="button" data-bs-target="#loginCarousel" data-bs-slide-to="1" aria-label="Mensaje 2"></button><button type="button" data-bs-target="#loginCarousel" data-bs-slide-to="2" aria-label="Mensaje 3"></button></div>
+            <div class="carousel-inner">
+                <div class="carousel-item active"><div class="login-carousel-slide" style="background-image: url('{{ asset('img/login-educativo.png') }}');"><div class="login-carousel-overlay"><img src="{{ asset('img/demo-school.svg') }}" alt="Instituto Horizonte"><h2>Instituto Horizonte</h2><p>Una comunidad educativa organizada y cercana.</p></div></div></div>
+                <div class="carousel-item"><div class="login-carousel-slide" style="background-image: url('{{ asset('img/dashboard-educativo.png') }}');"><div class="login-carousel-overlay"><img src="{{ asset('img/demo-school.svg') }}" alt="Instituto Horizonte"><h2>Información al alcance</h2><p>Consulta expedientes y plataformas de forma clara y segura.</p></div></div></div>
+                <div class="carousel-item"><div class="login-carousel-slide" style="background-image: url('{{ asset('img/login-educativo.png') }}');"><div class="login-carousel-overlay"><img src="{{ asset('img/demo-school.svg') }}" alt="Instituto Horizonte"><h2>Trabajo que acompaña</h2><p>Herramientas sencillas para el equipo escolar.</p></div></div></div>
+            </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#loginCarousel" data-bs-slide="prev"><span class="carousel-control-prev-icon" aria-hidden="true"></span><span class="visually-hidden">Anterior</span></button>
+            <button class="carousel-control-next" type="button" data-bs-target="#loginCarousel" data-bs-slide="next"><span class="carousel-control-next-icon" aria-hidden="true"></span><span class="visually-hidden">Siguiente</span></button>
         </div>
 
         <!-- Sección del login -->
@@ -146,11 +150,11 @@
                         @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
 
-                    <button type="submit" class="btn btn-primary w-100">Entrar</button>
+                    <button type="submit" class="btn btn-primary w-100"><i class="fas fa-right-to-bracket me-2"></i>Entrar al sistema</button>
                 </form>
             </div>
             <div class="card-footer text-center text-muted">
-                <a href="{{ route('register') }}">¿No tienes cuenta? Regístrate</a>
+                <span>¿Necesitas acceso o restablecer tu contraseña? Solicítalo a la administración.</span>
             </div>
         </div>
     </div>

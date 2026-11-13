@@ -1,11 +1,21 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container mt-5">
-    <div class="text-center mb-4">
-        <h1 class="display-4 text-primary">Registro de Alumno</h1>
-        <p class="lead">Ingresa los datos del alumno a continuación:</p>
+<div class="container-xl csl-student-form">
+    <div class="csl-module-header">
+        <div class="d-flex align-items-center gap-3">
+            <span class="csl-choice-icon"><i class="ti ti-user-plus"></i></span>
+            <div>
+                <h1>Registro de alumno</h1>
+                <p>Captura la información académica, familiar y de contacto.</p>
+            </div>
+        </div>
     </div>
+    <nav class="csl-form-nav" aria-label="Secciones del registro">
+        <a href="#datos-alumno"><i class="ti ti-user"></i> Datos del alumno</a>
+        <a href="#contactos-emergencia"><i class="ti ti-phone"></i> Contactos</a>
+        <a href="#familiares"><i class="ti ti-users"></i> Familiares</a>
+    </nav>
 
     @if(session('success'))
         <div class="alert alert-success">
@@ -23,12 +33,12 @@
         </div>
     @endif
 
-    <form action="{{ route('alumnos.store') }}" method="POST">
+    <form action="{{ route('alumnos.store') }}" method="POST" class="csl-student-form-body">
         @csrf
         <div class="row">
 <!-- Información del Alumno en columnas -->
 <div class="col-md-12">
-    <div class="card shadow-sm mb-4" style="background-color: #f8f9fa;">
+    <div id="datos-alumno" class="card shadow-sm mb-4" style="background-color: #f8f9fa;">
         <div class="card-body">
             <h5 class="card-title text-primary">Datos del Alumno</h5>
 
@@ -179,7 +189,7 @@
                 <div class="section mb-4">
                     <h6 class="text-secondary">Grado y Fecha de Inscripción</h6>
                     <div class="row mb-3">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                             <label for="grado_id" class="form-label"><strong>Grado</strong></label>
                             <select class="form-select" id="grado_id" name="grado_id" required>
                                 <option value="">Selecciona un grado</option>
@@ -192,12 +202,22 @@
                                 @endif
                             </select>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
+                            <label for="seccion" class="form-label"><strong>Sección</strong></label>
+                            <select class="form-select" id="seccion" name="seccion" disabled>
+                                <option value="">Primero selecciona un grado</option>
+                                @foreach($secciones as $seccion)
+                                    <option value="{{ $seccion->nombre }}" data-grado="{{ $seccion->grado_id }}" @selected(old('seccion') === $seccion->nombre)>{{ $seccion->nombre }}</option>
+                                @endforeach
+                            </select>
+                            <small class="text-secondary">Sólo se muestran las secciones configuradas para el grado.</small>
+                        </div>
+                        <div class="col-md-3">
                             <label for="fecha_inscripcion" class="form-label"><strong>Fecha de Inscripción</strong></label>
                             <input type="date" class="form-control" id="fecha_inscripcion" name="fecha_inscripcion" value="{{ old('fecha_inscripcion') }}">
                         </div>
 
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label for="fecha_inicio" class="form-label"><strong>Fecha de Inicio</strong></label>
                             <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" value="{{ old('fecha_inicio') }}">
                         </div>
@@ -209,7 +229,7 @@
 </div>
 
                 <!-- Información de Contactos -->
-                <div class="card shadow-sm mb-4" style="background-color: #f8f9fa;">
+                <div id="contactos-emergencia" class="card shadow-sm mb-4" style="background-color: #f8f9fa;">
                     <div class="card-body">
                         <h5 class="card-title text-primary">Información de Contactos (En caso de no localizar a los padres por emergencia)</h5>
 
@@ -256,7 +276,7 @@
 @endphp
 
     @foreach($tiposFamiliares as $tipo)
-    <div class="card shadow-sm mb-4" style="background-color: #f8f9fa;">
+    <div id="{{ $loop->first ? 'familiares' : 'familiar-' . $loop->iteration }}" class="card shadow-sm mb-4" style="background-color: #f8f9fa;">
         <div class="card-body">
             <h5 class="card-title text-primary">Datos de {{ $tipo }}</h5> <!-- Título dinámico -->
 
@@ -371,7 +391,7 @@
      @endforeach
 </div>
         <div class="d-flex justify-content-center">
-            <button type="submit" class="btn btn-success btn-lg">Registrar Alumno</button>
+            <button type="submit" class="btn btn-success btn-lg"><i class="ti ti-device-floppy me-1"></i>Registrar alumno</button>
         </div>
         <br><br>
     </form>
@@ -426,13 +446,37 @@
     });
     // Contador y configuración para los hermanos
 let hermanoCount = 1;
-const maxHermanos = 5;
 const agregarHermanoButton = document.getElementById('agregar-hermano');
 const hermanosAdicionales = document.getElementById('hermanos-adicionales');
 
+const gradoSelect = document.getElementById('grado_id');
+const seccionSelect = document.getElementById('seccion');
+const seccionesConfiguradas = [...seccionSelect.options].slice(1);
+
+function actualizarSecciones() {
+    const seccionAnterior = seccionSelect.value;
+    seccionSelect.innerHTML = '<option value="">Selecciona una sección</option>';
+
+    const seccionesDelGrado = seccionesConfiguradas.filter((option) => option.dataset.grado === gradoSelect.value);
+    seccionesDelGrado.forEach((option) => seccionSelect.add(option.cloneNode(true)));
+
+    seccionSelect.disabled = !gradoSelect.value || seccionesDelGrado.length === 0;
+
+    if (seccionesDelGrado.length === 0 && gradoSelect.value) {
+        seccionSelect.innerHTML = '<option value="">No hay secciones configuradas</option>';
+    }
+
+    if (seccionAnterior) {
+        seccionSelect.value = seccionAnterior;
+    }
+}
+
+gradoSelect.addEventListener('change', actualizarSecciones);
+actualizarSecciones();
+
 // Función para agregar hermanos
 agregarHermanoButton.addEventListener('click', function() {
-    if (hermanoCount < maxHermanos) {
+    {
         hermanoCount++;
         const hermanoDiv = document.createElement('div');
         hermanoDiv.classList.add('card', 'shadow-sm', 'mb-4');
@@ -443,31 +487,27 @@ agregarHermanoButton.addEventListener('click', function() {
     <div class="row mb-3">
         <div class="col-md-6">
             <label for="hermano${hermanoCount}nombre" class="form-label"><strong>Nombre del Hermano ${hermanoCount}</strong></label>
-            <input type="text" class="form-control" id="hermano${hermanoCount}nombre" name="hermano${hermanoCount}nombre" placeholder="Ej. Juan Pérez">
+            <input type="text" class="form-control" id="hermano${hermanoCount}nombre" name="hermanos[${hermanoCount}][nombre]" placeholder="Ej. Juan Pérez">
         </div>
 
         <div class="col-md-6">
             <label for="hermano${hermanoCount}apellido_paterno" class="form-label"><strong>Apellido Paterno del Hermano ${hermanoCount}</strong></label>
-            <input type="text" class="form-control" id="hermano${hermanoCount}apellido_paterno" name="hermano${hermanoCount}apellido_paterno" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" placeholder="Ej. Pérez">
+            <input type="text" class="form-control" id="hermano${hermanoCount}apellido_paterno" name="hermanos[${hermanoCount}][apellido_paterno]" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" placeholder="Ej. Pérez">
         </div>
 
         <div class="col-md-6">
             <label for="hermano${hermanoCount}apellido_materno" class="form-label"><strong>Apellido Materno del Hermano ${hermanoCount}</strong></label>
-            <input type="text" class="form-control" id="hermano${hermanoCount}apellido_materno" name="hermano${hermanoCount}apellido_materno" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" placeholder="Ej. Gómez">
+            <input type="text" class="form-control" id="hermano${hermanoCount}apellido_materno" name="hermanos[${hermanoCount}][apellido_materno]" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" placeholder="Ej. Gómez">
         </div>
 
         <div class="col-md-6">
             <label for="hermano${hermanoCount}edad" class="form-label"><strong>Edad del Hermano ${hermanoCount}</strong></label>
-            <input type="number" class="form-control" id="hermano${hermanoCount}edad" name="hermano${hermanoCount}edad" min="0" max="50" required>
+            <input type="number" class="form-control" id="hermano${hermanoCount}edad" name="hermanos[${hermanoCount}][edad]" min="0" max="50">
         </div>
     </div>
 </div>`;
         hermanosAdicionales.appendChild(hermanoDiv);
 
-        // Si se alcanzan los 5 hermanos, ocultamos el botón
-        if (hermanoCount === maxHermanos) {
-            agregarHermanoButton.classList.add('d-none');
-        }
     }
 });
 </script>

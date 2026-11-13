@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Models\HistorialSeguridad;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
@@ -43,9 +44,27 @@ class LoginRequest extends FormRequest
 
         if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
+            HistorialSeguridad::registrar(
+                null,
+                'inicio_sesion_fallido',
+                'Se rechazó un intento de inicio de sesión.',
+                ['correo_hash' => hash('sha256', Str::lower($this->string('email')->toString()))]
+            );
 
             throw ValidationException::withMessages([
                 'email' => trans('auth.failed'),
+            ]);
+        }
+
+        $user = Auth::user();
+
+        if (! $user->activo) {
+            Auth::logout();
+            RateLimiter::hit($this->throttleKey());
+            HistorialSeguridad::registrar($user, 'inicio_sesion_rechazado', 'Se intentó acceder con una cuenta desactivada.');
+
+            throw ValidationException::withMessages([
+                'email' => 'Esta cuenta está desactivada. Solicita acceso a la administración escolar.',
             ]);
         }
 

@@ -1,8 +1,10 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container py-5">
-    <h2 class="mb-4">{{ __('Editar Perfil') }}</h2>
+<div class="container-xl py-4">
+    <div class="csl-module-header"><h1>Mi perfil</h1><p>Actualiza tus datos personales, imagen y contraseña de acceso.</p></div>
+    <x-task-guide title="Actualiza tu información" description="Tu rol, contraseña y estado de acceso son administrados por SuperAdmin." :steps="['Actualiza solo tus datos personales.', 'Cambia tu fotografía si la necesitas.', 'Solicita a administración cualquier cambio de acceso.']" />
+    <div class="card csl-data-card mb-4"><div class="card-body d-flex align-items-center gap-3"><span class="csl-management-icon"><i class="fas fa-id-badge"></i></span><div><div class="fw-bold">{{ $user->getRoleNames()->implode(' · ') ?: 'Sin rol asignado' }}</div><div class="text-secondary small">Estado de acceso: {{ $user->activo ? 'Cuenta activa' : 'Cuenta desactivada' }}</div></div></div></div>
 
         <!-- Mostrar alerta de éxito -->
         @if (session('status'))
@@ -31,12 +33,12 @@
     <!-- Mostrar foto actual o ícono si no hay foto -->
     <div class="mt-3">
         @if($user->profile_picture)
-          <center>  <img src="{{ asset($user->profile_picture) }}" 
+          <center>  <img id="current_picture" src="{{ asset($user->profile_picture) }}"
                  alt="Foto de perfil" 
                  class="rounded-circle img-thumbnail" 
                  style="width: 150px; height: 150px; object-fit: cover;"></center>
         @else
-            <i class="fas fa-user-circle fa-5x text-muted"></i> <!-- Ícono si no hay foto -->
+            <i id="current_picture" class="fas fa-user-circle fa-5x text-muted"></i> <!-- Ícono si no hay foto -->
         @endif
     </div>
 
@@ -45,14 +47,9 @@
         <img id="preview_img" class="rounded-circle mt-2" style="width: 150px; height: 150px; object-fit: cover; display: none;">
     </div>
 </div>
-                    <!-- Área de previsualización -->
-                    <div class="mt-2">
-                        <strong>{{ __('Previsualización:') }}</strong>
-                        <img id="preview_img" class="img-thumbnail mt-2" style="width: 100px; display: none;">
-                    </div>
                 </div>
 
-                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> {{ __('Guardar Foto') }}</button>
+                <button type="submit" class="btn btn-primary d-inline-flex align-items-center gap-2"><i class="fas fa-save"></i><span>{{ __('Guardar foto') }}</span></button>
             </form>
         </div>
     </div>
@@ -76,32 +73,14 @@
                 <div class="mb-3">
                     <label for="email" class="form-label">{{ __('Correo Electrónico') }}</label>
                     <input type="email" id="email" name="email" value="{{ old('email', $user->email) }}" class="form-control" required>
+                    <div class="form-text">Si cambias el correo, podría requerirse verificación según la configuración de la escuela.</div>
                 </div>
 
-                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> {{ __('Guardar Cambios') }}</button>
+                <button type="submit" class="btn btn-primary d-inline-flex align-items-center gap-2"><i class="fas fa-save"></i><span>{{ __('Guardar cambios') }}</span></button>
             </form>
         </div>
     </div>
 
-    <!-- Actualizar Contraseña -->
-    <div class="card mb-4">
-        <div class="card-header">
-            <h3 class="card-title"><i class="fas fa-key"></i> {{ __('Actualizar Contraseña') }}</h3>
-        </div>
-        <div class="card-body">
-            @include('profile.partials.update-password-form')
-        </div>
-    </div>
-
-    <!-- Eliminar Cuenta -->
-    <div class="card mb-4">
-        <div class="card-header">
-            <h3 class="card-title text-danger"><i class="fas fa-trash-alt"></i> {{ __('Eliminar Cuenta') }}</h3>
-        </div>
-        <div class="card-body">
-            @include('profile.partials.delete-user-form')
-        </div>
-    </div>
 </div>
 
 <script>

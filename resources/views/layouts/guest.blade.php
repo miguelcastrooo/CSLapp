@@ -3,46 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'Colegio San Luis')</title>
+    <title>@yield('title', 'Instituto Horizonte')</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-    <link rel="icon" href="{{ asset('img/san-luis_512%20(1).webp') }}" type="image/x-icon">
+    <link rel="icon" href="{{ asset('img/demo-school.svg') }}" type="image/svg+xml">
     
     @yield('styles')
     <style>
         body {
             font-family: 'Poppins', sans-serif;
-            background: linear-gradient(to right,rgb(255, 255, 255),rgb(218, 236, 23),rgb(44, 100, 51), rgba(96, 61, 44, 0.8));
-            color: #333;
+            background: #f3f6fa;
+            color: #243442;
         }
 
         /* NAVBAR */
         .navbar {
-            background: rgba(0, 0, 0, 0.9);
-            backdrop-filter: blur(5px);
-            transition: all 0.3s ease-in-out;
+            background: #fff;
+            border-bottom: 1px solid #d6e0ea;
         }
 
         .navbar.scrolled {
-            background: rgba(30, 30, 30, 1);
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            background: #fff;
         }
 
         .navbar-brand {
             font-size: 1.5rem;
             font-weight: 700;
-            color: #fff !important;
+            color: #183444 !important;
         }
 
         .nav-link {
-            color: #f8f9fa !important;
+            color: #24536d !important;
             font-weight: 500;
             transition: color 0.3s ease-in-out;
         }
 
         .nav-link:hover {
-            color: #3E8E7E !important;
+            color: #176b62 !important;
         }
     </style>
 </head>
@@ -52,26 +50,9 @@
     <nav class="navbar navbar-expand-lg fixed-top">
         <div class="container">
             <a class="navbar-brand" href="{{ url('/') }}">
-            <img src="{{ asset('img/sanluis.webp') }}" alt="Icono" style="width: 50px; height: 50px; margin-right: 10px;">
-            Colegio San Luis
+            <img src="{{ asset('img/demo-school.svg') }}" alt="Instituto Horizonte" style="width: 42px; height: 42px; margin-right: 10px;">
+            Instituto Horizonte
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <i class="fas fa-bars"></i>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ route('login') }}">
-                            <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ route('register') }}">
-                            <i class="fas fa-user-plus"></i> Registrarse
-                        </a>
-                    </li>
-                </ul>
-            </div>
         </div>
     </nav>
 

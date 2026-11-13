@@ -4,8 +4,8 @@ namespace App\Mail;
 
 use Illuminate\Mail\Mailable;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Barryvdh\DomPDF\PDF;
+use Symfony\Component\Mime\Email;
 
 class EnviarPdfConMensaje extends Mailable
 {
@@ -58,9 +58,9 @@ class EnviarPdfConMensaje extends Mailable
                         'mime' => 'application/pdf',
                         'disposition' => 'attachment',
                     ])
-                    // Incrustar el logo como CID
-                    ->withSwiftMessage(function ($message) use ($logoPath) {
-                        $message->embed(\Swift_Image::fromPath($logoPath)->setId('logo-csl'));
+                    // Incrustar el logo como CID mediante Symfony Mailer.
+                    ->withSymfonyMessage(function (Email $message) use ($logoPath) {
+                        $message->embedFromPath($logoPath, 'logo-csl');
                     });
     }
 }

@@ -1,42 +1,29 @@
 @extends('layouts.app')
 
-@section('content')
-    <br><br><br><br>
-    <div class="container">
-        <h1 class="text-center mb-4">Selecciona el Nivel Educativo para ver sus Plataformas</h1>
-        <div class="row justify-content-center">
-            @foreach ($niveles as $nivel)
-                @php
-                    // Asignar un color si no está en la base de datos
-                    $colores = [
-                        'Preescolar' => '#FF5733',
-                        'Primaria Inferior' => '#FFC300',
-                        'Primaria Superior' => '#28B463',
-                        'Secundaria' => '#1976D2'
-                    ];
-                    $color = $nivel->color ?? ($colores[$nivel->nombre] ?? '#007bff');
+@section('title', 'Plataformas por nivel | Instituto Horizonte')
 
-                    // Asignar iconos para cada nivel
-                    $iconos = [
-                        'Preescolar' => 'fas fa-child',
-                        'Primaria Inferior' => 'fas fa-book',
-                        'Primaria Superior' => 'fas fa-graduation-cap',
-                        'Secundaria' => 'fas fa-school'
-                    ];
-                    $icono = $iconos[$nivel->nombre] ?? 'fas fa-users';
-                @endphp
-                <div class="col-12 col-sm-6 col-md-3 d-flex align-items-stretch">
-    <div class="card text-white mb-4 shadow-lg w-100" style="background-color: {{ $color }}; border-radius: 15px;">
-        <div class="card-body text-center d-flex flex-column">
-            <i class="{{ $icono }} fa-3x mb-3"></i>
-            <h3 class="card-title text-truncate" style="font-size: 1.2rem; max-width: 100%;">{{ $nivel->nombre }}</h3>
-            <p class="card-text flex-grow-1">Selecciona este nivel para ver más detalles</p>
-            <a href="{{ route('niveles.show', ['nivelId' => $nivel->id]) }}" class="btn btn-light mt-auto">Seleccionar</a>
-        </div>
-    </div>
+@section('content')
+<div class="csl-module-header">
+    <h1>Plataformas por nivel</h1>
+    <p>Selecciona un nivel para consultar los accesos de sus alumnos.</p>
 </div>
 
-            @endforeach
+<div class="row row-cards">
+    @forelse($niveles as $nivel)
+        @php
+            $iconos = ['Preescolar' => 'fa-child-reaching', 'Primaria Baja' => 'fa-book-open', 'Primaria Alta' => 'fa-graduation-cap', 'Secundaria' => 'fa-school'];
+            $icono = $iconos[$nivel->nombre] ?? 'fa-layer-group';
+        @endphp
+        <div class="col-sm-6 col-xl-3">
+            <a href="{{ route('niveles.show', ['nivelId' => $nivel->id]) }}" class="card csl-choice-card">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <span class="csl-choice-icon"><i class="fas {{ $icono }}"></i></span>
+                    <div><h2 class="h3 mb-1">{{ $nivel->nombre }}</h2><p class="text-secondary mb-0 small">Ver plataformas y alumnos</p></div>
+                </div>
+            </a>
         </div>
-    </div>
+    @empty
+        <div class="col-12"><div class="alert alert-info mb-0">No hay niveles asignados a tu cuenta.</div></div>
+    @endforelse
+</div>
 @endsection

@@ -5,15 +5,15 @@
 @section('styles')
     <style>
         body {
-            background: linear-gradient(to right, rgb(255, 255, 255), rgb(218, 236, 23), rgb(44, 100, 51));
-            color: white;
+            background: #f3f6fa;
+            color: #243442;
         }
 
         .register-container {
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: calc(100vh - 70px);
             padding: 20px;
         }
 
@@ -21,16 +21,16 @@
             display: flex;
             flex-direction: row;
             background: #ffffff;
-            border-radius: 12px;
+            border-radius: 16px;
             overflow: hidden;
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
-            max-width: 800px;
+            box-shadow: 0 12px 32px rgba(29, 52, 70, 0.12);
+            max-width: 900px;
             width: 100%;
         }
 
         /* Sección de la imagen con información */
         .info-section {
-            background: #2c6433;
+            background: #24536d;
             color: white;
             padding: 30px;
             width: 50%;
@@ -66,33 +66,34 @@
             text-align: center;
             font-size: 1.5rem;
             font-weight: bold;
-            color: #0f2027;
+            color: #183444;
         }
 
         .form-control {
-            border-radius: 8px;
-            border: 1px solid #ced4da;
+            border-radius: 9px;
+            border: 1px solid #b9c9d6;
+            min-height: 46px;
         }
 
         .form-control:focus {
-            border-color: #007bff;
-            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+            border-color: #238478;
+            box-shadow: 0 0 0 .2rem rgba(35, 132, 120, .15);
         }
 
         .btn-primary {
-            background-color: #007bff;
+            background-color: #176b62;
             border: none;
-            border-radius: 8px;
+            border-radius: 9px;
             padding: 10px;
             font-size: 1rem;
         }
 
         .btn-primary:hover {
-            background-color: #0056b3;
+            background-color: #14534d;
         }
 
         .text-muted a {
-            color: #007bff;
+            color: #176b62;
             text-decoration: none;
         }
 
@@ -119,8 +120,8 @@
     <div class="register-card">
         <!-- Sección de la imagen con información -->
         <div class="info-section">
-            <img src="{{asset('img/sanluis.webp') }}" alt="Colegio San Luis">
-            <h2>Bienvenido al Colegio San Luis</h2>
+            <img src="{{asset('img/demo-school.svg') }}" alt="Instituto Horizonte">
+            <h2>Bienvenido al Instituto Horizonte</h2>
             <p>Forma parte de nuestra comunidad educativa y desarrolla tu máximo potencial en un entorno de aprendizaje innovador y con valores.</p>
         </div>
 
@@ -160,7 +161,7 @@
                                id="password_confirmation" name="password_confirmation" required>
                     </div>
 
-                    <button type="submit" class="btn btn-primary w-100">Registrarse</button>
+                    <button type="submit" class="btn btn-primary w-100"><i class="fas fa-user-plus me-2"></i>Crear cuenta</button>
                 </form>
             </div>
             <div class="card-footer text-center text-muted">

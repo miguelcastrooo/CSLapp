@@ -1,11 +1,24 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container mt-5">
-    <div class="text-center mb-4">
-        <h1 class="display-4 text-primary">Ver Alumno</h1>
-        <p class="lead">Consulta los datos del alumno a continuación:</p>
+<div class="container-xl csl-student-form">
+    <div class="csl-module-header d-flex align-items-center justify-content-between gap-3 flex-wrap">
+        <div class="d-flex align-items-center gap-3">
+            <span class="csl-choice-icon"><i class="ti ti-school"></i></span>
+            <div>
+                <h1>Expediente del alumno</h1>
+                <p>Consulta y actualiza la información registrada.</p>
+            </div>
+        </div>
     </div>
+    <nav class="csl-form-nav" aria-label="Secciones del expediente">
+        <a href="#datos-alumno"><i class="ti ti-user"></i> Datos del alumno</a>
+        <a href="#contactos-emergencia"><i class="ti ti-phone"></i> Contactos</a>
+        <a href="#familiares"><i class="ti ti-users"></i> Familiares</a>
+        <a href="#plataformas-acceso"><i class="ti ti-key"></i> Plataformas</a>
+    </nav>
+    <x-task-guide title="Cómo actualizar este expediente" description="Primero consulta los datos. Si necesitas corregir algo, usa el botón Editar." :steps="['Pulsa “Editar expediente” para habilitar el formulario.', 'Cambia solo los datos necesarios.', 'Revisa y pulsa “Guardar cambios”.']" />
+    <div id="edit-status" class="alert alert-info d-flex gap-2" role="status"><i class="fas fa-eye mt-1"></i><div><strong>Modo consulta.</strong> Los datos están protegidos mientras los revisas.</div></div>
 
     @if(session('success'))
         <div class="alert alert-success">
@@ -23,43 +36,33 @@
         </div>
     @endif
 
-    <form action="{{ route('alumnos.update', $alumno->id) }}" method="POST">
+    <form action="{{ route('alumnos.update', $alumno->id) }}" method="POST" class="csl-student-form-body">
         @csrf
         @method('PUT')
         <div class="row">
 
             <!-- Botones de acción -->
-            <div class="d-flex justify-content-between">
-                <button type="submit" class="btn btn-primary" id="updateBtn" style="display:none;"><i class="fas fa-save"></i> Actualizar Alumno</button>
+            <div class="csl-form-actions d-flex justify-content-between">
+                <button type="submit" class="btn btn-primary" id="updateBtn" style="display:none;"><i class="ti ti-device-floppy"></i> Guardar cambios</button>
                     <a href="{{ route('capturista.selectsearch') }}" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Volver
+                    <i class="ti ti-arrow-left"></i> Volver
                 </a>
 
-                <button type="button" class="btn btn-warning" id="editBtn"><i class="fas fa-pencil-alt"></i> Editar</button>
+                <button type="button" class="btn btn-warning" id="editBtn"><i class="ti ti-pencil"></i> Editar expediente</button>
             </div>
 
 <!-- Información del Alumno en columnas -->
 <div class="col-md-12"><br>
 
 @if (Auth::user()->hasRole('SuperAdmin') || Auth::user()->hasRole('CoordinacionPreescolar') || Auth::user()->hasRole('CoordinacionPrimaria') || Auth::user()->hasRole('CoordinacionSecundaria'))
-        <div class="card shadow-sm mb-4" style="background-color: #f8f9fa;">
+        <div id="plataformas-acceso" class="card shadow-sm mb-4" style="background-color: #f8f9fa;">
         <div class="card-body">
             <h5 class="card-title text-primary">Datos de Usuario</h5>
 
             @php
                 // Define las plataformas por nivel educativo
-                $plataformasPorNivel = [
-                    'preescolar' => [1, 2], 
-                    'primaria_baja' => [1, 2, 3], 
-                    'primaria_alta' => [1, 2, 3, 4, 5], 
-                    'secundaria' => [1, 2, 4] 
-                ];
-
-                // Determina las plataformas que deben mostrarse en función del nivel educativo
-                $nivel = $alumno->nivel_educativo_id;
-                $plataformasDisponibles = $plataformasPorNivel[
-                    ['preescolar', 'primaria_baja', 'primaria_alta', 'secundaria'][$nivel - 1] ?? []
-                ];
+                // Plataformas configuradas para el nivel, sin depender de valores fijos.
+                $plataformasDisponibles = $alumno->nivelEducativo?->plataformas?->pluck('id')->all() ?? [];
             @endphp
 
             @foreach($plataformasDisponibles as $plataformaId)
@@ -93,7 +96,7 @@
 
 
 
-    <div class="card shadow-sm mb-4" style="background-color: #f8f9fa;">
+    <div id="datos-alumno" class="card shadow-sm mb-4" style="background-color: #f8f9fa;">
         <div class="card-body">
             <h5 class="card-title text-primary">Datos del Alumno</h5>
 
@@ -208,7 +211,7 @@
 
     <!-- Ciclo para mostrar todos los hermanos -->
     @foreach ($alumno->hermanos as $index => $hermano)
-        <div class="row mb-3">
+        <div class="row mb-3 hermano-existente">
             <div class="col-md-6">
                 <label for="hermano{{ $index+1 }}nombre" class="form-label"><strong>Nombre del Hermano {{ $index+1 }}</strong></label>
                 <input type="text" class="form-control" id="hermano{{ $index+1 }}nombre" name="hermanos[{{ $index }}][nombre]" value="{{ old('hermanos.' . $index . '.nombre', $hermano->nombre) }}" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" placeholder="Ej. Juan Pérez" readonly>
@@ -226,6 +229,7 @@
                 <input type="number" class="form-control" id="hermano{{ $index+1 }}edad" name="hermanos[{{ $index }}][edad]" value="{{ old('hermanos.' . $index . '.edad', $hermano->edad) }}" min="0" max="50" readonly>
             </div>
             <input type="hidden" name="hermanos[{{ $index }}][id]" value="{{ $hermano->id }}">
+            <div class="col-12 mt-2"><button type="button" class="btn btn-outline-danger btn-sm eliminar-hermano-existente"><i class="fas fa-trash me-1"></i>Quitar hermano</button></div>
         </div>
     @endforeach
     <div id="hermanos-adicionales"></div>
@@ -233,7 +237,7 @@
 <div class="d-flex justify-content-center">
     <button type="button" class="btn btn-primary" id="agregar-hermano">Agregar otro hermano</button>
 </div>
-<p class="text-muted mt-2">Puedes agregar hasta 5 hermanos. Los campos de hermano son opcionales.</p>
+<p class="text-muted mt-2">Agrega los hermanos que necesites. Los campos son opcionales.</p>
 
                 <div class="row mb-3">
                     <div class="col-md-4">
@@ -255,7 +259,7 @@
                     <div class="row mb-3">
                     <div class="col-md-4">
                         <label for="grado_id" class="form-label"><strong>Grado</strong></label>
-                        <select class="form-select" id="grado_id" name="grado_id" required disabled>
+                        <select class="form-select" id="grado_id" name="grado_id" required disabled onchange="cargarSecciones(this.value)">
                             <option value="">Selecciona un grado</option>
                             @if($grados && $grados->isNotEmpty())
                                 @foreach ($grados as $grado)
@@ -279,7 +283,7 @@
                     <div class="row mb-3">
                     <div class="col-md-4">
                         <label for="grado_id" class="form-label"><strong>NivelEducativo</strong></label>
-                        <select class="form-select" id="nivel_educativo_id" name="nivel_educativo_id" required disabled>
+                        <select class="form-select" id="nivel_educativo_id" name="nivel_educativo_id" required disabled onchange="cargarGrados(this.value)">
                             <option value="">Selecciona un Nivel</option>
                                 @foreach($niveles as $nivel)
                                     <option value="{{ $nivel->id }}" 
@@ -290,8 +294,14 @@
                         </select>
                     </div>
                     <div class="col-md-4">
-                        <label for="seccion" class="form-label"><strong>Seccion</strong></label>
-                        <input type="text" class="form-control" id="seccion" name="seccion" value="{{ old('seccion', $alumno->seccion) }}" readonly>
+                        <label for="seccion" class="form-label"><strong>Sección</strong></label>
+                        <select class="form-select" id="seccion" name="seccion" disabled>
+                            <option value="">Sin sección</option>
+                            @foreach($secciones as $seccion)
+                                <option value="{{ $seccion->nombre }}" @selected(old('seccion', $alumno->seccion) === $seccion->nombre)>{{ $seccion->nombre }}</option>
+                            @endforeach
+                        </select>
+                        <small class="text-secondary">Las secciones dependen del grado seleccionado.</small>
                     </div>
                     @endif
                     </div>
@@ -302,7 +312,7 @@
 </div>
 
         <!-- Información de Contactos dentro de una tarjeta -->
-        <div class="card shadow-sm mb-4" style="background-color: #f8f9fa;">
+        <div id="contactos-emergencia" class="card shadow-sm mb-4" style="background-color: #f8f9fa;">
             <div class="card-body">
                 <h5 class="card-title text-primary">Información de Contactos</h5>
                 @foreach ($contactos as $index => $contacto)
@@ -350,7 +360,7 @@
 </div>
 
     @foreach($familiares as $familiar)
-        <div class="card shadow-sm mb-4" style="background-color: #f8f9fa;">
+        <div id="{{ $loop->first ? 'familiares' : 'familiar-' . $loop->iteration }}" class="card shadow-sm mb-4" style="background-color: #f8f9fa;">
             <div class="card-body">
             <h5 class="card-title text-primary">Datos de {{ ucfirst(strtolower($familiar->tipo_familiar)) }}</h5>
                 <!-- Campos de datos personales -->
@@ -526,6 +536,8 @@
         // Mostrar el botón de actualizar
         document.getElementById('updateBtn').style.display = 'inline-block';
         this.style.display = 'none'; // Ocultar el botón de editar
+        document.getElementById('edit-status').className = 'alert alert-warning d-flex gap-2';
+        document.getElementById('edit-status').innerHTML = '<i class="fas fa-pen-to-square mt-1"></i><div><strong>Modo edición.</strong> Modifica únicamente los datos necesarios y pulsa “Guardar cambios” al terminar.</div>';
     });
 
     // Bloquear campos por defecto si el usuario es SuperAdmin
@@ -574,6 +586,8 @@ function cargarGrados(nivelEducativoId) {
                     option.textContent = 'No se encontraron grados';
                     gradoSelect.appendChild(option);
                 }
+
+                cargarSecciones('');
             })
             .catch(error => {
                 console.error('Error cargando los grados:', error);
@@ -584,14 +598,39 @@ function cargarGrados(nivelEducativoId) {
         gradoSelect.innerHTML = '<option value="" disabled selected>Seleccione un Grado</option>';
     }
 }
+
+function cargarSecciones(gradoId) {
+    const seccionSelect = document.getElementById('seccion');
+
+    if (!seccionSelect) {
+        return;
+    }
+
+    seccionSelect.innerHTML = '<option value="">Sin sección</option>';
+
+    if (!gradoId) {
+        return;
+    }
+
+    fetch(`/secciones/${gradoId}`)
+        .then(response => response.json())
+        .then(data => {
+            data.forEach(seccion => {
+                const option = document.createElement('option');
+                option.value = seccion.nombre;
+                option.textContent = seccion.nombre;
+                seccionSelect.appendChild(option);
+            });
+        })
+        .catch(error => console.error('Error cargando las secciones:', error));
+}
 let hermanoCount = {{ $alumno->hermanos->count() }};
     let nuevoHermanoIndex = {{ $alumno->hermanos->count() }};
-    const maxHermanos = 5;
     const agregarHermanoButton = document.getElementById('agregar-hermano');
     const hermanosAdicionales = document.getElementById('hermanos-adicionales');
 
     agregarHermanoButton.addEventListener('click', function () {
-        if (hermanoCount < maxHermanos) {
+        {
             hermanoCount++;
             nuevoHermanoIndex++;
 
@@ -631,19 +670,13 @@ let hermanoCount = {{ $alumno->hermanos->count() }};
                 hermanosAdicionales.removeChild(hermanoDiv);
                 hermanoCount--;
 
-                // Mostrar el botón agregar si se bajó del máximo
-                if (hermanoCount < maxHermanos) {
-                    agregarHermanoButton.classList.remove('d-none');
-                }
             });
 
             hermanosAdicionales.appendChild(hermanoDiv);
 
-            if (hermanoCount === maxHermanos) {
-                agregarHermanoButton.classList.add('d-none');
-            }
         }
     });
+    document.querySelectorAll('.eliminar-hermano-existente').forEach((button) => button.addEventListener('click', () => button.closest('.hermano-existente').remove()));
     let contactoCount = 0; // Comienza en 0
 const maxContactos = 3;
 const agregarContactoButton = document.getElementById('agregar-contacto');
