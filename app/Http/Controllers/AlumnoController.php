@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Alumno;
 use App\Models\AlumnoArchivado;
+use App\Models\AlumnoEdicion;
 use App\Models\AlumnoPlataforma;
 use App\Models\BitacoraContactoFamiliar;
 use App\Models\Contacto;
@@ -567,12 +568,39 @@ class AlumnoController extends Controller
             END")
             ->get();
 
-        return view('capturista.edit', compact('alumno', 'contactos', 'grados', 'secciones', 'niveles', 'hermanos', 'familiares') + [
+        $edicionEnCurso = AlumnoEdicion::with('usuario')
+            ->where('alumno_id', $alumno->id)
+            ->where('expira_en', '>', now())
+            ->first();
+
+        return view('capturista.edit', compact('alumno', 'contactos', 'grados', 'secciones', 'niveles', 'hermanos', 'familiares', 'edicionEnCurso') + [
             'estadoExpediente' => $alumno->estadoExpediente(),
             'camposOpcionalesConfirmables' => $this->camposOpcionalesConfirmables(),
             'puedeEditarExpediente' => ! auth()->user()->hasAnyRole(['CoordinacionPreescolar', 'CoordinacionPrimaria', 'CoordinacionSecundaria'])
                 && auth()->user()->hasAnyRole(['SuperAdmin', 'ControlEscolar']),
         ]);
+    }
+
+    public function iniciarEdicion(Alumno $alumno)
+    {
+        NivelAccess::ensureCanAccess(auth()->user(), $alumno->nivel_educativo_id);
+        abort_unless(auth()->user()->hasAnyRole(['SuperAdmin', 'ControlEscolar']), 403);
+
+        AlumnoEdicion::where('alumno_id', $alumno->id)->where('expira_en', '<=', now())->delete();
+        $edicion = AlumnoEdicion::with('usuario')->where('alumno_id', $alumno->id)->first();
+
+        if ($edicion && $edicion->user_id !== auth()->id()) {
+            return response()->json([
+                'message' => 'Este expediente está siendo editado por '.$edicion->usuario?->name.'. Puedes consultarlo y volver a intentarlo cuando termine.',
+            ], 409);
+        }
+
+        AlumnoEdicion::updateOrCreate(
+            ['alumno_id' => $alumno->id],
+            ['user_id' => auth()->id(), 'iniciado_en' => now(), 'expira_en' => now()->addMinutes(15)]
+        );
+
+        return response()->json(['message' => 'Edición habilitada. La reserva vence automáticamente después de 15 minutos sin guardar.']);
     }
 
     public function registrarContactoFamiliar(Request $request, Alumno $alumno)
@@ -750,6 +778,15 @@ class AlumnoController extends Controller
             return back()->with('success', 'Los accesos de las plataformas se actualizaron correctamente.');
         }
 
+        $edicion = AlumnoEdicion::where('alumno_id', $alumno->id)
+            ->where('user_id', auth()->id())
+            ->where('expira_en', '>', now())
+            ->first();
+
+        if (! $edicion) {
+            return back()->with('error', 'Para guardar cambios primero usa “Editar expediente”. Si otra persona lo está editando, espera a que termine.');
+        }
+
         if ($request->filled('nivel_educativo_id')) {
             NivelAccess::ensureCanAccess(auth()->user(), (int) $request->nivel_educativo_id);
         }
@@ -858,6 +895,8 @@ class AlumnoController extends Controller
         if ($cambios !== []) {
             $this->registrarHistorial($alumno->id, "{$alumno->nombre} {$alumno->apellidopaterno} {$alumno->apellidomaterno}", 'actualizacion', null, $cambios);
         }
+
+        $edicion->delete();
 
         // Redirigir según el rol del usuario
         if (auth()->user()->hasRole('SuperAdmin')) {

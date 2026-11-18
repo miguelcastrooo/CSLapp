@@ -15,7 +15,7 @@
             <a href="{{ route('admin.alumnos.reporte', $alumno) }}" target="_blank" rel="noopener" class="btn btn-outline-primary"><i class="ti ti-file-description"></i> Reporte PDF</a>
             <a href="{{ route('admin.alumnos.pdf.id', $alumno) }}" target="_blank" rel="noopener" class="btn btn-outline-danger"><i class="ti ti-printer"></i> Credenciales PDF</a>
             @if($puedeEditarExpediente)
-                <button type="button" class="btn btn-warning" id="editBtn"><i class="ti ti-pencil"></i> Editar expediente</button>
+                <button type="button" class="btn btn-warning" id="editBtn" data-lock-url="{{ route('alumnos.edicion.iniciar', $alumno) }}" @disabled($edicionEnCurso && $edicionEnCurso->user_id !== auth()->id())><i class="ti ti-pencil"></i> Editar expediente</button>
                 <button type="submit" form="studentEditForm" class="btn btn-primary" id="updateBtn" style="display:none;"><i class="ti ti-device-floppy"></i> Guardar cambios</button>
             @else
                 <button type="button" class="btn btn-warning" id="editCredentialsBtn" onclick="window.habilitarContrasenasCoordinacion?.()"><i class="ti ti-key"></i> Editar accesos</button>
@@ -32,6 +32,9 @@
     </nav>
     <x-task-guide :title="$puedeEditarExpediente ? 'Cómo actualizar este expediente' : 'Consulta de expediente'" :description="$puedeEditarExpediente ? 'Primero consulta los datos. Si necesitas corregir algo, usa el botón Editar.' : 'Puedes consultar toda la información y actualizar únicamente los accesos de plataformas.'" :steps="$puedeEditarExpediente ? ['Pulsa “Editar expediente” para habilitar el formulario.', 'Cambia solo los datos necesarios.', 'Revisa y pulsa “Guardar cambios”.'] : ['Consulta la información del alumno.', 'Usa “Editar accesos” sólo si cambia un usuario o contraseña de plataforma.', 'Guarda los accesos al terminar.']" />
     <div id="edit-status" class="alert alert-info d-flex gap-2" role="status"><i class="fas fa-eye mt-1"></i><div><strong>Modo consulta.</strong> {{ $puedeEditarExpediente ? 'Los datos están protegidos mientras los revisas.' : 'La información del alumno está protegida; sólo los accesos de plataformas pueden modificarse.' }}</div></div>
+    @if($puedeEditarExpediente && $edicionEnCurso && $edicionEnCurso->user_id !== auth()->id)
+        <div class="alert alert-warning d-flex gap-2" role="alert"><i class="ti ti-lock mt-1"></i><div><strong>Edición en curso.</strong> {{ $edicionEnCurso->usuario?->name ?? 'Otra persona' }} está actualizando este expediente. Puedes consultarlo, pero espera a que termine para evitar sobrescribir cambios.</div></div>
+    @endif
     @php
         $importantes = collect($estadoExpediente['importantes']);
         $opcionales = collect($estadoExpediente['opcionales']);
@@ -633,7 +636,15 @@
     };
 
     // Funcionalidad de habilitar campos cuando el SuperAdmin hace click en "Editar"
-    document.getElementById('editBtn')?.addEventListener('click', function() {
+    document.getElementById('editBtn')?.addEventListener('click', async function() {
+        const button = this;
+        button.disabled = true;
+        const original = button.innerHTML;
+        button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Preparando edición';
+        try {
+            const response = await fetch(button.dataset.lockUrl, { method: 'POST', headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' } });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.message || 'No fue posible habilitar la edición.');
         // Hacer los campos input editables
         let fields = document.querySelectorAll('input');
         fields.forEach(field => field.removeAttribute('readonly'));
@@ -644,11 +655,17 @@
 
         // Mostrar el botón de actualizar
         document.getElementById('updateBtn').style.display = 'inline-block';
-        this.style.display = 'none'; // Ocultar el botón de editar
+        button.style.display = 'none'; // Ocultar el botón de editar
         document.querySelectorAll('.csl-readonly-form').forEach((section) => section.classList.remove('csl-readonly-form'));
         document.querySelectorAll('[data-edit-action]').forEach((button) => { button.disabled = false; });
         document.getElementById('edit-status').className = 'alert alert-warning d-flex gap-2';
         document.getElementById('edit-status').innerHTML = '<i class="fas fa-pen-to-square mt-1"></i><div><strong>Modo edición.</strong> Modifica únicamente los datos necesarios y pulsa “Guardar cambios” al terminar.</div>';
+        } catch (error) {
+            button.disabled = false;
+            button.innerHTML = original;
+            document.getElementById('edit-status').className = 'alert alert-danger d-flex gap-2';
+            document.getElementById('edit-status').innerHTML = '<i class="ti ti-lock-x mt-1"></i><div><strong>No se habilitó la edición.</strong> '+error.message+'</div>';
+        }
     });
 
     document.getElementById('editCredentialsBtn')?.addEventListener('click', function() {

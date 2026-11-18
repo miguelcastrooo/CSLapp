@@ -1,57 +1,27 @@
 @extends('layouts.app')
-
 @section('title', 'Respaldo del sistema | Instituto Horizonte')
-
 @section('content')
+@php
+    $estado = [
+        'vigente' => ['class' => 'success', 'titulo' => 'Respaldo al día', 'texto' => 'La última copia fue registrada hace '.$diasSinRespaldo.' día(s).'],
+        'por_revisar' => ['class' => 'warning', 'titulo' => 'Conviene crear una copia nueva', 'texto' => 'El último respaldo tiene '.$diasSinRespaldo.' días.'],
+        'atrasado' => ['class' => 'danger', 'titulo' => 'Respaldo pendiente', 'texto' => 'Han pasado '.$diasSinRespaldo.' días desde la última copia registrada.'],
+        'pendiente' => ['class' => 'danger', 'titulo' => 'Aún no hay respaldo registrado', 'texto' => 'Crea una copia antes de continuar con cambios importantes.'],
+    ][$estadoRespaldo];
+    $tipos = ['base_datos' => 'Base de datos', 'archivos' => 'Archivos adjuntos', 'completo' => 'Copia completa'];
+@endphp
 <div class="container-xl py-4">
-    <div class="csl-module-header">
-        <h1>Respaldo del sistema</h1>
-        <p>Protege la información antes de un cierre escolar, una actualización o una operación importante.</p>
+    <div class="csl-module-header d-flex align-items-start justify-content-between gap-3 flex-wrap">
+        <div><h1>Respaldo del sistema</h1><p>Registra copias seguras para poder recuperar el sistema ante un error, pérdida o cambio importante.</p></div>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#registrarRespaldoModal"><i class="ti ti-database-export me-2"></i>Registrar respaldo</button>
     </div>
-
-    <x-task-guide
-        title="Respalda antes de hacer cambios importantes"
-        description="Este proceso guarda una copia de la base de datos. Sólo SuperAdmin debe realizarlo."
-        :steps="[
-            'Confirma que nadie esté capturando información.',
-            'Crea el respaldo desde phpMyAdmin o con apoyo técnico.',
-            'Guarda el archivo con la fecha en una ubicación externa segura.',
-            'Antes de restaurar, crea un respaldo nuevo de la información actual.'
-        ]"
-    />
-
-    <div class="alert alert-warning d-flex gap-3" role="alert">
-        <i class="fas fa-triangle-exclamation mt-1" aria-hidden="true"></i>
-        <div><strong>Restaurar reemplaza información.</strong> Nunca restaures una copia sin guardar primero el estado actual. El sistema no restaura datos automáticamente para evitar pérdidas accidentales.</div>
+    <x-task-guide title="Qué se debe respaldar" description="Git protege el código, pero no guarda alumnos, archivos ni configuraciones locales." :steps="['Exporta la base de datos desde phpMyAdmin o el panel del servidor.', 'Copia también fotos, archivos adjuntos y documentos almacenados por el sistema.', 'Guarda los archivos fuera del equipo o servidor: disco externo o nube institucional.', 'Registra aquí dónde quedó la copia.']" />
+    <div class="alert alert-{{ $estado['class'] }} d-flex align-items-center gap-3 mb-4" role="status"><i class="ti ti-{{ $estadoRespaldo === 'vigente' ? 'circle-check' : 'alert-triangle' }} fs-2"></i><div><strong>{{ $estado['titulo'] }}</strong><div>{{ $estado['texto'] }}</div></div></div>
+    <div class="row g-4 mb-4">
+        <div class="col-lg-7"><div class="card csl-data-card h-100"><div class="card-body"><h2 class="h3 mb-2"><i class="ti ti-shield-lock me-2 text-primary"></i>Regla de seguridad</h2><p class="mb-0">Nunca guardes una copia sólo en el mismo equipo. El respaldo SQL no incluye la clave privada de la aplicación. Conserva una copia protegida del archivo <code>.env</code> o, como mínimo, de <code>APP_KEY</code>; sin ella no podrán leerse las credenciales cifradas de las plataformas.</p></div></div></div>
+        <div class="col-lg-5"><div class="card csl-data-card h-100"><div class="card-body"><div class="d-flex align-items-center gap-3"><span class="csl-management-icon"><i class="ti ti-clock-check"></i></span><div><strong>Último registro</strong><div class="text-secondary small">@if($ultimoRespaldo){{ $ultimoRespaldo->fecha->format('d/m/Y H:i') }} · {{ $ultimoRespaldo->usuario?->name ?? 'Administración' }}@else Sin registro todavía.@endif</div></div></div></div></div></div>
     </div>
-
-    <div class="card csl-data-card mb-4"><div class="card-body d-flex flex-column flex-md-row align-items-md-center gap-3"><span class="csl-management-icon"><i class="fas fa-shield-heart"></i></span><div class="flex-fill"><strong>Último respaldo confirmado</strong><div class="text-secondary small">@if($ultimoRespaldo){{ $ultimoRespaldo->fecha->format('d/m/Y H:i') }} por {{ $ultimoRespaldo->usuario?->name ?? 'Administración' }}@else Aún no hay un respaldo confirmado desde el sistema.@endif</div></div><form method="POST" action="{{ route('admin.respaldo.confirmar') }}" data-confirm="Confirma sólo después de descargar y guardar el archivo SQL en una ubicación externa segura." data-confirm-title="Confirmar respaldo" data-confirm-button="Sí, ya lo guardé" data-confirm-variant="primary">@csrf<button class="btn btn-primary"><i class="fas fa-check me-2"></i>Confirmar respaldo creado</button></form></div></div>
-
-    <div class="row g-4">
-        <div class="col-lg-6">
-            <div class="card csl-data-card h-100"><div class="card-body">
-                <h2 class="h3">Opción recomendada: phpMyAdmin</h2>
-                <ol class="mb-0 ps-3">
-                    <li>Abre <strong>phpMyAdmin</strong> desde XAMPP.</li>
-                    <li>Selecciona la base de datos <strong>cslprac</strong>.</li>
-                    <li>Abre la pestaña <strong>Exportar</strong>.</li>
-                    <li>Elige <strong>Rápido</strong> y formato <strong>SQL</strong>.</li>
-                    <li>Guarda el archivo con un nombre como <strong>cslprac-2026-11-12.sql</strong>.</li>
-                </ol>
-            </div></div>
-        </div>
-        <div class="col-lg-6">
-            <div class="card csl-data-card h-100"><div class="card-body">
-                <h2 class="h3">Para recuperar una copia</h2>
-                <ol class="mb-0 ps-3">
-                    <li>Crea primero un respaldo nuevo del estado actual.</li>
-                    <li>En phpMyAdmin selecciona <strong>cslprac</strong>.</li>
-                    <li>Abre <strong>Importar</strong> y selecciona el archivo SQL.</li>
-                    <li>Confirma la importación sólo si revisaste la fecha del archivo.</li>
-                    <li>Entra al sistema y verifica alumnos, usuarios y plataformas.</li>
-                </ol>
-            </div></div>
-        </div>
-    </div>
+    <div class="card csl-data-card"><div class="card-header"><h2 class="card-title mb-0">Historial de respaldos</h2></div><div class="table-responsive"><table class="table table-vcenter card-table"><thead><tr><th>Fecha</th><th>Tipo</th><th>Referencia</th><th>Ubicación</th><th>Responsable</th><th>Verificación</th></tr></thead><tbody>@forelse($historialRespaldos as $respaldo) @php($meta = $respaldo->metadata ?? []) <tr><td class="text-nowrap">{{ $respaldo->fecha->format('d/m/Y H:i') }}</td><td><span class="badge bg-azure-lt">{{ $tipos[$meta['tipo'] ?? 'base_datos'] ?? 'Base de datos' }}</span></td><td>{{ $meta['referencia'] ?? 'Sin referencia' }}</td><td>{{ $meta['ubicacion'] ?? 'No especificada' }}</td><td>{{ $respaldo->usuario?->name ?? 'Administración' }}</td><td>@if($meta['restauracion_verificada'] ?? false)<span class="badge bg-green-lt">Probada</span>@else<span class="text-secondary small">Pendiente</span>@endif</td></tr> @empty<tr><td colspan="6" class="text-center text-secondary py-5"><i class="ti ti-database-off fs-2 d-block mb-2"></i>Aún no hay respaldos registrados. Cuando crees uno, anota aquí dónde está guardado.</td></tr>@endforelse</tbody></table></div></div>
 </div>
+<div class="modal fade" id="registrarRespaldoModal" tabindex="-1" aria-labelledby="registrarRespaldoTitulo" aria-hidden="true"><div class="modal-dialog modal-lg"><form method="POST" action="{{ route('admin.respaldo.confirmar') }}" class="modal-content">@csrf <div class="modal-header"><h2 class="modal-title h3" id="registrarRespaldoTitulo">Registrar copia externa</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button></div><div class="modal-body"><div class="alert alert-info"><i class="ti ti-info-circle me-2"></i>Este formulario no genera el archivo: deja constancia de una copia que ya descargaste y protegiste.</div><div class="row g-3"><div class="col-md-6"><label class="form-label" for="respaldo-tipo">¿Qué guardaste?</label><select class="form-select" id="respaldo-tipo" name="tipo" required><option value="completo">Copia completa: base de datos y archivos</option><option value="base_datos">Sólo base de datos</option><option value="archivos">Sólo archivos adjuntos</option></select></div><div class="col-md-6"><label class="form-label" for="respaldo-referencia">Nombre del archivo o referencia</label><input class="form-control" id="respaldo-referencia" name="referencia" maxlength="120" placeholder="Ej. colegio-2026-11-18.sql"></div><div class="col-12"><label class="form-label" for="respaldo-ubicacion">¿Dónde quedó guardado?</label><input class="form-control" id="respaldo-ubicacion" name="ubicacion" maxlength="160" required placeholder="Ej. Disco externo de Administración o nube institucional"></div><div class="col-12"><label class="form-label" for="respaldo-notas">Notas (opcional)</label><textarea class="form-control" id="respaldo-notas" name="notas" rows="2" maxlength="500" placeholder="Ej. Incluye las fotos de perfil y archivos adjuntos."></textarea></div><div class="col-12"><label class="form-check"><input class="form-check-input" type="checkbox" name="restauracion_verificada" value="1"><span class="form-check-label">Ya se comprobó que esta copia puede restaurarse.</span></label></div></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button type="submit" class="btn btn-primary"><i class="ti ti-check me-2"></i>Registrar respaldo</button></div></form></div></div>
 @endsection

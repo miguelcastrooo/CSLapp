@@ -48,6 +48,7 @@ Route::middleware(['auth', 'account.active', 'school.verified'])->group(function
     Route::post('/alumnos/excel/previsualizar', [ImportacionAlumnoController::class, 'previsualizar'])->middleware('role:SuperAdmin|ControlEscolar')->name('alumnos.excel.previsualizar');
     Route::post('/alumnos/excel/confirmar', [ImportacionAlumnoController::class, 'confirmar'])->middleware('role:SuperAdmin|ControlEscolar')->name('alumnos.excel.confirmar');
     Route::get('/alumnos/{alumno}/edit', [AlumnoController::class, 'edit'])->name('alumnos.edit');
+    Route::post('/alumnos/{alumno}/edicion/iniciar', [AlumnoController::class, 'iniciarEdicion'])->middleware('role:SuperAdmin|ControlEscolar')->name('alumnos.edicion.iniciar');
     Route::get('/alumnos/{alumno}/bitacora', [AlumnoController::class, 'bitacoraContacto'])->name('alumnos.bitacora');
     Route::put('/alumnos/{alumno}', [AlumnoController::class, 'update'])->middleware('role:SuperAdmin|ControlEscolar|CoordinacionPreescolar|CoordinacionPrimaria|CoordinacionSecundaria')->name('alumnos.update');
     Route::post('/alumnos/{alumno}/bitacora-contacto', [AlumnoController::class, 'registrarContactoFamiliar'])->middleware('role:SuperAdmin|ControlEscolar')->name('alumnos.bitacora-contacto.registrar');

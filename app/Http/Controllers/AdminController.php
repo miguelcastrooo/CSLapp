@@ -272,16 +272,40 @@ class AdminController extends Controller
             ->latest('fecha')
             ->first();
 
-        return view('admin.respaldo', compact('ultimoRespaldo'));
+        $historialRespaldos = HistorialSeguridad::with('usuario')
+            ->where('evento', 'respaldo_confirmado')
+            ->latest('fecha')
+            ->take(10)
+            ->get();
+
+        $diasSinRespaldo = $ultimoRespaldo ? $ultimoRespaldo->fecha->diffInDays(now()) : null;
+        $estadoRespaldo = $diasSinRespaldo === null ? 'pendiente' : ($diasSinRespaldo <= 7 ? 'vigente' : ($diasSinRespaldo <= 14 ? 'por_revisar' : 'atrasado'));
+
+        return view('admin.respaldo', compact('ultimoRespaldo', 'historialRespaldos', 'diasSinRespaldo', 'estadoRespaldo'));
     }
 
-    public function confirmarRespaldo()
+    public function confirmarRespaldo(Request $request)
     {
         abort_unless(auth()->user()->hasRole('SuperAdmin'), 403);
 
-        HistorialSeguridad::registrar(auth()->user(), 'respaldo_confirmado', 'Se confirmó que se creó un respaldo externo de la base de datos.');
+        $data = $request->validate([
+            'tipo' => 'required|in:base_datos,archivos,completo',
+            'referencia' => 'nullable|string|max:120',
+            'ubicacion' => 'required|string|max:160',
+            'notas' => 'nullable|string|max:500',
+            'restauracion_verificada' => 'nullable|boolean',
+        ]);
 
-        return back()->with('success', 'Se registró el respaldo. Guarda el archivo SQL en una ubicación externa segura.');
+        $tipos = ['base_datos' => 'Base de datos', 'archivos' => 'Archivos adjuntos', 'completo' => 'Copia completa'];
+        HistorialSeguridad::registrar(auth()->user(), 'respaldo_confirmado', 'Se registró un respaldo externo: '.$tipos[$data['tipo']].'.', [
+            'tipo' => $data['tipo'],
+            'referencia' => $data['referencia'] ?? null,
+            'ubicacion' => $data['ubicacion'],
+            'notas' => $data['notas'] ?? null,
+            'restauracion_verificada' => (bool) ($data['restauracion_verificada'] ?? false),
+        ]);
+
+        return back()->with('success', 'El respaldo quedó registrado en el historial. Conserva su archivo y la clave de la aplicación en ubicaciones seguras y separadas.');
     }
 
     public function asignarPlataformasNivel(Request $request, NivelEducativo $nivel)
