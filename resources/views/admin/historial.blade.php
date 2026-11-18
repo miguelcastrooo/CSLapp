@@ -10,6 +10,7 @@
 <x-task-guide title="Cómo usar este historial" description="Este registro es de consulta: muestra quién realizó cada cambio y cuándo." :steps="['Ubica al alumno o la fecha.', 'Abre “Ver cambios” para conocer el detalle.', 'No se puede modificar el historial desde esta pantalla.']" />
 
 <div class="card csl-data-card">
+    <div class="card-header"><form method="GET" class="row g-2 align-items-end"><div class="col-md-3"><label class="form-label small" for="historial-buscar">Alumno</label><input id="historial-buscar" name="buscar" class="form-control" value="{{ $filtros['buscar'] ?? '' }}" placeholder="Nombre del alumno"></div><div class="col-md-2"><label class="form-label small" for="historial-accion">Acción</label><select id="historial-accion" name="accion" class="form-select"><option value="">Todas</option>@foreach($acciones as $accion)<option value="{{ $accion }}" @selected(($filtros['accion'] ?? '') === $accion)>{{ str_replace('_', ' ', ucfirst($accion)) }}</option>@endforeach</select></div><div class="col-md-2"><label class="form-label small" for="historial-usuario">Responsable</label><select id="historial-usuario" name="usuario_id" class="form-select"><option value="">Todos</option>@foreach($usuariosHistorial as $usuario)<option value="{{ $usuario->id }}" @selected((string) ($filtros['usuario_id'] ?? '') === (string) $usuario->id)>{{ $usuario->name }}</option>@endforeach</select></div><div class="col-md-2"><label class="form-label small" for="historial-desde">Desde</label><input id="historial-desde" type="date" name="desde" class="form-control" value="{{ $filtros['desde'] ?? '' }}"></div><div class="col-md-2"><label class="form-label small" for="historial-hasta">Hasta</label><input id="historial-hasta" type="date" name="hasta" class="form-control" value="{{ $filtros['hasta'] ?? '' }}"></div><div class="col-md-1 d-flex gap-1"><button type="submit" class="btn btn-primary text-nowrap" aria-label="Aplicar filtros"><i class="fas fa-filter me-1"></i>Filtrar</button><a href="{{ route('admin.historial') }}" class="btn btn-outline-secondary" aria-label="Limpiar filtros"><i class="fas fa-rotate-left"></i></a></div></form></div>
     <div class="table-responsive">
         <table class="table table-vcenter table-hover">
             <thead><tr><th>Fecha</th><th>Alumno</th><th>Acción</th><th>Responsable</th><th>Detalle</th></tr></thead>
@@ -21,7 +22,7 @@
                     <tr>
                         <td class="text-nowrap">{{ $evento->fecha->format('d/m/Y H:i') }}</td>
                         <td>{{ $evento->alumno_nombre ?? '#' . $evento->alumno_id }}</td>
-                        <td><span class="badge {{ $evento->accion === 'baja' ? 'bg-red-lt' : ($evento->accion === 'reactivacion' ? 'bg-green-lt' : 'bg-azure-lt') }}">{{ ucfirst($evento->accion) }}</span></td>
+                        <td><span class="badge {{ $evento->accion === 'baja' ? 'bg-red-lt' : ($evento->accion === 'reactivacion' ? 'bg-green-lt' : 'bg-azure-lt') }}">{{ str_replace('_', ' ', ucfirst($evento->accion)) }}</span></td>
                         <td>{{ $evento->usuario?->name ?? 'Sin registro anterior' }}</td>
                         <td>
                             @if($evento->motivo)

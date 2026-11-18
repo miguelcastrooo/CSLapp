@@ -2,11 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Mail\AlumnoRegistered;
-use App\Mail\AlumnoUpdate;
 use App\Models\Alumno;
 use App\Models\AlumnoArchivado;
 use App\Models\AlumnoPlataforma;
+use App\Models\BitacoraContactoFamiliar;
 use App\Models\Contacto;
 use App\Models\Familiar;
 use App\Models\Grado;
@@ -16,12 +15,16 @@ use App\Models\NivelEducativo;
 use App\Models\Plataforma;
 use App\Models\Seccion;
 use App\Support\NivelAccess;
+use App\Services\NotificacionesEscolares;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
 
 class AlumnoController extends Controller
 {
+    public function __construct(private readonly NotificacionesEscolares $notificaciones)
+    {
+    }
+
     private function registrarHistorial(int $alumnoId, string $alumnoNombre, string $accion, ?string $motivo = null, ?array $cambios = null): void
     {
         HistorialAlumno::create([
@@ -68,6 +71,17 @@ class AlumnoController extends Controller
                 'plataforma' => $plataforma->plataforma->nombre ?? 'Sin nombre',
                 'usuario' => $plataforma->usuario,
             ])->sortBy('id')->values()->all(),
+        ];
+    }
+
+    private function camposOpcionalesConfirmables(): array
+    {
+        return [
+            'contacto_alterno' => 'Contacto alterno',
+            'tercer_contacto' => 'Tercer contacto de emergencia',
+            'telefono_fijo_familiar' => 'Teléfono fijo de familiar',
+            'alergias_padecimientos' => 'Alergias o padecimientos',
+            'plataforma_asignada' => 'Plataforma asignada',
         ];
     }
 
@@ -121,7 +135,7 @@ class AlumnoController extends Controller
         $tokens = collect(preg_split('/\s+/', trim($raw)))
             ->filter();                   // elimina strings vacíos
 
-        $alumnos = Alumno::with(['nivelEducativo', 'grado'])
+        $alumnos = Alumno::with(['nivelEducativo', 'grado', 'contactos', 'familiares'])
             ->withCount(['contactos', 'familiares', 'alumnoPlataforma'])
             ->whereIn('nivel_educativo_id', $nivelIds)
 
@@ -148,6 +162,12 @@ class AlumnoController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
+        $alumnos->getCollection()->transform(function (Alumno $alumno) {
+            $alumno->setAttribute('estado_expediente', $alumno->estadoExpediente());
+
+            return $alumno;
+        });
+
         return response()->json($alumnos);
     }
 
@@ -163,6 +183,7 @@ class AlumnoController extends Controller
 
     public function select()
     {
+        abort_unless(NivelAccess::hasFullAccess(auth()->user()), 403);
         $niveles = NivelAccess::allowedLevels(auth()->user());
 
         return view('capturista.select', compact('niveles'));
@@ -170,6 +191,7 @@ class AlumnoController extends Controller
 
     public function create($nivel_id)
     {
+        abort_unless(NivelAccess::hasFullAccess(auth()->user()), 403);
         // Obtener el nivel educativo con su ID
         $nivel = NivelEducativo::findOrFail($nivel_id);
         NivelAccess::ensureCanAccess(auth()->user(), $nivel->id);
@@ -184,6 +206,7 @@ class AlumnoController extends Controller
 
     public function store(Request $request)
     {
+        abort_unless(NivelAccess::hasFullAccess(auth()->user()), 403);
         NivelAccess::ensureCanAccess(auth()->user(), (int) $request->nivel_educativo_id);
         // Validación de los datos del formulario
         $request->validate([
@@ -232,7 +255,43 @@ class AlumnoController extends Controller
             'hermano4edad' => 'nullable|integer|min:0|max:50',
             'hermano5nombre' => 'nullable|string|max:255',
             'hermano5edad' => 'nullable|integer|min:0|max:50',
+            'hermanos' => 'nullable|array',
+            'hermanos.*.nombre' => 'nullable|string|max:255',
+            'hermanos.*.apellido_paterno' => 'nullable|string|max:255',
+            'hermanos.*.apellido_materno' => 'nullable|string|max:255',
+            'hermanos.*.edad' => 'nullable|integer|min:0|max:50',
+            'familiares' => 'nullable|array',
+            'familiares.*.nombre' => 'nullable|string|max:255',
+            'familiares.*.apellido_paterno' => 'nullable|string|max:255',
+            'familiares.*.apellido_materno' => 'nullable|string|max:255',
+            'familiares.*.correo' => 'nullable|email|max:255',
+            'familiares.*.celular' => 'nullable|string|max:15',
+            'familiares.*.telefono_fijo' => 'nullable|string|max:15',
         ]);
+
+        // No se obliga a registrar padre, madre y tutor a la vez. Basta con
+        // capturar a una persona responsable real; sólo se guardan las tarjetas
+        // que tengan nombre.
+        $tiposFamiliares = collect(['Padre', 'Madre', 'Tutor']);
+        $familiaresRegistrados = $tiposFamiliares
+            ->mapWithKeys(fn (string $tipo) => [$tipo => $request->input("familiares.{$tipo}", [])])
+            ->filter(fn (array $datos) => filled($datos['nombre'] ?? null));
+
+        if ($familiaresRegistrados->isEmpty()) {
+            return back()->withInput()->withErrors([
+                'familiares' => 'Registra al menos un familiar responsable: padre, madre o tutor.',
+            ]);
+        }
+
+        foreach ($familiaresRegistrados as $tipo => $datos) {
+            foreach (['apellido_paterno' => 'apellido paterno', 'apellido_materno' => 'apellido materno'] as $campo => $etiqueta) {
+                if (blank($datos[$campo] ?? null)) {
+                    return back()->withInput()->withErrors([
+                        "familiares.{$tipo}.{$campo}" => "Completa el {$etiqueta} de {$tipo}.",
+                    ]);
+                }
+            }
+        }
 
         $correosContacto = collect([$request->correo1, $request->correo2, $request->correo3])
             ->filter()
@@ -270,9 +329,6 @@ class AlumnoController extends Controller
         } else {
             $ultimoNumero = 1723;
         }
-
-        // Generar la nueva matrícula
-        $nuevaMatricula = $año.str_pad($ultimoNumero + 1, 4, '0', STR_PAD_LEFT);
 
         // Incrementar en 1 y formatear con 4 dígitos
         $nuevoNumero = str_pad($ultimoNumero + 1, 4, '0', STR_PAD_LEFT);
@@ -321,18 +377,12 @@ class AlumnoController extends Controller
             return redirect()->back()->with('error', 'Error al crear el alumno.');
         }
 
-        if ($request->has('familiares')) {
-            // Definir los tipos requeridos
-            $tiposRequeridos = ['Padre', 'Madre', 'Tutor'];
-
-            foreach ($tiposRequeridos as $tipo) {
-                // Obtener datos si existen, sino asignar array vacío
-                $datos = $request->familiares[$tipo] ?? [];
-
+        if ($familiaresRegistrados->isNotEmpty()) {
+            foreach ($familiaresRegistrados as $tipo => $datos) {
                 Familiar::create([
                     'alumno_id' => $alumno->id,
-                    'tipo_familiar' => $tipo, // Aquí se usa el nombre correcto del campo en la base de datos
-                    'nombre' => $datos['nombre'] ?? 'No Especificado',
+                    'tipo_familiar' => $tipo,
+                    'nombre' => $datos['nombre'],
                     'apellido_paterno' => $datos['apellido_paterno'] ?? null,
                     'apellido_materno' => $datos['apellido_materno'] ?? null,
                     'fecha_nacimiento' => $datos['fecha_nacimiento'] ?? null,
@@ -367,41 +417,17 @@ class AlumnoController extends Controller
 
         $this->registrarHistorial($alumno->id, "{$alumno->nombre} {$alumno->apellidopaterno} {$alumno->apellidomaterno}", 'alta');
 
-        // Recuperar los hermanos
-        $hermanos = Hermano::where('alumno_id', $alumno->id)->get();
+        $this->notificaciones->notificarAlumno($alumno, 'alta');
 
-        $contactos = Contacto::where('alumno_id', $alumno->id)->get();
-
-        // Lógica para agregar los destinatarios del correo
-        $destinatarios = [
-            'coordinador_tecnologia@colegiosanluis.com',
-            'coordinadora_academica@colegiosanluis.com',
-        ];
-
-        // Agregar al coordinador del nivel educativo
-        switch ($request->nivel_educativo_id) {
-            case 1:
-                $destinatarios[] = 'coordinador.preescolar@colegiosanluis.com';
-                break;
-            case 2:
-                $destinatarios[] = 'coordinador.primaria@colegiosanluis.com';
-                break;
-            case 3:
-                $destinatarios[] = 'coordinador.secundaria@colegiosanluis.com';
-                break;
-        }
-
-        // Enviar el correo de notificación a los destinatarios
-        Mail::to($destinatarios)->send(new AlumnoRegistered($alumno, $contactos, $hermanos));
-
-        return redirect()->route('capturista.selectsearch')->with('success', 'Alumno registrado correctamente.');
+        return redirect()->route('alumnos.edit', $alumno)
+            ->with('success', "Alumno registrado correctamente. Matrícula asignada: {$alumno->matricula}. Desde este expediente puedes revisar los datos o descargar sus credenciales.");
     }
 
-    protected function generarCredenciales($nombre, $apellido, $matricula, $fechaInscripcion)
+    protected function generarCredenciales(string $nombre, string $apellido, string $matricula, string $fechaInscripcion): array
     {
-        // Obtener el primer nombre y apellido
-        $primerNombre = strtolower(explode(' ', $nombre)[0]);
-        $primerApellido = strtolower(explode(' ', $apellido)[0]);
+        // Se usan datos simples y sin acentos para evitar correos inválidos.
+        $primerNombre = Str::lower(Str::ascii(explode(' ', trim($nombre))[0]));
+        $primerApellido = Str::lower(Str::ascii(explode(' ', trim($apellido))[0]));
 
         // Generar el correo con el dominio @colegiosanluis.com.mx
         $emailClassroom = $primerNombre.$primerApellido.'@colegiosanluis.com.mx';
@@ -423,35 +449,36 @@ class AlumnoController extends Controller
 
         // Devolvemos las credenciales generadas
         return [
-            'usuario_classroom' => $emailClassroom, // Solo guardamos el correo para usuario_classroom
+            'usuario_classroom' => $emailClassroom,
             'contraseña_classroom' => $contraseñaClassroom,
             'usuario_moodle' => $usuarioMoodle,
             'contraseña_moodle' => $contraseñaMoodle,
         ];
     }
 
-    // Función para guardar las credenciales en alumno_plataforma
-    protected function guardarCredencialesPlataforma(Alumno $alumno, $credenciales)
+    /**
+     * Guarda sólo credenciales automáticas de plataformas activas y asignadas
+     * al nivel del alumno. Nunca depende de IDs internos como 1 o 2.
+     */
+    protected function guardarCredencialesPlataforma(Alumno $alumno, array $credenciales): void
     {
-        // Asignar plataforma_id para Classroom (1) y Moodle (2)
-        $classroomPlataformaId = 1;
-        $moodlePlataformaId = 2;
+        $plataformas = Plataforma::query()
+            ->where('activo', true)
+            ->whereHas('niveles', fn ($query) => $query->whereKey($alumno->nivel_educativo_id))
+            ->get();
 
-        // Guardar en la tabla alumno_plataforma para Classroom
-        AlumnoPlataforma::create([
-            'alumno_id' => $alumno->id,
-            'plataforma_id' => $classroomPlataformaId, // ID de la plataforma
-            'usuario' => $credenciales['usuario_classroom'],
-            'contraseña' => $credenciales['contraseña_classroom'],
-        ]);
+        $automaticas = [
+            'classroom' => ['usuario' => $credenciales['usuario_classroom'], 'contraseña' => $credenciales['contraseña_classroom']],
+            'moodle' => ['usuario' => $credenciales['usuario_moodle'], 'contraseña' => $credenciales['contraseña_moodle']],
+        ];
 
-        // Guardar en la tabla alumno_plataforma para Moodle
-        AlumnoPlataforma::create([
-            'alumno_id' => $alumno->id,
-            'plataforma_id' => $moodlePlataformaId, // ID de la plataforma
-            'usuario' => $credenciales['usuario_moodle'],
-            'contraseña' => $credenciales['contraseña_moodle'],
-        ]);
+        foreach ($automaticas as $nombre => $datos) {
+            $plataforma = $plataformas->first(fn (Plataforma $plataforma) => Str::contains(Str::lower($plataforma->nombre), $nombre));
+
+            if ($plataforma) {
+                $alumno->alumnoPlataforma()->updateOrCreate(['plataforma_id' => $plataforma->id], $datos);
+            }
+        }
     }
 
     public function relacionarContactos(Request $request, Alumno $alumno)
@@ -524,11 +551,11 @@ class AlumnoController extends Controller
 
     public function edit($id)
     {
-        $alumno = Alumno::findOrFail($id);
+        $alumno = Alumno::with(['confirmacionesOpcionales', 'bitacorasContacto.usuario'])->findOrFail($id);
         NivelAccess::ensureCanAccess(auth()->user(), $alumno->nivel_educativo_id);
         $contactos = Contacto::where('alumno_id', $alumno->id)->get();
         $grados = Grado::where('nivel_educativo_id', $alumno->nivel_educativo_id)->where('activo', true)->get();
-        $secciones = Seccion::where('grado_id', $alumno->grado_id)->where('activo', true)->orderBy('nombre')->get();
+        $secciones = $this->seccionesDisponiblesParaGrado($alumno->grado_id);
         $niveles = NivelAccess::allowedLevels(auth()->user());
         $hermanos = $alumno->hermanos; // Obtener los hermanos relacionados con el alumno
         $familiares = Familiar::where('alumno_id', $id)
@@ -540,7 +567,86 @@ class AlumnoController extends Controller
             END")
             ->get();
 
-        return view('capturista.edit', compact('alumno', 'contactos', 'grados', 'secciones', 'niveles', 'hermanos', 'familiares'));
+        return view('capturista.edit', compact('alumno', 'contactos', 'grados', 'secciones', 'niveles', 'hermanos', 'familiares') + [
+            'estadoExpediente' => $alumno->estadoExpediente(),
+            'camposOpcionalesConfirmables' => $this->camposOpcionalesConfirmables(),
+            'puedeEditarExpediente' => ! auth()->user()->hasAnyRole(['CoordinacionPreescolar', 'CoordinacionPrimaria', 'CoordinacionSecundaria'])
+                && auth()->user()->hasAnyRole(['SuperAdmin', 'ControlEscolar']),
+        ]);
+    }
+
+    public function registrarContactoFamiliar(Request $request, Alumno $alumno)
+    {
+        NivelAccess::ensureCanAccess(auth()->user(), $alumno->nivel_educativo_id);
+
+        $data = $request->validate([
+            'tipo' => 'required|in:llamada,correo,reunion,mensaje,otro',
+            'resumen' => 'required|string|max:1500',
+            'fecha_contacto' => 'required|date',
+        ]);
+
+        $registro = $alumno->bitacorasContacto()->create([
+            ...$data,
+            'user_id' => auth()->id(),
+        ]);
+
+        $this->registrarHistorial(
+            $alumno->id,
+            trim("{$alumno->nombre} {$alumno->apellidopaterno} {$alumno->apellidomaterno}"),
+            'contacto_familia',
+            "Se registró {$registro->tipo} con la familia."
+        );
+
+        return back()->with('success', 'El contacto con la familia quedó registrado en el expediente.');
+    }
+
+    /**
+     * Muestra el historial de comunicación en una pantalla separada para que el
+     * expediente conserve una lectura corta y enfocada en los datos del alumno.
+     */
+    public function bitacoraContacto(Alumno $alumno)
+    {
+        NivelAccess::ensureCanAccess(auth()->user(), $alumno->nivel_educativo_id);
+
+        $alumno->load('bitacorasContacto.usuario');
+
+        $puedeRegistrarBitacora = ! auth()->user()->hasAnyRole([
+            'CoordinacionPreescolar',
+            'CoordinacionPrimaria',
+            'CoordinacionSecundaria',
+        ]) && auth()->user()->hasAnyRole(['SuperAdmin', 'ControlEscolar']);
+
+        return view('capturista.bitacora-contacto', compact('alumno', 'puedeRegistrarBitacora'));
+    }
+
+    public function confirmarCampoOpcional(Alumno $alumno, string $campo)
+    {
+        NivelAccess::ensureCanAccess(auth()->user(), $alumno->nivel_educativo_id);
+        abort_unless(array_key_exists($campo, $this->camposOpcionalesConfirmables()), 404);
+
+        $alumno->confirmacionesOpcionales()->updateOrCreate(
+            ['campo' => $campo],
+            ['user_id' => auth()->id(), 'confirmado_en' => now()]
+        );
+
+        $this->registrarHistorial(
+            $alumno->id,
+            trim("{$alumno->nombre} {$alumno->apellidopaterno} {$alumno->apellidomaterno}"),
+            'dato_opcional_confirmado',
+            "Se confirmó que no aplica o no se cuenta con: {$this->camposOpcionalesConfirmables()[$campo]}."
+        );
+
+        return back()->with('success', 'El dato opcional quedó confirmado como no disponible o no aplicable.');
+    }
+
+    public function reabrirCampoOpcional(Alumno $alumno, string $campo)
+    {
+        NivelAccess::ensureCanAccess(auth()->user(), $alumno->nivel_educativo_id);
+        abort_unless(array_key_exists($campo, $this->camposOpcionalesConfirmables()), 404);
+
+        $alumno->confirmacionesOpcionales()->where('campo', $campo)->delete();
+
+        return back()->with('success', 'El dato opcional volvió a quedar pendiente para completarse.');
     }
 
     public function getGrados($nivel_id)
@@ -558,9 +664,34 @@ class AlumnoController extends Controller
         $grado = Grado::findOrFail($grado_id);
         NivelAccess::ensureCanAccess(auth()->user(), $grado->nivel_educativo_id);
 
-        return response()->json(
-            Seccion::where('grado_id', $grado->id)->where('activo', true)->orderBy('nombre')->get(['id', 'nombre'])
-        );
+        return response()->json($this->seccionesDisponiblesParaGrado($grado->id));
+    }
+
+    /**
+     * Combina las secciones administradas con las que ya existen en expedientes
+     * antiguos. Así la transición al nuevo catálogo no deja selectores vacíos.
+     */
+    private function seccionesDisponiblesParaGrado(int $gradoId)
+    {
+        $catalogo = Seccion::where('grado_id', $gradoId)
+            ->where('activo', true)
+            ->orderBy('nombre')
+            ->get(['id', 'nombre']);
+
+        $historicas = Alumno::where('grado_id', $gradoId)
+            ->whereNotNull('seccion')
+            ->where('seccion', '!=', '')
+            ->distinct()
+            ->orderBy('seccion')
+            ->pluck('seccion')
+            ->map(fn (string $nombre) => ['id' => null, 'nombre' => $nombre]);
+
+        return $catalogo
+            ->map(fn (Seccion $seccion) => ['id' => $seccion->id, 'nombre' => $seccion->nombre])
+            ->concat($historicas)
+            ->unique('nombre')
+            ->sortBy('nombre')
+            ->values();
     }
 
     private function validarSeccionDelGrado(?string $seccion, int $gradoId): void
@@ -588,12 +719,44 @@ class AlumnoController extends Controller
         }
 
         NivelAccess::ensureCanAccess(auth()->user(), $alumno->nivel_educativo_id);
+
+        $soloAccesosPlataforma = auth()->user()->hasAnyRole([
+            'CoordinacionPreescolar',
+            'CoordinacionPrimaria',
+            'CoordinacionSecundaria',
+        ]);
+
+        // Coordinación consulta el expediente, pero puede mantener actualizados los
+        // accesos de las plataformas de su propio nivel. Ningún otro dato recibido
+        // desde el formulario se procesa para ese rol.
+        if ($soloAccesosPlataforma) {
+            $request->validate([
+                'plataformas' => 'nullable|array',
+                'plataformas.*.usuario' => 'nullable|string|max:255',
+                'plataformas.*.contraseña' => 'nullable|string|max:255',
+            ]);
+
+            $actualizadas = $this->actualizarAccesosPlataformas($request, $alumno);
+
+            if ($actualizadas > 0) {
+                $this->registrarHistorial(
+                    $alumno->id,
+                    "{$alumno->nombre} {$alumno->apellidopaterno} {$alumno->apellidomaterno}",
+                    'accesos_plataformas_actualizados',
+                    "Se actualizaron los accesos de {$actualizadas} plataforma(s), sin registrar credenciales."
+                );
+            }
+
+            return back()->with('success', 'Los accesos de las plataformas se actualizaron correctamente.');
+        }
+
         if ($request->filled('nivel_educativo_id')) {
             NivelAccess::ensureCanAccess(auth()->user(), (int) $request->nivel_educativo_id);
         }
 
         // Validación de los campos
         $request->validate($this->getValidationRules($id));
+        $this->validarTelefonosFamiliaresModificados($request, $alumno);
 
         $nivelDestinoId = (int) ($request->nivel_educativo_id ?? $alumno->nivel_educativo_id);
         $gradoDestinoId = (int) ($request->grado_id ?? $alumno->grado_id);
@@ -615,27 +778,16 @@ class AlumnoController extends Controller
         // Asignación de la fecha de inicio
         $fecha_inicio = $request->fecha_inicio ?? now()->toDateString();
 
-        // Generar las credenciales
-        $credenciales = $this->generarCredenciales(
-            $request->nombre ?? $alumno->nombre,
-            $request->apellidopaterno ?? $alumno->apellidopaterno,
-            $request->matricula ?? $alumno->matricula,
-            $request->fecha_inscripcion ?? $alumno->fecha_inscripcion
-        );
-
         $valoresAnteriores = $alumno->getOriginal();
         $relacionesAnteriores = $this->resumenRelaciones($alumno);
 
         // Asignar los valores recibidos de la solicitud
         $alumno->update([
-            'matricula' => $request->matricula ?? $alumno->matricula,
+            // La matrícula se asigna al alta o importación y no se modifica desde el expediente.
+            'matricula' => $alumno->matricula,
             'nombre' => $request->nombre ?? $alumno->nombre,
             'apellidopaterno' => $request->apellidopaterno ?? $alumno->apellidopaterno,
             'apellidomaterno' => $request->apellidomaterno ?? $alumno->apellidomaterno,
-            'usuario_classroom' => $credenciales['usuario_classroom'],
-            'contraseña_classroom' => $credenciales['contraseña_classroom'],
-            'usuario_moodle' => $credenciales['usuario_moodle'],
-            'contraseña_moodle' => $credenciales['contraseña_moodle'],
             'usuario_hmh' => $request->usuario_hmh ?? $alumno->usuario_hmh,
             'contraseña_hmh' => $request->contraseña_hmh ?? $alumno->contraseña_hmh,
             'usuario_mathletics' => $request->usuario_mathletics ?? $alumno->usuario_mathletics,
@@ -707,12 +859,6 @@ class AlumnoController extends Controller
             $this->registrarHistorial($alumno->id, "{$alumno->nombre} {$alumno->apellidopaterno} {$alumno->apellidomaterno}", 'actualizacion', null, $cambios);
         }
 
-        // Obtener los contactos del alumno
-        $contactos = $alumno->contactos;
-
-        // Enviar correo de notificación
-        $this->enviarCorreoNotificacion($alumno, $contactos);
-
         // Redirigir según el rol del usuario
         if (auth()->user()->hasRole('SuperAdmin')) {
             return redirect()->route('alumnos.edit', ['alumno' => $alumno->id])->with('success', 'Alumno actualizado correctamente.');
@@ -724,7 +870,7 @@ class AlumnoController extends Controller
     private function getValidationRules($id)
     {
         return [
-            'matricula' => 'nullable|numeric|unique:alumnos,matricula,'.$id,
+            'matricula' => 'nullable|string|max:100|unique:alumnos,matricula,'.$id,
             'nombre' => 'nullable|string|max:255',
             'apellidopaterno' => 'nullable|string|max:255',
             'apellidomaterno' => 'nullable|string|max:255',
@@ -770,8 +916,10 @@ class AlumnoController extends Controller
             'familiares.*.colonia' => 'nullable|string|max:255',
             'familiares.*.ciudad' => 'nullable|string|max:255',
             'familiares.*.estado' => 'nullable|string|max:255',
-            'familiares.*.telefono_fijo' => 'nullable|digits:10',
-            'familiares.*.celular' => 'nullable|digits:10',
+            // Los expedientes históricos pueden conservar teléfonos antiguos. Los datos
+            // nuevos o modificados se validan después con un mensaje orientado al usuario.
+            'familiares.*.telefono_fijo' => 'sometimes|nullable|string|max:15',
+            'familiares.*.celular' => 'sometimes|nullable|string|max:15',
             'familiares.*.correo' => 'nullable|email',
             'familiares.*.profesion' => 'nullable|string|max:255',
             'familiares.*.ocupacion' => 'nullable|string|max:255',
@@ -792,40 +940,81 @@ class AlumnoController extends Controller
         ];
     }
 
-    private function enviarCorreoNotificacion($alumno, $contactos)
+    /**
+     * Valida únicamente teléfonos de familiares que se modificaron en esta edición.
+     * Esto evita bloquear una consulta/guardado por datos heredados del expediente.
+     */
+    private function validarTelefonosFamiliaresModificados(Request $request, Alumno $alumno): void
     {
-        $destinatarios = [
-            'coordinador_tecnologia@colegiosanluis.com',
-            'coordinadora_academica@colegiosanluis.com',
-        ];
+        $familiaresActuales = $alumno->familiares->keyBy('id');
+        $errores = [];
 
-        switch ($alumno->nivel_educativo_id) {
-            case 1:
-                $destinatarios[] = 'coordinador.preescolar@colegiosanluis.com';
-                break;
-            case 2:
-                $destinatarios[] = 'coordinador.primaria@colegiosanluis.com';
-                break;
-            case 3:
-                $destinatarios[] = 'coordinador.secundaria@colegiosanluis.com';
-                break;
+        foreach ($request->input('familiares', []) as $indice => $familiar) {
+            $registroAnterior = $familiaresActuales->get((int) ($familiar['id'] ?? 0));
+
+            foreach (['celular' => 'teléfono celular', 'telefono_fijo' => 'teléfono fijo'] as $campo => $etiqueta) {
+                $valor = trim((string) ($familiar[$campo] ?? ''));
+                $valorAnterior = (string) ($registroAnterior?->{$campo} ?? '');
+
+                if ($valor === '' || $valor === $valorAnterior) {
+                    continue;
+                }
+
+                if (! preg_match('/^\\d{10}$/', $valor)) {
+                    $errores["familiares.{$indice}.{$campo}"] = "El {$etiqueta} debe tener 10 dígitos.";
+                }
+            }
         }
 
-        Mail::to($destinatarios)->send(new AlumnoUpdate($alumno, $contactos));
+        if ($errores !== []) {
+            throw \Illuminate\Validation\ValidationException::withMessages($errores);
+        }
     }
 
     private function actualizarPlataformas(Request $request, Alumno $alumno)
     {
         $plataformas = $request->input('plataformas', []);
+        $plataformasPermitidas = Plataforma::query()
+            ->where('activo', true)
+            ->whereHas('niveles', fn ($query) => $query->whereKey($alumno->nivel_educativo_id))
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
 
         foreach ($plataformas as $plataformaId => $datos) {
-            if (! empty($datos['usuario']) && ! empty($datos['contraseña'])) {
+            if (in_array((int) $plataformaId, $plataformasPermitidas, true) && ! empty($datos['usuario']) && ! empty($datos['contraseña'])) {
                 $alumno->alumnoPlataforma()->updateOrCreate(
                     ['plataforma_id' => $plataformaId],
                     ['usuario' => $datos['usuario'], 'contraseña' => $datos['contraseña']]
                 );
             }
         }
+    }
+
+    /** Actualiza sólo accesos de plataforma; se usa desde Coordinación. */
+    private function actualizarAccesosPlataformas(Request $request, Alumno $alumno): int
+    {
+        $plataformasPermitidas = Plataforma::query()
+            ->where('activo', true)
+            ->whereHas('niveles', fn ($query) => $query->whereKey($alumno->nivel_educativo_id))
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+        $actualizadas = 0;
+
+        foreach ($request->input('plataformas', []) as $plataformaId => $datos) {
+            if (! in_array((int) $plataformaId, $plataformasPermitidas, true) || blank($datos['usuario'] ?? null) || blank($datos['contraseña'] ?? null)) {
+                continue;
+            }
+
+            $registro = $alumno->alumnoPlataforma()->where('plataforma_id', $plataformaId)->first();
+            if ($registro && (! hash_equals((string) $registro->usuario, (string) $datos['usuario']) || ! hash_equals((string) $registro->contraseña, (string) $datos['contraseña']))) {
+                $registro->update(['usuario' => $datos['usuario'], 'contraseña' => $datos['contraseña']]);
+                $actualizadas++;
+            }
+        }
+
+        return $actualizadas;
     }
 
     private function actualizarFamiliares(Request $request, Alumno $alumno)
@@ -933,6 +1122,7 @@ class AlumnoController extends Controller
 
     public function indexBaja()
     {
+        abort_unless(NivelAccess::hasFullAccess(auth()->user()), 403);
         $nivelIds = NivelAccess::allowedIds(auth()->user());
         $alumnos = Alumno::with('grado')
             ->whereIn('nivel_educativo_id', $nivelIds)
@@ -948,6 +1138,7 @@ class AlumnoController extends Controller
 
     public function darBaja(Request $request)
     {
+        abort_unless(NivelAccess::hasFullAccess(auth()->user()), 403);
         $request->validate([
             'alumno_id' => 'required|exists:alumnos,id',
             'motivo_baja' => 'required|string|max:2000',
@@ -1092,11 +1283,14 @@ class AlumnoController extends Controller
             $alumno->delete();
         });
 
+        $this->notificaciones->notificarAlumno($alumno, 'baja', $motivo);
+
         return redirect()->route('index.baja')->with('success', 'Alumno dado de baja correctamente.');
     }
 
     public function indexArchivados()
     {
+        abort_unless(NivelAccess::hasFullAccess(auth()->user()), 403);
         $nivelIds = NivelAccess::allowedIds(auth()->user());
         // Obtener todos los alumnos archivados y cargar las relaciones 'nivelEducativo' y 'grado'
         $alumnosArchivados = AlumnoArchivado::with(['nivelEducativo', 'grado'])
@@ -1130,7 +1324,7 @@ class AlumnoController extends Controller
 
     public function indexEgresados()
     {
-        abort_unless(auth()->user()->hasAnyRole(['SuperAdmin', 'ControlEscolar']), 403);
+        abort_unless(NivelAccess::hasFullAccess(auth()->user()), 403);
 
         $egresados = AlumnoArchivado::with(['nivelEducativo', 'grado'])
             ->where('tipo_archivo', 'egreso')
@@ -1142,6 +1336,7 @@ class AlumnoController extends Controller
 
     public function reactivar(Request $request, $id)
     {
+        abort_unless(NivelAccess::hasFullAccess(auth()->user()), 403);
         $request->validate(['motivo_reactivacion' => 'required|string|max:2000']);
         $motivo = trim($request->input('motivo_reactivacion'));
         $alumnoArchivado = DB::table('alumnos_archivados')->where('id', $id)->first();
@@ -1271,6 +1466,9 @@ class AlumnoController extends Controller
             // Eliminar el alumno de la tabla 'alumnos_archivados'
             DB::table('alumnos_archivados')->where('id', $id)->delete();
         });
+
+        $alumnoReactivado = Alumno::findOrFail($id);
+        $this->notificaciones->notificarAlumno($alumnoReactivado, 'reactivacion', $motivo);
 
         return redirect()->route('alumnos.archivados')->with('success', 'Alumno reactivado correctamente.');
     }

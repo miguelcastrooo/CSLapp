@@ -16,7 +16,7 @@ class NivelAccess
     public static function allowedLevels(User $user): Collection
     {
         if (self::hasFullAccess($user)) {
-            return NivelEducativo::where('activo', true)->orderBy('nombre')->get();
+            return NivelEducativo::where('activo', true)->orderBy('orden')->orderBy('nombre')->get();
         }
 
         $names = match (true) {
@@ -26,7 +26,7 @@ class NivelAccess
             default => [],
         };
 
-        return NivelEducativo::whereIn('nombre', $names)->where('activo', true)->orderBy('nombre')->get();
+        return NivelEducativo::whereIn('nombre', $names)->where('activo', true)->orderBy('orden')->orderBy('nombre')->get();
     }
 
     public static function allowedIds(User $user): array

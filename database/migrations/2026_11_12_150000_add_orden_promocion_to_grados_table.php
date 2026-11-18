@@ -12,12 +12,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('grados', function (Blueprint $table) {
-            $table->unsignedSmallInteger('orden_promocion')->nullable()->after('nivel_educativo_id');
-        });
+        if (! Schema::hasColumn('grados', 'orden_promocion')) {
+            Schema::table('grados', function (Blueprint $table) {
+                $table->unsignedSmallInteger('orden_promocion')->nullable()->after('nivel_educativo_id');
+            });
+        }
 
         DB::table('grados')->orderBy('id')->pluck('id')->each(function ($id, $index) {
-            DB::table('grados')->where('id', $id)->update(['orden_promocion' => $index + 1]);
+            DB::table('grados')->where('id', $id)->whereNull('orden_promocion')->update(['orden_promocion' => $index + 1]);
         });
     }
 

@@ -29,20 +29,20 @@
                     </div>
                     <div class="col-md-6">
                         <label for="password" class="form-label">Contraseña temporal</label>
-                        <input id="password" name="password" type="password" class="form-control @error('password') is-invalid @enderror" required>
+                        <div class="input-group"><input id="password" name="password" type="password" class="form-control @error('password') is-invalid @enderror" required><button type="button" class="btn btn-outline-secondary" data-password-toggle="password" aria-label="Mostrar contraseña" title="Mostrar contraseña"><i class="fas fa-eye"></i></button></div>
                         <div class="form-text">Usa 12 o más caracteres, mayúscula, minúscula, número y símbolo.</div>
                         @error('password')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
                     <div class="col-md-6">
                         <label for="password_confirmation" class="form-label">Confirmar contraseña</label>
-                        <input id="password_confirmation" name="password_confirmation" type="password" class="form-control" required>
+                        <div class="input-group"><input id="password_confirmation" name="password_confirmation" type="password" class="form-control" required><button type="button" class="btn btn-outline-secondary" data-password-toggle="password_confirmation" aria-label="Mostrar contraseña" title="Mostrar contraseña"><i class="fas fa-eye"></i></button></div>
                     </div>
                     <div class="col-12">
                         <label for="role" class="form-label">Rol y alcance</label>
                         <select id="role" name="role" class="form-select @error('role') is-invalid @enderror" required>
                             <option value="">Selecciona un rol</option>
                             @foreach($roles as $role)
-                                <option value="{{ $role->name }}" @selected(old('role') === $role->name)>{{ $role->name }}</option>
+                                <option value="{{ $role->name }}" @selected(old('role') === $role->name)>{{ \App\Support\RoleLabel::for($role->name) }}</option>
                             @endforeach
                         </select>
                         <div class="form-text">El rol determina los niveles educativos que la cuenta puede consultar.</div>
@@ -54,4 +54,19 @@
         </div>
     </div>
 </div>
+@endsection
+
+@section('scripts')
+<script>
+document.querySelectorAll('[data-password-toggle]').forEach((button) => {
+    button.addEventListener('click', () => {
+        const field = document.getElementById(button.dataset.passwordToggle);
+        const visible = field.type === 'text';
+        field.type = visible ? 'password' : 'text';
+        button.querySelector('i').className = visible ? 'fas fa-eye' : 'fas fa-eye-slash';
+        button.setAttribute('aria-label', visible ? 'Mostrar contraseña' : 'Ocultar contraseña');
+        button.title = visible ? 'Mostrar contraseña' : 'Ocultar contraseña';
+    });
+});
+</script>
 @endsection

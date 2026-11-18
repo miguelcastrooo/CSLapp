@@ -9,6 +9,10 @@ return new class extends Migration
     public function up(): void
     {
         foreach (['nivel_educativo', 'grados', 'secciones', 'plataformas'] as $table) {
+            if (Schema::hasColumn($table, 'activo')) {
+                continue;
+            }
+
             Schema::table($table, function (Blueprint $blueprint) {
                 $blueprint->boolean('activo')->default(true)->index();
             });

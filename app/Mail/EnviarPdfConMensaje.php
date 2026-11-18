@@ -5,6 +5,7 @@ namespace App\Mail;
 use Illuminate\Mail\Mailable;
 use Illuminate\Bus\Queueable;
 use Barryvdh\DomPDF\PDF;
+use App\Models\ConfiguracionInstitucional;
 use Symfony\Component\Mime\Email;
 
 class EnviarPdfConMensaje extends Mailable
@@ -43,15 +44,24 @@ class EnviarPdfConMensaje extends Mailable
      */
     public function build()
     {
-        $logoPath = public_path('img/csl.png'); // Ruta absoluta al logo
+        $configuracion = ConfiguracionInstitucional::firstOrCreate(
+            ['id' => 1],
+            ConfiguracionInstitucional::valoresPredeterminados()
+        );
+        $logoPath = $configuracion->logo_path
+            ? public_path('storage/' . $configuracion->logo_path)
+            : public_path('img/demo-school.svg');
+        $tieneLogotipo = is_file($logoPath);
 
         return $this->view('emails.pdfConMensaje')
                     ->subject($this->asunto)
-                    ->from('control.escolar@colegiosanluis.com.mx')
+                    ->from(config('mail.from.address'), config('mail.from.name'))
                     ->with([
                         'mensaje' => $this->mensaje,
                         'alumno' => $this->alumno,
                         'familiar' => $this->familiar,
+                        'configuracionInstitucional' => $configuracion,
+                        'tieneLogotipo' => $tieneLogotipo,
                     ])
                     // Adjuntar el archivo PDF
                     ->attachData($this->pdf->output(), 'credenciales_alumno.pdf', [
@@ -59,8 +69,10 @@ class EnviarPdfConMensaje extends Mailable
                         'disposition' => 'attachment',
                     ])
                     // Incrustar el logo como CID mediante Symfony Mailer.
-                    ->withSymfonyMessage(function (Email $message) use ($logoPath) {
-                        $message->embedFromPath($logoPath, 'logo-csl');
+                    ->withSymfonyMessage(function (Email $message) use ($logoPath, $tieneLogotipo) {
+                        if ($tieneLogotipo) {
+                            $message->embedFromPath($logoPath, 'logo-institucional');
+                        }
                     });
     }
 }

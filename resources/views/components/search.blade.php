@@ -24,6 +24,7 @@
             </select>
         </div>
     </div>
+    <div id="search-result-count" class="text-secondary small mb-2" aria-live="polite"></div>
 
     <div class="table-responsive">
     <table class="table table-vcenter table-hover">
@@ -93,13 +94,14 @@
                 let resultsHTML = '';
                 if (data.data.length > 0) {
                     data.data.forEach(alumno => {
-                        const pendientes = [];
-                        if (alumno.contactos_count < 1) pendientes.push('sin contacto');
-                        if (alumno.familiares_count < 1) pendientes.push('sin familiar');
-                        if (alumno.alumno_plataforma_count < 1) pendientes.push('sin plataforma');
-                        const estado = pendientes.length
-                            ? `<span class="badge bg-yellow-lt text-dark">Pendiente: ${escapeHtml(pendientes.join(', '))}</span>`
-                            : '<span class="badge bg-green-lt text-success">Completo</span>';
+                        const estadoExpediente = alumno.estado_expediente ?? { importantes: [], opcionales: [] };
+                        const importantes = estadoExpediente.importantes ?? [];
+                        const opcionales = Object.values(estadoExpediente.opcionales ?? {});
+                        const estado = importantes.length
+                            ? '<span class="badge bg-red-lt text-danger">Incompleto · requiere atención</span>'
+                            : opcionales.length
+                                ? '<span class="badge bg-yellow-lt text-dark">Incompleto · por complementar</span>'
+                                : '<span class="badge bg-green-lt text-success">Completo</span>';
                         resultsHTML += ` 
                             <tr>
                                 <td>${escapeHtml(alumno.matricula)}</td>
@@ -115,17 +117,20 @@
                         `;
                     });
                 } else {
-                    resultsHTML = '<tr><td colspan="7">No se encontraron resultados.</td></tr>';
+                    resultsHTML = '<tr><td colspan="7"><div class="csl-empty-results"><i class="fas fa-magnifying-glass"></i><strong>No encontramos alumnos con esos filtros.</strong><span>Revisa el nombre, matrícula, grado o sección e inténtalo de nuevo.</span></div></td></tr>';
                 }
 
                 document.getElementById('alumnos-list').innerHTML = resultsHTML;
+                document.getElementById('search-result-count').textContent = data.total
+                    ? `${data.total} alumno(s) encontrado(s)`
+                    : 'Sin resultados con los filtros actuales';
 
                 // Crear los enlaces de paginación
                 let paginationHTML = '<nav><ul class="pagination">';
 
                 // Página anterior
                 if (data.prev_page_url) {
-                    paginationHTML += `<li class="page-item"><a href="#" class="page-link" onclick="changePage(${data.current_page - 1})">&laquo; Anterior</a></li>`;
+                    paginationHTML += `<li class="page-item"><a href="#" class="page-link" onclick="return changePage(${data.current_page - 1}, event)">&laquo; Anterior</a></li>`;
                 } else {
                     paginationHTML += `<li class="page-item disabled"><a href="#" class="page-link">&laquo; Anterior</a></li>`;
                 }
@@ -135,23 +140,23 @@
                 let endPage = Math.min(data.last_page, data.current_page + 5);
 
                 if (startPage > 1) {
-                    paginationHTML += `<li class="page-item"><a href="#" class="page-link" onclick="changePage(1)">1</a></li>`;
+                    paginationHTML += `<li class="page-item"><a href="#" class="page-link" onclick="return changePage(1, event)">1</a></li>`;
                     if (startPage > 2) paginationHTML += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
                 }
 
                 for (let i = startPage; i <= endPage; i++) {
                     let activeClass = data.current_page === i ? ' active' : '';
-                    paginationHTML += `<li class="page-item${activeClass}"><a href="#" class="page-link" onclick="changePage(${i})">${i}</a></li>`;
+                    paginationHTML += `<li class="page-item${activeClass}"><a href="#" class="page-link" onclick="return changePage(${i}, event)">${i}</a></li>`;
                 }
 
                 if (endPage < data.last_page) {
                     if (endPage < data.last_page - 1) paginationHTML += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
-                    paginationHTML += `<li class="page-item"><a href="#" class="page-link" onclick="changePage(${data.last_page})">${data.last_page}</a></li>`;
+                    paginationHTML += `<li class="page-item"><a href="#" class="page-link" onclick="return changePage(${data.last_page}, event)">${data.last_page}</a></li>`;
                 }
 
                 // Página siguiente
                 if (data.next_page_url) {
-                    paginationHTML += `<li class="page-item"><a href="#" class="page-link" onclick="changePage(${data.current_page + 1})">Siguiente &raquo;</a></li>`;
+                    paginationHTML += `<li class="page-item"><a href="#" class="page-link" onclick="return changePage(${data.current_page + 1}, event)">Siguiente &raquo;</a></li>`;
                 } else {
                     paginationHTML += `<li class="page-item disabled"><a href="#" class="page-link">Siguiente &raquo;</a></li>`;
                 }
@@ -187,9 +192,11 @@
         });
 
         // Función para cambiar de página
-        window.changePage = function(page) {
+        window.changePage = function(page, event) {
+            event?.preventDefault();
             let query = document.getElementById('search').value;
             updateAlumnosList(query, page);
+            return false;
         };
 
         // Mostrar todos los alumnos al entrar a la vista

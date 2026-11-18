@@ -12,18 +12,28 @@
             <li class="csl-sidebar-section">Administración</li>
             <li class="nav-item"><a class="nav-link {{ request()->routeIs('admin.assignRoles') ? 'active' : '' }}" href="{{ route('admin.assignRoles') }}"><i class="fas fa-user-cog"></i><span>Usuarios y roles</span></a></li>
             <li class="nav-item"><a class="nav-link {{ request()->routeIs('admin.configuracion*') ? 'active' : '' }}" href="{{ route('admin.configuracion') }}"><i class="fas fa-sliders"></i><span>Configuración académica</span></a></li>
+            <li class="nav-item"><a class="nav-link {{ request()->routeIs('admin.diseno*') ? 'active' : '' }}" href="{{ route('admin.diseno') }}"><i class="fas fa-palette"></i><span>Diseño del portal</span></a></li>
             <li class="nav-item"><a class="nav-link {{ request()->routeIs('admin.respaldo') ? 'active' : '' }}" href="{{ route('admin.respaldo') }}"><i class="fas fa-hard-drive"></i><span>Respaldo del sistema</span></a></li>
             <li class="nav-item"><a class="nav-link {{ request()->routeIs('admin.historial') ? 'active' : '' }}" href="{{ route('admin.historial') }}"><i class="fas fa-clock-rotate-left"></i><span>Historial de cambios</span></a></li>
             <li class="nav-item"><a class="nav-link {{ request()->routeIs('admin.historialSeguridad') ? 'active' : '' }}" href="{{ route('admin.historialSeguridad') }}"><i class="fas fa-shield-halved"></i><span>Historial de seguridad</span></a></li>
         @endif
 
+        <li class="csl-sidebar-section">Comunicación</li>
+        <li class="nav-item"><a class="nav-link {{ request()->routeIs('avisos.*') ? 'active' : '' }}" href="{{ route('avisos.index') }}"><i class="fas fa-bell"></i><span>Avisos</span></a></li>
+        @if($accesoCompleto)
+            <li class="nav-item"><a class="nav-link {{ request()->routeIs('admin.bitacoraFamilias') ? 'active' : '' }}" href="{{ route('admin.bitacoraFamilias') }}"><i class="fas fa-comments"></i><span>Bitácora de familias</span></a></li>
+        @endif
+
         @if($puedeGestionarAlumnos)
             <li class="csl-sidebar-section">Alumnos</li>
             <li class="nav-item"><a class="nav-link {{ request()->routeIs('capturista.selectsearch', 'capturista.index', 'alumnos.search*') ? 'active' : '' }}" href="{{ route('capturista.selectsearch') }}"><i class="fas fa-users"></i><span>{{ $accesoCompleto ? 'Ver alumnos' : 'Mis alumnos' }}</span></a></li>
-            <li class="nav-item"><a class="nav-link {{ request()->routeIs('alumnos.select', 'alumnos.create') ? 'active' : '' }}" href="{{ route('alumnos.select') }}"><i class="fas fa-user-plus"></i><span>Registrar alumno</span></a></li>
-            <li class="nav-item"><a class="nav-link {{ request()->routeIs('admin.select', 'niveles.show') ? 'active' : '' }}" href="{{ route('admin.select') }}"><i class="fas fa-layer-group"></i><span>Plataformas</span></a></li>
-            <li class="nav-item"><a class="nav-link {{ request()->routeIs('index.baja') ? 'active' : '' }}" href="{{ route('index.baja') }}"><i class="fas fa-user-minus"></i><span>Dar de baja</span></a></li>
             @if($accesoCompleto)
+                <li class="nav-item"><a class="nav-link {{ request()->routeIs('alumnos.select', 'alumnos.create') ? 'active' : '' }}" href="{{ route('alumnos.select') }}"><i class="fas fa-user-plus"></i><span>Registrar alumno</span></a></li>
+                <li class="nav-item"><a class="nav-link {{ request()->routeIs('alumnos.excel.*') ? 'active' : '' }}" href="{{ route('alumnos.excel.index') }}"><i class="fas fa-file-excel"></i><span>Importar y exportar</span></a></li>
+            @endif
+            <li class="nav-item"><a class="nav-link {{ request()->routeIs('admin.select', 'niveles.show') ? 'active' : '' }}" href="{{ route('admin.select') }}"><i class="fas fa-layer-group"></i><span>Plataformas</span></a></li>
+            @if($accesoCompleto)
+                <li class="nav-item"><a class="nav-link {{ request()->routeIs('index.baja') ? 'active' : '' }}" href="{{ route('index.baja') }}"><i class="fas fa-user-minus"></i><span>Dar de baja</span></a></li>
                 <li class="nav-item"><a class="nav-link {{ request()->routeIs('alumnos.archivados') ? 'active' : '' }}" href="{{ route('alumnos.archivados') }}"><i class="fas fa-box-archive"></i><span>Alumnos archivados</span></a></li>
                 <li class="nav-item"><a class="nav-link {{ request()->routeIs('alumnos.egresados') ? 'active' : '' }}" href="{{ route('alumnos.egresados') }}"><i class="fas fa-graduation-cap"></i><span>Egresados</span></a></li>
                 <li class="nav-item"><a class="nav-link {{ request()->routeIs('admin.grupos.*') ? 'active' : '' }}" href="{{ route('admin.grupos.form') }}"><i class="fas fa-people-arrows"></i><span>Mover alumnos</span></a></li>

@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasColumn('users', 'activo')) {
+            return;
+        }
+
         Schema::table('users', function (Blueprint $table) {
             $table->boolean('activo')->default(true)->after('email_verified_at');
         });

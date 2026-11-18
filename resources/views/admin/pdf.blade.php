@@ -7,14 +7,14 @@
         @page { margin: 28px 32px; }
         * { box-sizing: border-box; }
         body { color: #243442; font-family: DejaVu Sans, sans-serif; font-size: 10px; line-height: 1.45; margin: 0; }
-        .header { background: #24536d; border-radius: 8px; color: #ffffff; padding: 18px 20px; }
+        .header { background: {{ $configuracionInstitucional->color_primario }}; border-radius: 8px; color: #ffffff; padding: 18px 20px; }
         .header-table { width: 100%; border-collapse: collapse; }
-        .brand-icon { background: #ffffff; border-radius: 6px; color: #176b62; font-size: 19px; font-weight: bold; padding: 8px 12px; text-align: center; width: 42px; }
+        .brand-icon { background: #ffffff; border-radius: 6px; color: {{ $configuracionInstitucional->color_acento }}; font-size: 19px; font-weight: bold; padding: 8px 12px; text-align: center; width: 42px; }
         .brand-name { font-size: 16px; font-weight: bold; margin: 0; }
         .brand-subtitle { color: #d9ebf5; font-size: 9px; margin: 3px 0 0; text-transform: uppercase; }
         .document-label { color: #d9ebf5; font-size: 9px; text-align: right; }
         .document-title { font-size: 14px; font-weight: bold; margin: 3px 0 0; text-align: right; }
-        .section-title { color: #176b62; font-size: 11px; font-weight: bold; margin: 22px 0 8px; text-transform: uppercase; }
+        .section-title { color: {{ $configuracionInstitucional->color_acento }}; font-size: 11px; font-weight: bold; margin: 22px 0 8px; text-transform: uppercase; }
         .student-card { background: #f2f7f8; border: 1px solid #d4e3e5; border-radius: 6px; padding: 12px 14px; }
         .student-name { color: #183444; font-size: 15px; font-weight: bold; margin: 0 0 9px; }
         .details { width: 100%; border-collapse: collapse; }
@@ -22,7 +22,7 @@
         .label { color: #526474; font-size: 8px; font-weight: bold; text-transform: uppercase; }
         .value { color: #243442; font-size: 10px; font-weight: normal; }
         .platform-table { border-collapse: collapse; margin-top: 5px; width: 100%; }
-        .platform-table th { background: #24536d; color: #ffffff; font-size: 9px; padding: 9px 10px; text-align: left; }
+        .platform-table th { background: {{ $configuracionInstitucional->color_primario }}; color: #ffffff; font-size: 9px; padding: 9px 10px; text-align: left; }
         .platform-table td { border-bottom: 1px solid #d8e1e8; padding: 10px; vertical-align: middle; }
         .platform-table tr:nth-child(even) td { background: #f7fafb; }
         .empty { background: #fff7df; border: 1px solid #ead28d; border-radius: 5px; color: #6f5510; padding: 10px; }
@@ -33,8 +33,8 @@
 <body>
     <div class="header">
         <table class="header-table"><tr>
-            <td style="width: 48px;"><div class="brand-icon">IH</div></td>
-            <td><p class="brand-name">Instituto Horizonte</p><p class="brand-subtitle">Portal academico</p></td>
+            <td style="width: 48px;"><div class="brand-icon">{{ mb_strtoupper(mb_substr($configuracionInstitucional->nombre, 0, 1)) }}</div></td>
+            <td><p class="brand-name">{{ $configuracionInstitucional->nombre }}</p><p class="brand-subtitle">{{ $configuracionInstitucional->subtitulo }}</p></td>
             <td><p class="document-label">CREDENCIALES DEL ALUMNO</p><p class="document-title">Accesos digitales</p></td>
         </tr></table>
     </div>
@@ -66,6 +66,7 @@
     @endif
 
     <div class="note">Conserva este documento en un lugar seguro. Las credenciales son personales y deben compartirse unicamente con la familia responsable.</div>
-    <div class="footer">Documento generado el {{ now()->format('d/m/Y H:i') }} - Instituto Horizonte</div>
+    <table style="width:100%; margin-top:28px; border-collapse:collapse;"><tr><td style="width:52%; vertical-align:bottom;"><div style="border-top:1px solid #748594; padding-top:6px; text-align:center;">Responsable que emite</div></td><td style="width:8%;"></td><td style="width:40%; vertical-align:bottom;"><div style="border-top:1px solid #748594; padding-top:6px; text-align:center;">Firma o sello institucional</div></td></tr></table>
+    <div class="footer">Emitido por {{ auth()->user()?->name ?? 'Administración' }} · {{ now()->format('d/m/Y H:i') }} · {{ $configuracionInstitucional->nombre }}</div>
 </body>
 </html>

@@ -25,6 +25,8 @@
         <div><strong>Restaurar reemplaza información.</strong> Nunca restaures una copia sin guardar primero el estado actual. El sistema no restaura datos automáticamente para evitar pérdidas accidentales.</div>
     </div>
 
+    <div class="card csl-data-card mb-4"><div class="card-body d-flex flex-column flex-md-row align-items-md-center gap-3"><span class="csl-management-icon"><i class="fas fa-shield-heart"></i></span><div class="flex-fill"><strong>Último respaldo confirmado</strong><div class="text-secondary small">@if($ultimoRespaldo){{ $ultimoRespaldo->fecha->format('d/m/Y H:i') }} por {{ $ultimoRespaldo->usuario?->name ?? 'Administración' }}@else Aún no hay un respaldo confirmado desde el sistema.@endif</div></div><form method="POST" action="{{ route('admin.respaldo.confirmar') }}" data-confirm="Confirma sólo después de descargar y guardar el archivo SQL en una ubicación externa segura." data-confirm-title="Confirmar respaldo" data-confirm-button="Sí, ya lo guardé" data-confirm-variant="primary">@csrf<button class="btn btn-primary"><i class="fas fa-check me-2"></i>Confirmar respaldo creado</button></form></div></div>
+
     <div class="row g-4">
         <div class="col-lg-6">
             <div class="card csl-data-card h-100"><div class="card-body">

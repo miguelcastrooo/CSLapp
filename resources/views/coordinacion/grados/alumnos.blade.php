@@ -1,15 +1,15 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="container">
-        <h1 class="text-center mb-4">Alumnos del Grado: {{ $grado->nombre }}</h1>
-        <div class="table-responsive">
-            <table class="table table-bordered table-striped">
+    <div class="container-xl">
+        <div class="csl-module-header"><h1>Alumnos de {{ ($grado ?? $nivelEducativo)->nombre }}</h1><p>Consulta el expediente; sólo puedes actualizar contraseñas de las plataformas autorizadas.</p></div>
+        <div class="card csl-data-card"><div class="table-responsive">
+            <table class="table table-vcenter table-hover mb-0">
                 <thead>
                     <tr>
                         <th>#</th>
                         <th>Nombre</th>
-                        <th>Apellido</th>
+                        <th>Apellidos</th>
                         <th>Acción</th>
                     </tr>
                 </thead>
@@ -18,17 +18,14 @@
                         <tr>
                             <td>{{ $alumno->id }}</td>
                             <td>{{ $alumno->nombre }}</td>
-                            <td>{{ $alumno->apellido }}</td>
+                            <td>{{ $alumno->apellidopaterno }} {{ $alumno->apellidomaterno }}</td>
                             <td>
-                                <!-- Aquí puedes agregar más acciones, por ejemplo, ver detalles o editar -->
-                                <a href="{{ route('coordinacion.grados.show', ['id' => $alumno->id]) }}" class="btn btn-info btn-sm">Ver Detalles</a>
+                                <a href="{{ route('alumnos.edit', $alumno) }}" class="btn btn-primary btn-sm"><i class="fas fa-folder-open me-1"></i>Abrir expediente</a>
                             </td>
                         </tr>
                     @endforeach
                 </tbody>
             </table>
-            <!-- Paginación -->
-            {{ $alumnos->links() }}
-        </div>
+        </div>@if($alumnos->hasPages())<div class="card-footer">{{ $alumnos->links() }}</div>@endif</div>
     </div>
 @endsection

@@ -1,0 +1,6 @@
+<main class="login-page">
+  <section class="welcome" aria-hidden="true"><div class="brand-mark">IH</div><p class="eyebrow">INSTITUTO HORIZONTE</p><h1>Portal académico</h1><p>Consulta y registra calificaciones de forma clara, desde una sola pantalla.</p></section>
+  <section class="access-card" aria-label="Inicio de sesión"><p class="eyebrow">ACCESO DEL PERSONAL</p><h2>Inicia sesión</h2><p class="help">Usa las credenciales que te proporcionó la administración.</p>
+    <form (ngSubmit)="ingresar()"><label for="email">Correo electrónico</label><input id="email" name="email" type="email" [(ngModel)]="email" autocomplete="email" required><label for="password">Contraseña</label><input id="password" name="password" type="password" [(ngModel)]="password" autocomplete="current-password" required>@if (error) { <p class="error" role="alert">{{ error }}</p> }<button type="submit" [disabled]="loading">{{ loading ? 'Ingresando…' : 'Ingresar al portal' }}</button></form>
+  </section>
+</main>

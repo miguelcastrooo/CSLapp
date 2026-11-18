@@ -38,7 +38,7 @@
                     <label for="roles" class="form-label">Roles asignados</label>
                     <select class="form-select" id="roles" name="roles[]" multiple required aria-describedby="roles-help">
                         @foreach($roles as $role)
-                            <option value="{{ $role->name }}">{{ $role->name }}</option>
+                            <option value="{{ $role->name }}">{{ \App\Support\RoleLabel::for($role->name) }}</option>
                         @endforeach
                     </select>
                     <div id="roles-help" class="form-text">Para seleccionar varios roles, mantén presionada la tecla Ctrl.</div>
@@ -91,12 +91,12 @@
                                 @forelse($user->roles as $role)
                                     <span class="csl-role-chip">
                                         <i class="fas fa-shield-halved"></i>
-                                        <span>{{ $role->name }}</span>
+                                        <span>{{ \App\Support\RoleLabel::for($role->name) }}</span>
                                         @if (! $user->is(auth()->user()))
-                                            <form action="{{ route('admin.removeRole', [$user->id, $role->id]) }}" method="POST" class="d-inline">
+                                            <form action="{{ route('admin.removeRole', [$user->id, $role->id]) }}" method="POST" class="d-inline" data-confirm="¿Deseas quitar el rol {{ \App\Support\RoleLabel::for($role->name) }}?" data-confirm-title="Quitar rol" data-confirm-button="Sí, quitar">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" class="csl-role-remove" title="Quitar el rol {{ $role->name }}" aria-label="Quitar el rol {{ $role->name }}" onclick="return confirm('¿Deseas quitar el rol {{ $role->name }}?')"><i class="fas fa-xmark"></i></button>
+                                                <button type="submit" class="csl-role-remove" title="Quitar el rol {{ \App\Support\RoleLabel::for($role->name) }}" aria-label="Quitar el rol {{ \App\Support\RoleLabel::for($role->name) }}"><i class="fas fa-xmark"></i></button>
                                             </form>
                                         @endif
                                     </span>
@@ -106,9 +106,9 @@
                             </td>
                             <td class="text-end">
                                 @if (! $user->is(auth()->user()))
-                                    <form action="{{ route('admin.user.status', $user) }}" method="POST">
+                                    <form action="{{ route('admin.user.status', $user) }}" method="POST" data-confirm="¿Deseas {{ $user->activo ? 'desactivar' : 'reactivar' }} la cuenta de {{ $user->name }}?" data-confirm-title="{{ $user->activo ? 'Desactivar' : 'Reactivar' }} cuenta" data-confirm-button="Sí, {{ $user->activo ? 'desactivar' : 'reactivar' }}">
                                         @csrf
-                                        <button type="submit" class="btn btn-sm {{ $user->activo ? 'btn-outline-warning' : 'btn-outline-success' }}" onclick="return confirm('¿Deseas {{ $user->activo ? 'desactivar' : 'reactivar' }} la cuenta de {{ $user->name }}?')">
+                                        <button type="submit" class="btn btn-sm {{ $user->activo ? 'btn-outline-warning' : 'btn-outline-success' }}">
                                             <i class="fas {{ $user->activo ? 'fa-user-slash' : 'fa-user-check' }} me-1"></i>{{ $user->activo ? 'Desactivar' : 'Reactivar' }}
                                         </button>
                                     </form>

@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Mail\EnviarPdfConMensaje;
 use App\Models\Admin;
 use App\Models\Alumno;
+use App\Models\ConfiguracionInstitucional;
+use App\Models\CarruselImagen;
+use App\Models\BitacoraContactoFamiliar;
 use App\Models\Grado;
 use App\Models\HistorialAlumno;
 use App\Models\HistorialSeguridad;
@@ -12,6 +15,7 @@ use App\Models\NivelEducativo;
 use App\Models\Plataforma;
 use App\Models\Seccion;
 use App\Models\User;
+use App\Services\NotificacionesEscolares;
 use App\Support\NivelAccess;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Auth\Events\Registered;
@@ -19,11 +23,17 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Spatie\Permission\Models\Role;
 
 class AdminController extends Controller
 {
+    public function __construct(private readonly NotificacionesEscolares $notificaciones)
+    {
+    }
+
     public function configuracion()
     {
         abort_unless(auth()->user()->hasRole('SuperAdmin'), 403);
@@ -38,15 +48,103 @@ class AdminController extends Controller
             ]);
 
         return view('admin.configuracion', [
-            'niveles' => NivelEducativo::with('plataformas')->orderBy('nombre')->get(),
+            'niveles' => NivelEducativo::with('plataformas')->orderBy('orden')->orderBy('nombre')->get(),
             'grados' => Grado::with('nivelEducativo')->orderBy('nivel_educativo_id')->orderBy('nombre')->get(),
-            'plataformas' => Plataforma::orderBy('nombre')->get(),
+            'plataformas' => Plataforma::with('niveles:id,nombre')->orderBy('nombre')->get(),
             'secciones' => Seccion::with('grado.nivelEducativo')->orderBy('nombre')->get(),
             'credencialesPorNivelYPlataforma' => $credencialesPorNivelYPlataforma,
         ]);
     }
 
-    public function guardarNivel(Request $request) { abort_unless(auth()->user()->hasRole('SuperAdmin'), 403); NivelEducativo::create($request->validate(['nombre' => 'required|string|max:100|unique:nivel_educativo,nombre'])); return back()->with('success', 'Nivel educativo creado.'); }
+    public function diseno()
+    {
+        abort_unless(auth()->user()->hasRole('SuperAdmin'), 403);
+        return view('admin.diseno', ['imagenesCarrusel' => CarruselImagen::orderBy('orden')->get()]);
+    }
+
+    public function guardarImagenCarrusel(Request $request)
+    {
+        abort_unless(auth()->user()->hasRole('SuperAdmin'), 403);
+        $data = $request->validate(['titulo' => 'required|string|max:120', 'descripcion' => 'nullable|string|max:255', 'orden' => 'nullable|integer|min:1|max:999', 'imagen' => 'required|image|mimes:jpg,jpeg,png,webp|max:4096']);
+        $data['imagen_path'] = $request->file('imagen')->storeAs('carrusel', Str::uuid().'.'.$request->file('imagen')->extension(), 'public');
+        $data['orden'] ??= ((int) CarruselImagen::max('orden')) + 1;
+        unset($data['imagen']);
+        CarruselImagen::create($data);
+        return back()->with('success', 'La imagen se agregó al carrusel.');
+    }
+
+    public function cambiarEstadoImagenCarrusel(CarruselImagen $imagen)
+    {
+        abort_unless(auth()->user()->hasRole('SuperAdmin'), 403);
+        $imagen->update(['activo' => ! $imagen->activo]);
+        return back()->with('success', 'Se actualizó la visibilidad de la imagen.');
+    }
+
+    public function moverImagenCarrusel(Request $request, CarruselImagen $imagen)
+    {
+        abort_unless(auth()->user()->hasRole('SuperAdmin'), 403);
+        $direccion = $request->validate(['direccion' => 'required|in:subir,bajar'])['direccion'];
+        $operador = $direccion === 'subir' ? '<' : '>';
+        $orden = $direccion === 'subir' ? 'desc' : 'asc';
+        $vecina = CarruselImagen::where('orden', $operador, $imagen->orden)->orderBy('orden', $orden)->first();
+
+        if (! $vecina) {
+            return back();
+        }
+
+        DB::transaction(function () use ($imagen, $vecina): void {
+            [$imagen->orden, $vecina->orden] = [$vecina->orden, $imagen->orden];
+            $imagen->save();
+            $vecina->save();
+        });
+
+        return back()->with('success', 'Se actualizó el orden del carrusel.');
+    }
+
+    public function borrarImagenCarrusel(CarruselImagen $imagen)
+    {
+        abort_unless(auth()->user()->hasRole('SuperAdmin'), 403);
+        Storage::disk('public')->delete($imagen->imagen_path);
+        $imagen->delete();
+        return back()->with('success', 'La imagen se eliminó del carrusel.');
+    }
+
+    public function guardarNivel(Request $request)
+    {
+        abort_unless(auth()->user()->hasRole('SuperAdmin'), 403);
+
+        $data = $request->validate(['nombre' => 'required|string|max:100|unique:nivel_educativo,nombre']);
+        $data['orden'] = ((int) NivelEducativo::max('orden')) + 1;
+        NivelEducativo::create($data);
+
+        return back()->with('success', 'Nivel educativo creado al final del orden. Puedes moverlo desde “Administrar lo creado”.');
+    }
+
+    public function moverNivel(Request $request, NivelEducativo $nivel)
+    {
+        abort_unless(auth()->user()->hasRole('SuperAdmin'), 403);
+
+        $direccion = $request->validate(['direccion' => 'required|in:subir,bajar'])['direccion'];
+        $operador = $direccion === 'subir' ? '<' : '>';
+        $ordenamiento = $direccion === 'subir' ? 'desc' : 'asc';
+        $vecino = NivelEducativo::where('orden', $operador, $nivel->orden)
+            ->orderBy('orden', $ordenamiento)
+            ->first();
+
+        if (! $vecino) {
+            return back()->with('info', 'Este nivel ya está en ese extremo del panel.');
+        }
+
+        DB::transaction(function () use ($nivel, $vecino): void {
+            [$nivel->orden, $vecino->orden] = [$vecino->orden, $nivel->orden];
+            $nivel->save();
+            $vecino->save();
+        });
+
+        HistorialSeguridad::registrar(auth()->user(), 'orden_niveles_actualizado', "Se movió el nivel {$nivel->nombre} en el panel principal.");
+
+        return back()->with('success', 'Se actualizó el orden de los niveles en el panel principal.');
+    }
     public function guardarGrado(Request $request)
     {
         abort_unless(auth()->user()->hasRole('SuperAdmin'), 403);
@@ -64,6 +162,71 @@ class AdminController extends Controller
     }
     public function guardarSeccion(Request $request) { abort_unless(auth()->user()->hasRole('SuperAdmin'), 403); Seccion::firstOrCreate($request->validate(['grado_id' => 'required|exists:grados,id', 'nombre' => 'required|string|max:50'])); return back()->with('success', 'Sección guardada.'); }
     public function guardarPlataforma(Request $request) { abort_unless(auth()->user()->hasRole('SuperAdmin'), 403); Plataforma::create($request->validate(['nombre' => 'required|string|max:100|unique:plataformas,nombre'])); return back()->with('success', 'Plataforma creada.'); }
+
+    public function actualizarConfiguracionInstitucional(Request $request)
+    {
+        abort_unless(auth()->user()->hasRole('SuperAdmin'), 403);
+
+        $data = $request->validate([
+            'nombre' => 'required|string|max:100',
+            'subtitulo' => 'nullable|string|max:100',
+            'color_primario' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'color_sidebar' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'color_acento' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'color_fondo' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'color_texto' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'color_texto_secundario' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'color_carrusel' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'fuente' => 'required|in:Inter,Arial,Georgia,Trebuchet MS',
+            'tamano_texto' => 'required|integer|in:15,16,17,18',
+            'logo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+        ]);
+
+        $configuracion = ConfiguracionInstitucional::firstOrCreate(
+            ['id' => 1],
+            ConfiguracionInstitucional::valoresPredeterminados()
+        );
+
+        if ($request->hasFile('logo')) {
+            if ($configuracion->logo_path) {
+                Storage::disk('public')->delete($configuracion->logo_path);
+            }
+
+            $extension = $request->file('logo')->extension();
+            $data['logo_path'] = $request->file('logo')->storeAs('institucion', Str::uuid() . '.' . $extension, 'public');
+        }
+
+        unset($data['logo']);
+        $configuracion->fill($data)->save();
+
+        HistorialSeguridad::registrar(auth()->user(), 'identidad_institucional_actualizada', 'Se actualizó la identidad visual institucional.', [
+            'nombre' => $configuracion->nombre,
+            'colores' => collect($data)->only(['color_primario', 'color_sidebar', 'color_acento', 'color_fondo', 'color_texto', 'color_texto_secundario', 'color_carrusel'])->all(),
+            'tipografia' => collect($data)->only(['fuente', 'tamano_texto'])->all(),
+            'logo_actualizado' => $request->hasFile('logo'),
+        ]);
+
+        return back()->with('success', 'La identidad institucional se actualizó y ya se aplica en el portal.');
+    }
+
+    public function restaurarConfiguracionInstitucional()
+    {
+        abort_unless(auth()->user()->hasRole('SuperAdmin'), 403);
+
+        $configuracion = ConfiguracionInstitucional::firstOrCreate(
+            ['id' => 1],
+            ConfiguracionInstitucional::valoresPredeterminados()
+        );
+
+        if ($configuracion->logo_path) {
+            Storage::disk('public')->delete($configuracion->logo_path);
+        }
+
+        $configuracion->fill(ConfiguracionInstitucional::valoresPredeterminados())->save();
+        HistorialSeguridad::registrar(auth()->user(), 'identidad_institucional_restaurada', 'Se restauró la identidad visual institucional predeterminada.');
+
+        return back()->with('success', 'Se restauraron el nombre, colores y logotipo de ejemplo.');
+    }
 
     public function cambiarEstadoConfiguracion(string $tipo, int $id)
     {
@@ -104,7 +267,21 @@ class AdminController extends Controller
     {
         abort_unless(auth()->user()->hasRole('SuperAdmin'), 403);
 
-        return view('admin.respaldo');
+        $ultimoRespaldo = HistorialSeguridad::with('usuario')
+            ->where('evento', 'respaldo_confirmado')
+            ->latest('fecha')
+            ->first();
+
+        return view('admin.respaldo', compact('ultimoRespaldo'));
+    }
+
+    public function confirmarRespaldo()
+    {
+        abort_unless(auth()->user()->hasRole('SuperAdmin'), 403);
+
+        HistorialSeguridad::registrar(auth()->user(), 'respaldo_confirmado', 'Se confirmó que se creó un respaldo externo de la base de datos.');
+
+        return back()->with('success', 'Se registró el respaldo. Guarda el archivo SQL en una ubicación externa segura.');
     }
 
     public function asignarPlataformasNivel(Request $request, NivelEducativo $nivel)
@@ -360,16 +537,17 @@ class AdminController extends Controller
 
     public function enviarCorreoConPdf(Request $request, $id)
     {
-        $request->validate(['destinatario' => 'required|in:padre,madre,ambos']);
+        $request->validate(['destinatario' => 'required|in:padre,madre,tutor,ambos']);
         $destinatario = $request->input('destinatario');
 
         // Obtener al alumno con sus familiares
         $alumno = Alumno::with('familiares')->findOrFail($id);
         NivelAccess::ensureCanAccess(auth()->user(), $alumno->nivel_educativo_id);
 
-        // Filtrar al familiar por tipo (Padre o Madre)
+        // Cada responsable se trata por separado para respetar situaciones familiares.
         $padre = $alumno->familiares->firstWhere('tipo_familiar', 'Padre');
         $madre = $alumno->familiares->firstWhere('tipo_familiar', 'Madre');
+        $tutor = $alumno->familiares->firstWhere('tipo_familiar', 'Tutor');
 
         // Generar el PDF
         $pdf = Pdf::loadView('admin.pdf', compact('alumno'));
@@ -399,17 +577,26 @@ class AdminController extends Controller
             Mail::to($madre->correo)->send(new EnviarPdfConMensaje($mensaje, $alumno, $pdf, $asunto, $madre));
         }
 
+        if ($destinatario === 'tutor' && $tutor && ! empty($tutor->correo)) {
+            $mensaje = "Estimado/a {$tutor->nombre} {$tutor->apellido_paterno} {$tutor->apellido_materno},\n\n";
+            $mensaje .= "Adjunto el PDF con los datos de acceso de {$alumno->nombre} {$alumno->apellidopaterno} {$alumno->apellidomaterno}.\n\n";
+            $mensaje .= "Atentamente,\n\nEl equipo de la escuela.";
+
+            Mail::to($tutor->correo)->send(new EnviarPdfConMensaje($mensaje, $alumno, $pdf, $asunto, $tutor));
+        }
+
         HistorialSeguridad::registrar(auth()->user(), 'credenciales_enviadas', 'Se enviaron credenciales de un alumno por correo.', [
             'alumno_id' => $alumno->id,
             'nivel_educativo_id' => $alumno->nivel_educativo_id,
             'destinatario' => $destinatario,
         ]);
 
-        return redirect()->back()->with('success', 'El correo se ha enviado exitosamente a los familiares.');
+        return redirect()->back()->with('success', 'El correo se envió al responsable seleccionado.');
     }
 
-    public function enviarCorreoATodos($nivel)
+    public function enviarCorreoATodos(Request $request, $nivel)
     {
+        $destinatario = $request->validate(['destinatario' => 'nullable|in:padre,madre,tutor,ambos'])['destinatario'] ?? 'ambos';
         $nivelEducativo = NivelEducativo::where('nombre', $nivel)->firstOrFail();
         NivelAccess::ensureCanAccess(auth()->user(), $nivelEducativo->id);
 
@@ -425,9 +612,10 @@ class AdminController extends Controller
 
         // Iterar sobre cada alumno y enviar el correo a los familiares
         foreach ($alumnos as $alumno) {
-            // Filtrar al familiar por tipo (Padre o Madre)
+            // Los responsables se filtran según la selección; Tutor nunca se agrega por defecto.
             $padre = $alumno->familiares->firstWhere('tipo_familiar', 'Padre');
             $madre = $alumno->familiares->firstWhere('tipo_familiar', 'Madre');
+            $tutor = $alumno->familiares->firstWhere('tipo_familiar', 'Tutor');
 
             // Generar el PDF para el alumno
             $pdf = Pdf::loadView('admin.pdf', compact('alumno'));
@@ -436,7 +624,7 @@ class AdminController extends Controller
             $asunto = 'Datos de Acceso a Plataformas Digitales';
 
             // Verificar si el padre tiene correo
-            if ($padre && ! empty($padre->correo)) {
+            if (in_array($destinatario, ['padre', 'ambos'], true) && $padre && ! empty($padre->correo)) {
                 // Crear el mensaje para el padre
                 $mensaje = "Estimado Sr/Sra. {$padre->nombre} {$padre->apellido_paterno} {$padre->apellido_materno},\n\n";
                 $mensaje .= "Adjunto el PDF con los datos de acceso de su hijo(a) {$alumno->nombre} {$alumno->apellido_paterno} {$alumno->apellido_materno}.\n\n";
@@ -447,7 +635,7 @@ class AdminController extends Controller
             }
 
             // Verificar si la madre tiene correo
-            if ($madre && ! empty($madre->correo)) {
+            if (in_array($destinatario, ['madre', 'ambos'], true) && $madre && ! empty($madre->correo)) {
                 // Crear el mensaje para la madre
                 $mensaje = "Estimada Sra. {$madre->nombre} {$madre->apellido_paterno} {$madre->apellido_materno},\n\n";
                 $mensaje .= "Adjunto el PDF con los datos de acceso de su hijo(a) {$alumno->nombre} {$alumno->apellido_paterno} {$alumno->apellido_materno}.\n\n";
@@ -456,14 +644,22 @@ class AdminController extends Controller
                 // Enviar el correo a la madre
                 Mail::to($madre->correo)->send(new EnviarPdfConMensaje($mensaje, $alumno, $pdf, $asunto, $madre));
             }
+
+            if ($destinatario === 'tutor' && $tutor && ! empty($tutor->correo)) {
+                $mensaje = "Estimado/a {$tutor->nombre} {$tutor->apellido_paterno} {$tutor->apellido_materno},\n\n";
+                $mensaje .= "Adjunto el PDF con los datos de acceso de {$alumno->nombre} {$alumno->apellidopaterno} {$alumno->apellidomaterno}.\n\n";
+                $mensaje .= "Atentamente,\n\nEl equipo de la escuela.";
+                Mail::to($tutor->correo)->send(new EnviarPdfConMensaje($mensaje, $alumno, $pdf, $asunto, $tutor));
+            }
         }
 
         HistorialSeguridad::registrar(auth()->user(), 'credenciales_nivel_enviadas', 'Se enviaron credenciales por correo a un nivel completo.', [
             'nivel_educativo_id' => $nivelEducativo->id,
             'cantidad_alumnos' => $alumnos->count(),
+            'destinatario' => $destinatario,
         ]);
 
-        return redirect()->back()->with('success', 'Los correos se han enviado exitosamente a los familiares de todos los alumnos.');
+        return redirect()->back()->with('success', 'Los correos se enviaron a los responsables seleccionados del nivel.');
     }
 
     // Función privada para obtener las plataformas según el nivel educativo
@@ -490,6 +686,23 @@ class AdminController extends Controller
 
         // Descargar el PDF generado
         return $pdf->stream("credenciales_alumno_{$alumno->matricula}.pdf");
+    }
+
+    public function generarReporteAlumno(Alumno $alumno)
+    {
+        NivelAccess::ensureCanAccess(auth()->user(), $alumno->nivel_educativo_id);
+
+        $alumno->load([
+            'nivelEducativo', 'grado', 'contactos', 'familiares', 'hermanos',
+            'alumnoPlataforma.plataforma', 'bitacorasContacto.usuario',
+        ]);
+
+        HistorialSeguridad::registrar(auth()->user(), 'reporte_alumno_consultado', 'Se generó el reporte de expediente de un alumno.', [
+            'alumno_id' => $alumno->id,
+        ]);
+
+        return Pdf::loadView('admin.reporte-alumno-pdf', compact('alumno'))
+            ->stream("reporte_expediente_{$alumno->matricula}.pdf");
     }
 
     public function generarPdfPlataformas($nivel)
@@ -574,8 +787,12 @@ class AdminController extends Controller
             ->get();
 
         $seccionesUnicas = $alumnos->pluck('seccion')->unique()->filter()->values();
+        $plataformasNivel = $nivelEducativo->plataformas()
+            ->where('plataformas.activo', true)
+            ->orderBy('plataformas.nombre')
+            ->get();
 
-        return view('admin.niveles', compact('nivelEducativo', 'alumnos', 'grados', 'seccionesUnicas'));
+        return view('admin.niveles', compact('nivelEducativo', 'alumnos', 'grados', 'seccionesUnicas', 'plataformasNivel'));
     }
 
     public function selectAdmin()
@@ -640,6 +857,7 @@ class AdminController extends Controller
         }
 
         $alumnoReferencia = $alumnos->first();
+        $nivelOrigenId = $alumnoReferencia->nivel_educativo_id;
         $totalDelGrupo = Alumno::where('nivel_educativo_id', $alumnoReferencia->nivel_educativo_id)
             ->where('grado_id', $alumnoReferencia->grado_id)
             ->where('seccion', $alumnoReferencia->seccion)
@@ -656,6 +874,11 @@ class AdminController extends Controller
                 'cantidad_alumnos' => $alumnos->count(),
                 'grado_origen' => $alumnoReferencia->grado?->nombre,
                 'seccion' => $alumnoReferencia->seccion,
+            ]);
+
+            $this->notificaciones->notificarGrupo($alumnoReferencia->nivel_educativo_id, 'egreso', [
+                'Grupo' => trim(($alumnoReferencia->grado?->nombre ?? 'Sin grado') . ' ' . ($alumnoReferencia->seccion ?? '')),
+                'Alumnos egresados' => $alumnos->count(),
             ]);
 
             return response()->json(['success' => true, 'message' => 'El grupo concluyó el último grado y fue registrado en Egresados.']);
@@ -685,6 +908,12 @@ class AdminController extends Controller
             'grado_origen' => $alumnoReferencia->grado?->nombre,
             'grado_destino' => $siguienteGrado->nombre,
             'seccion' => $alumnoReferencia->seccion,
+        ]);
+
+        $this->notificaciones->notificarGrupo($nivelOrigenId, 'promocion', [
+            'Grupo de origen' => trim(($alumnoReferencia->grado?->nombre ?? 'Sin grado') . ' ' . ($alumnoReferencia->seccion ?? '')),
+            'Nuevo grado' => $siguienteGrado->nombre,
+            'Alumnos promovidos' => $alumnos->count(),
         ]);
 
         return response()->json(['success' => true, 'message' => "El grupo fue promovido a {$siguienteGrado->nombre} correctamente."]);
@@ -811,7 +1040,14 @@ class AdminController extends Controller
                 return $grupo;
             });
 
-        return view('admin.cierre-escolar', compact('grupos'));
+        $resumenCierre = [
+            'grupos' => $grupos->count(),
+            'por_promover' => $grupos->filter(fn ($grupo) => $grupo->grado_destino)->count(),
+            'por_egresar' => $grupos->filter(fn ($grupo) => ! $grupo->grado_destino)->count(),
+            'alumnos' => $grupos->sum('total_alumnos'),
+        ];
+
+        return view('admin.cierre-escolar', compact('grupos', 'resumenCierre'));
     }
 
     public function obtenerGradosYNiveles(Request $request)
@@ -930,25 +1166,112 @@ class AdminController extends Controller
         return redirect()->route('admin.assignRoles')->with('success', "La cuenta de {$user->name} fue ".($user->activo ? 'reactivada' : 'desactivada').'.');
     }
 
-    public function historial()
+    public function historial(Request $request)
     {
         abort_unless(auth()->user()->hasRole('SuperAdmin'), 403);
+
+        $filtros = $request->validate([
+            'buscar' => 'nullable|string|max:100',
+            'accion' => 'nullable|string|max:80',
+            'usuario_id' => 'nullable|integer|exists:users,id',
+            'desde' => 'nullable|date',
+            'hasta' => 'nullable|date',
+        ]);
 
         $historial = HistorialAlumno::with('usuario')
+            ->when($filtros['buscar'] ?? null, fn ($query, $buscar) => $query->where('alumno_nombre', 'like', "%{$buscar}%"))
+            ->when($filtros['accion'] ?? null, fn ($query, $accion) => $query->where('accion', $accion))
+            ->when($filtros['usuario_id'] ?? null, fn ($query, $usuario) => $query->where('user_id', $usuario))
+            ->when($filtros['desde'] ?? null, fn ($query, $desde) => $query->whereDate('fecha', '>=', $desde))
+            ->when($filtros['hasta'] ?? null, fn ($query, $hasta) => $query->whereDate('fecha', '<=', $hasta))
             ->orderByDesc('fecha')
-            ->paginate(25);
+            ->paginate(25)
+            ->withQueryString();
 
-        return view('admin.historial', compact('historial'));
+        $acciones = HistorialAlumno::query()->select('accion')->distinct()->orderBy('accion')->pluck('accion');
+        $usuariosHistorial = User::query()->whereIn('id', HistorialAlumno::query()->whereNotNull('user_id')->distinct()->pluck('user_id'))->orderBy('name')->get(['id', 'name']);
+
+        return view('admin.historial', compact('historial', 'acciones', 'usuariosHistorial', 'filtros'));
     }
 
-    public function historialSeguridad()
+    public function historialSeguridad(Request $request)
     {
         abort_unless(auth()->user()->hasRole('SuperAdmin'), 403);
 
-        $eventos = HistorialSeguridad::with('usuario')
-            ->orderByDesc('fecha')
-            ->paginate(30);
+        $filtros = $request->validate([
+            'buscar' => 'nullable|string|max:100',
+            'evento' => 'nullable|string|max:100',
+            'usuario_id' => 'nullable|integer|exists:users,id',
+            'desde' => 'nullable|date',
+            'hasta' => 'nullable|date',
+        ]);
 
-        return view('admin.historial-seguridad', compact('eventos'));
+        $eventos = HistorialSeguridad::with('usuario')
+            ->when($filtros['buscar'] ?? null, function ($query, $buscar) {
+                $query->where(function ($subconsulta) use ($buscar) {
+                    $subconsulta->where('descripcion', 'like', "%{$buscar}%")
+                        ->orWhere('evento', 'like', "%{$buscar}%")
+                        ->orWhere('ip_address', 'like', "%{$buscar}%");
+                });
+            })
+            ->when($filtros['evento'] ?? null, fn ($query, $evento) => $query->where('evento', $evento))
+            ->when($filtros['usuario_id'] ?? null, fn ($query, $usuario) => $query->where('user_id', $usuario))
+            ->when($filtros['desde'] ?? null, fn ($query, $desde) => $query->whereDate('fecha', '>=', $desde))
+            ->when($filtros['hasta'] ?? null, fn ($query, $hasta) => $query->whereDate('fecha', '<=', $hasta))
+            ->orderByDesc('fecha')
+            ->paginate(30)
+            ->withQueryString();
+
+        $tiposEvento = HistorialSeguridad::query()->select('evento')->distinct()->orderBy('evento')->pluck('evento');
+        $usuariosHistorial = User::query()->whereIn('id', HistorialSeguridad::query()->whereNotNull('user_id')->distinct()->pluck('user_id'))->orderBy('name')->get(['id', 'name']);
+
+        return view('admin.historial-seguridad', compact('eventos', 'tiposEvento', 'usuariosHistorial', 'filtros'));
+    }
+
+    /** Consulta centralizada de comunicaciones registradas en expedientes. */
+    public function bitacoraFamilias(Request $request)
+    {
+        abort_unless(auth()->user()->hasAnyRole(['SuperAdmin', 'ControlEscolar']), 403);
+
+        $filtros = $request->validate([
+            'buscar' => 'nullable|string|max:100',
+            'nivel_id' => 'nullable|integer|exists:nivel_educativo,id',
+            'tipo' => 'nullable|in:llamada,correo,reunion,mensaje,otro',
+            'usuario_id' => 'nullable|integer|exists:users,id',
+            'desde' => 'nullable|date',
+            'hasta' => 'nullable|date',
+        ]);
+
+        $bitacoras = BitacoraContactoFamiliar::with(['alumno.nivelEducativo', 'alumno.grado', 'usuario'])
+            ->when($filtros['buscar'] ?? null, function ($query, $buscar) {
+                $query->whereHas('alumno', function ($alumnos) use ($buscar) {
+                    $alumnos->where(function ($coincidencias) use ($buscar) {
+                        $coincidencias->where('matricula', 'like', "%{$buscar}%")
+                            ->orWhere('nombre', 'like', "%{$buscar}%")
+                            ->orWhere('apellidopaterno', 'like', "%{$buscar}%")
+                            ->orWhere('apellidomaterno', 'like', "%{$buscar}%");
+                    });
+                });
+            })
+            ->when($filtros['nivel_id'] ?? null, fn ($query, $nivel) => $query->whereHas('alumno', fn ($alumnos) => $alumnos->where('nivel_educativo_id', $nivel)))
+            ->when($filtros['tipo'] ?? null, fn ($query, $tipo) => $query->where('tipo', $tipo))
+            ->when($filtros['usuario_id'] ?? null, fn ($query, $usuario) => $query->where('user_id', $usuario))
+            ->when($filtros['desde'] ?? null, fn ($query, $desde) => $query->whereDate('fecha_contacto', '>=', $desde))
+            ->when($filtros['hasta'] ?? null, fn ($query, $hasta) => $query->whereDate('fecha_contacto', '<=', $hasta))
+            ->orderByDesc('fecha_contacto')
+            ->paginate(25)
+            ->withQueryString();
+
+        $niveles = NivelEducativo::where('activo', true)->orderBy('orden')->orderBy('nombre')->get(['id', 'nombre']);
+        $usuariosBitacora = User::query()
+            ->whereIn('id', BitacoraContactoFamiliar::query()->whereNotNull('user_id')->distinct()->pluck('user_id'))
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        if ($request->expectsJson()) {
+            return response()->json($bitacoras);
+        }
+
+        return view('admin.bitacora-familias', compact('bitacoras', 'niveles', 'usuariosBitacora', 'filtros'));
     }
 }

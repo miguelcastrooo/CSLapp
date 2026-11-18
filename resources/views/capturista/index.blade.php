@@ -9,11 +9,13 @@
         if ($nivel) {
             $nivelEducativo = App\Models\NivelEducativo::find($nivel);
         }
+
+        $tituloListado = $nivelEducativo ? 'Alumnos de ' . $nivelEducativo->nombre : 'Alumnos';
     @endphp
 
     <div class="csl-module-header d-flex justify-content-between align-items-center gap-3 flex-wrap">
         <div>
-            <h1>Alumnos@if($nivelEducativo) de {{ $nivelEducativo->nombre }}@endif</h1>
+            <h1>{{ $tituloListado }}</h1>
             <p>Busca por nombre, apellidos o matrícula.</p>
         </div>
         <a href="{{ route('capturista.selectsearch') }}" class="btn btn-secondary"><i class="fas fa-arrow-left me-2"></i>Volver a niveles</a>

@@ -23,9 +23,10 @@
             </select>
         </div>
         <div class="col-md-3">
-            <select id="gradoFilter" class="form-control" disabled>
+            <select id="gradoFilter" class="form-control" disabled aria-describedby="gradoFilterHelp">
                 <option value="">Filtrar por Grado</option>
             </select>
+            <small id="gradoFilterHelp" class="text-secondary">Primero selecciona un nivel.</small>
         </div>
         <div class="col-md-3">
             <select id="seccionFilter" class="form-control">
@@ -118,25 +119,25 @@ document.addEventListener("DOMContentLoaded", function () {
     const searchBox = document.getElementById("searchBox");
     const alumnosTable = document.getElementById("alumnosTable").getElementsByTagName("tbody")[0];
 
-    // Cargar grados dinámicamente cuando se seleccione un nivel
+    const gradosPorNivel = @json($grados->map(fn ($grado) => ['id' => $grado->id, 'nombre' => $grado->nombre, 'nivel_educativo_id' => $grado->nivel_educativo_id])->values());
+
+    // Los grados ya vienen disponibles en la pantalla; así el filtro no depende de una petición adicional.
     nivelFilter.addEventListener("change", function () {
         const nivelId = this.value;
         gradoFilter.innerHTML = '<option value="">Filtrar por Grado</option>';
         gradoFilter.disabled = true;
 
         if (nivelId) {
-            fetch(`/grados/${nivelId}`)
-                .then(response => response.json())
-                .then(data => {
-                    data.forEach(grado => {
-                        let option = document.createElement("option");
-                        option.value = grado.id;
-                        option.textContent = grado.nombre;
-                        gradoFilter.appendChild(option);
-                    });
-                    gradoFilter.disabled = false;
-                })
-                .catch(error => console.error('Error:', error));
+            gradosPorNivel
+                .filter((grado) => String(grado.nivel_educativo_id) === String(nivelId))
+                .forEach((grado) => {
+                    const option = document.createElement("option");
+                    option.value = grado.id;
+                    option.textContent = grado.nombre;
+                    gradoFilter.appendChild(option);
+                });
+
+            gradoFilter.disabled = gradoFilter.options.length === 1;
         }
     });
 

@@ -5,11 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class NivelEducativo extends Model
+class NivelPlataforma extends Model
 {
     use HasFactory;
 
-    protected $table = 'nivel_educativo';
+    protected $table = 'nivel_plataforma';
+
+    protected $fillable = ['nivel_educativo_id', 'plataforma_id'];
 
     public function plataformas()
     {

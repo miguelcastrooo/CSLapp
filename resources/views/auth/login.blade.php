@@ -5,38 +5,40 @@
 @section('styles')
     <style>
         body {
-            background: #f3f6fa;
-            color: #243442;
+            background: var(--csl-surface);
+            color: var(--csl-text);
         }
+
+        body .navbar { display: none; }
 
         .login-container {
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: calc(100vh - 70px);
-            padding: 20px;
+            min-height: 100vh;
+            padding: 0;
+            margin-top: -70px;
         }
 
         .login-card {
             display: flex;
             flex-direction: row;
             background: #ffffff;
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 12px 32px rgba(29, 52, 70, 0.12);
-            max-width: 900px;
+            border-radius: 0;
+            min-height: 100vh;
+            max-width: none;
             width: 100%;
         }
 
         /* Sección de la imagen con información */
         .info-section {
             color: white;
-            width: 50%;
+            width: 55%;
         }
 
         .login-carousel, .login-carousel .carousel-inner, .login-carousel .carousel-item { height: 100%; }
         .login-carousel-slide { align-items: center; background-position: center; background-size: cover; display: flex; min-height: 520px; }
-        .login-carousel-overlay { background: linear-gradient(135deg, rgba(24, 68, 91, .93), rgba(23, 107, 98, .72)); min-height: 520px; padding: 36px; text-align: center; width: 100%; }
+        .login-carousel-overlay { background: linear-gradient(135deg, color-mix(in srgb, var(--csl-carousel) 94%, #000), color-mix(in srgb, var(--csl-accent) 76%, #000)); min-height: 100vh; padding: clamp(2.5rem, 8vw, 7rem); text-align: left; width: 100%; }
         .login-carousel-overlay img { width: 92px; }
         .login-carousel-overlay p { margin: 0 auto; max-width: 300px; }
 
@@ -47,26 +49,38 @@
         }
 
         .info-section h2 {
-            font-size: 1.8rem;
+            font-size: clamp(2.5rem, 5vw, 4.5rem);
             margin-bottom: 10px;
+            line-height: 1;
         }
 
         .info-section p {
-            font-size: 1rem;
+            font-size: 1.12rem;
+            max-width: 470px;
         }
+
+        .login-welcome { background: linear-gradient(145deg, var(--csl-carousel), var(--csl-accent)); display: flex; flex-direction: column; justify-content: center; padding: clamp(2.5rem, 8vw, 7rem); }
+        .login-brand-mark { align-items: center; background: #fff; border-radius: 16px; display: flex; height: 58px; justify-content: center; margin-bottom: 3rem; width: 58px; }
+        .login-brand-mark img { height: 42px; margin: 0; max-width: 42px; object-fit: contain; width: 42px; }
+        .login-eyebrow { font-size: .76rem !important; font-weight: 800; letter-spacing: .12em; margin: 0 0 .6rem !important; opacity: .8; }
+        .login-eyebrow-dark { color: var(--csl-text-muted); opacity: 1; }
 
         /* Sección del login */
         .form-section {
-            width: 50%;
-            padding: 30px;
+            width: 45%;
+            padding: clamp(2.5rem, 6vw, 6rem);
+            align-self: center;
         }
 
         .card-header {
-            text-align: center;
-            font-size: 1.5rem;
+            text-align: left;
+            font-size: 2rem;
             font-weight: bold;
-            color: #183444;
+            color: var(--csl-text);
         }
+
+        .form-section .card-body { padding: 1.5rem 0 0; }
+        .form-section .card-footer { background: transparent; border: 0; padding: 1.5rem 0 0; }
 
         .form-control {
             border-radius: 9px;
@@ -75,12 +89,12 @@
         }
 
         .form-control:focus {
-            border-color: #238478;
-            box-shadow: 0 0 0 .2rem rgba(35, 132, 120, .15);
+            border-color: var(--csl-accent);
+            box-shadow: 0 0 0 .2rem color-mix(in srgb, var(--csl-accent) 18%, transparent);
         }
 
         .btn-primary {
-            background-color: #176b62;
+            background-color: var(--csl-accent);
             border: none;
             border-radius: 9px;
             padding: 10px;
@@ -88,11 +102,11 @@
         }
 
         .btn-primary:hover {
-            background-color: #14534d;
+            background-color: color-mix(in srgb, var(--csl-accent) 82%, #000);
         }
 
         .text-muted a {
-            color: #176b62;
+            color: var(--csl-accent);
             text-decoration: none;
         }
 
@@ -110,6 +124,8 @@
             .form-section {
                 width: 100%;
             }
+            .login-carousel-overlay { min-height: 320px; padding: 3rem 2rem; }
+            .form-section { padding: 2.5rem 2rem 3.5rem; }
         }
     </style>
 @endsection
@@ -117,22 +133,17 @@
 @section('content')
 <div class="login-container">
     <div class="login-card">
-        <div id="loginCarousel" class="carousel slide carousel-fade info-section login-carousel" data-bs-interval="false">
-            <div class="carousel-indicators"><button type="button" data-bs-target="#loginCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Mensaje 1"></button><button type="button" data-bs-target="#loginCarousel" data-bs-slide-to="1" aria-label="Mensaje 2"></button><button type="button" data-bs-target="#loginCarousel" data-bs-slide-to="2" aria-label="Mensaje 3"></button></div>
-            <div class="carousel-inner">
-                <div class="carousel-item active"><div class="login-carousel-slide" style="background-image: url('{{ asset('img/login-educativo.png') }}');"><div class="login-carousel-overlay"><img src="{{ asset('img/demo-school.svg') }}" alt="Instituto Horizonte"><h2>Instituto Horizonte</h2><p>Una comunidad educativa organizada y cercana.</p></div></div></div>
-                <div class="carousel-item"><div class="login-carousel-slide" style="background-image: url('{{ asset('img/dashboard-educativo.png') }}');"><div class="login-carousel-overlay"><img src="{{ asset('img/demo-school.svg') }}" alt="Instituto Horizonte"><h2>Información al alcance</h2><p>Consulta expedientes y plataformas de forma clara y segura.</p></div></div></div>
-                <div class="carousel-item"><div class="login-carousel-slide" style="background-image: url('{{ asset('img/login-educativo.png') }}');"><div class="login-carousel-overlay"><img src="{{ asset('img/demo-school.svg') }}" alt="Instituto Horizonte"><h2>Trabajo que acompaña</h2><p>Herramientas sencillas para el equipo escolar.</p></div></div></div>
-            </div>
-            <button class="carousel-control-prev" type="button" data-bs-target="#loginCarousel" data-bs-slide="prev"><span class="carousel-control-prev-icon" aria-hidden="true"></span><span class="visually-hidden">Anterior</span></button>
-            <button class="carousel-control-next" type="button" data-bs-target="#loginCarousel" data-bs-slide="next"><span class="carousel-control-next-icon" aria-hidden="true"></span><span class="visually-hidden">Siguiente</span></button>
+        <div class="info-section login-welcome">
+            <div class="login-brand-mark"><img src="{{ $configuracionInstitucional->logoUrl() }}" alt="Logotipo de {{ $configuracionInstitucional->nombre }}"></div>
+            <p class="login-eyebrow">{{ strtoupper($configuracionInstitucional->nombre) }}</p>
+            <h2>{{ $configuracionInstitucional->subtitulo ?: 'Portal académico' }}</h2>
+            <p>Consulta y administra la información escolar de forma clara, segura y ordenada.</p>
         </div>
 
         <!-- Sección del login -->
         <div class="form-section">
-            <div class="card-header">
-                <i class="fa fa-sign-in"></i> Iniciar Sesión
-            </div>
+            <p class="login-eyebrow login-eyebrow-dark">ACCESO DEL PERSONAL</p>
+            <div class="card-header">Inicia sesión</div>
             <div class="card-body">
                 <form method="POST" action="{{ route('login') }}">
                     @csrf
@@ -145,18 +156,36 @@
 
                     <div class="mb-3">
                         <label for="password" class="form-label">Contraseña</label>
-                        <input type="password" class="form-control @error('password') is-invalid @enderror" 
-                               id="password" name="password" required>
+                        <div class="input-group">
+                            <input type="password" class="form-control @error('password') is-invalid @enderror"
+                                   id="password" name="password" required>
+                            <button type="button" class="btn btn-outline-secondary" data-password-toggle="password" aria-label="Mostrar contraseña" title="Mostrar contraseña"><i class="fas fa-eye"></i></button>
+                        </div>
                         @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
 
                     <button type="submit" class="btn btn-primary w-100"><i class="fas fa-right-to-bracket me-2"></i>Entrar al sistema</button>
                 </form>
             </div>
-            <div class="card-footer text-center text-muted">
+            <div class="card-footer text-start text-muted">
                 <span>¿Necesitas acceso o restablecer tu contraseña? Solicítalo a la administración.</span>
             </div>
         </div>
     </div>
 </div>
+@endsection
+
+@section('scripts')
+<script>
+document.querySelectorAll('[data-password-toggle]').forEach((button) => {
+    button.addEventListener('click', () => {
+        const field = document.getElementById(button.dataset.passwordToggle);
+        const visible = field.type === 'text';
+        field.type = visible ? 'password' : 'text';
+        button.querySelector('i').className = visible ? 'fas fa-eye' : 'fas fa-eye-slash';
+        button.setAttribute('aria-label', visible ? 'Mostrar contraseña' : 'Ocultar contraseña');
+        button.title = visible ? 'Mostrar contraseña' : 'Ocultar contraseña';
+    });
+});
+</script>
 @endsection

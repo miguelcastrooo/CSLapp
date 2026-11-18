@@ -31,16 +31,15 @@ class CoordinacionController extends Controller
         $alumno = Alumno::findOrFail($id);
         NivelAccess::ensureCanAccess(auth()->user(), $alumno->nivel_educativo_id);
 
-        return view('admin.show', compact('alumno'));
+        return redirect()->route('alumnos.edit', $alumno);
     }
 
     public function showAlumno($id)
     {
         $alumno = Alumno::findOrFail($id);
         NivelAccess::ensureCanAccess(auth()->user(), $alumno->nivel_educativo_id);
-        $grado = $alumno->grado;
 
-        return view('coordinacion.show', compact('alumno', 'grado'));
+        return redirect()->route('alumnos.edit', $alumno);
     }
 
     public function gradosShow($gradoId)
@@ -48,7 +47,7 @@ class CoordinacionController extends Controller
         $grado = Grado::findOrFail($gradoId);
         NivelAccess::ensureCanAccess(auth()->user(), $grado->nivel_educativo_id);
 
-        return view('coordinacion.grados.show', compact('grado'));
+        return redirect()->route('admin.grados.alumnos', ['gradoId' => $grado->id]);
     }
 
     public function mostrarAlumnos($nivelId)
