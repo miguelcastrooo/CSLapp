@@ -7,6 +7,7 @@ use Illuminate\Support\Str;
 use App\Models\Alumno;
 use App\Models\Plataforma;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Crypt;
 
 class AlumnoPlataformaSeeder extends Seeder
 {
@@ -29,7 +30,7 @@ class AlumnoPlataformaSeeder extends Seeder
                     'alumno_id'     => $alumno->id,
                     'plataforma_id' => $plataforma->id,
                     'usuario'       => strtolower($alumno->nombre) . rand(100, 999),
-                    'contraseña'    => Str::random(10),
+                    'contraseña'    => Crypt::encryptString(Str::random(10)),
                     'created_at'    => now(),
                     'updated_at'    => now(),
                 ]);

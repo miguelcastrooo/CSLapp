@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Crypt;
 
 /**
  * Crea cinco expedientes ficticios completos para recorrer el sistema.
@@ -153,7 +154,7 @@ class CompleteSchoolDemoSeeder extends Seeder
                         'plataforma_id' => $plataforma->id,
                     ], [
                         'usuario' => "{$correoBase}.{$nombrePlataforma}",
-                        'contraseña' => "Demo{$numero}Acceso!",
+                        'contraseña' => Crypt::encryptString("Demo{$numero}Acceso!"),
                         'created_at' => $now,
                         'updated_at' => $now,
                     ]);

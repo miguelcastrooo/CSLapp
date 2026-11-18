@@ -15,6 +15,14 @@ class AlumnoPlataforma extends Model
 
     public $timestamps = true;
 
+    protected function casts(): array
+    {
+        return [
+            // Se descifra sólo dentro de Laravel, después de pasar los permisos.
+            'contraseña' => 'encrypted',
+        ];
+    }
+
     // Relación con Alumno
     public function alumno()
     {

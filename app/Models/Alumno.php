@@ -23,6 +23,7 @@ class Alumno extends Model
     public function plataformas()
     {
         return $this->belongsToMany(Plataforma::class, 'alumno_plataforma')
+                    ->using(AlumnoPlataformaPivot::class)
                     ->withPivot('usuario', 'contraseña')
                     ->withTimestamps();
     }
@@ -65,6 +66,18 @@ class Alumno extends Model
     public function bitacorasContacto()
     {
         return $this->hasMany(BitacoraContactoFamiliar::class)->latest('fecha_contacto');
+    }
+
+    protected function casts(): array
+    {
+        return [
+            // Campos heredados que siguen existiendo por compatibilidad.
+            'contraseña_classroom' => 'encrypted',
+            'contraseña_moodle' => 'encrypted',
+            'contraseña_mathletics' => 'encrypted',
+            'contraseña_hmh' => 'encrypted',
+            'contraseña_progrentis' => 'encrypted',
+        ];
     }
 
     /**

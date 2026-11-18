@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
 
 class AdditionalDemoStudentsSeeder extends Seeder
@@ -102,7 +103,7 @@ class AdditionalDemoStudentsSeeder extends Seeder
                 foreach (['ClassRoom', 'Moodle'] as $platformName) {
                     if (isset($platforms[$platformName])) {
                         DB::table('alumno_plataforma')->updateOrInsert(['alumno_id' => $alumnoId, 'plataforma_id' => $platforms[$platformName]], [
-                            'usuario' => $emailBase, 'contraseña' => $demoPassword, 'created_at' => $now, 'updated_at' => $now,
+                            'usuario' => $emailBase, 'contraseña' => Crypt::encryptString($demoPassword), 'created_at' => $now, 'updated_at' => $now,
                         ]);
                     }
                 }

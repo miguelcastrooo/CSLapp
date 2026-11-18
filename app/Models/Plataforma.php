@@ -16,6 +16,7 @@ class Plataforma extends Model
     public function alumnos()
     {
         return $this->belongsToMany(Alumno::class, 'alumno_plataforma', 'plataforma_id', 'alumno_id')
+                    ->using(AlumnoPlataformaPivot::class)
                     ->withPivot('usuario', 'contraseña') // Incluye credenciales
                     ->withTimestamps();
     }

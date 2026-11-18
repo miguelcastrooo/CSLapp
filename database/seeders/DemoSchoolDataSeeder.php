@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Spatie\Permission\Models\Permission;
@@ -233,7 +234,7 @@ class DemoSchoolDataSeeder extends Seeder
         foreach (['ClassRoom', 'Moodle'] as $platform) {
             DB::table('alumno_plataforma')->updateOrInsert(['alumno_id' => $alumnoId, 'plataforma_id' => $platformIds[$platform]], [
                 'usuario' => strtolower($matricula),
-                'contraseña' => $demoPassword,
+                'contraseña' => Crypt::encryptString($demoPassword),
                 'created_at' => $now,
                 'updated_at' => $now,
             ]);
@@ -337,7 +338,7 @@ class DemoSchoolDataSeeder extends Seeder
             'alumno_id' => $alumnoId,
             'plataforma_id' => $platformId,
             'usuario' => strtolower($matricula),
-            'contraseña' => $demoPassword,
+            'contraseña' => Crypt::encryptString($demoPassword),
             'created_at' => $now,
             'updated_at' => $now,
         ]);
