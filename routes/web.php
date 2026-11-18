@@ -75,8 +75,10 @@ Route::middleware(['auth', 'account.active', 'school.verified', 'role:SuperAdmin
     // Gestión de administradores
     Route::get('/admin/create', [AdminController::class, 'create'])->name('admin.admincreate');
     Route::post('/admin', [AdminController::class, 'store'])->name('admin.storeAdmin');
-    Route::get('/admin/{id}/edit', [AdminController::class, 'edit'])->name('admin.adminedit');
-    Route::put('/admin/alumnos/{id}', [AdminController::class, 'update'])->name('admin.adminupdate');
+    // Flujo administrativo anterior: se conserva temporalmente, pero nunca debe
+    // quedar disponible para Coordinación. El expediente actual usa AlumnoController.
+    Route::get('/admin/{id}/edit', [AdminController::class, 'edit'])->middleware('role:SuperAdmin|ControlEscolar')->name('admin.adminedit');
+    Route::put('/admin/alumnos/{id}', [AdminController::class, 'update'])->middleware('role:SuperAdmin|ControlEscolar')->name('admin.adminupdate');
     Route::get('/admin/search', [AdminController::class, 'search'])->name('admin.search');
 
     // PDF de alumnos
@@ -88,13 +90,13 @@ Route::middleware(['auth', 'account.active', 'school.verified', 'role:SuperAdmin
     Route::get('/admin/alumnos/pdf/plataformas/{nivel}', [AdminController::class, 'generarPdfPlataformas'])->name('admin.alumnos.pdf.plataformas');
 
     // Envío de correos con PDF
-    Route::post('admin/alumnos/{alumnoId}/enviarCorreo', [AdminController::class, 'enviarCorreoConPdf'])->name('admin.enviarCorreo');
-    Route::post('/admin/enviarCorreoATodos/{nivel}', [AdminController::class, 'enviarCorreoATodos'])->name('admin.enviarCorreoATodos');
+    Route::post('admin/alumnos/{alumnoId}/enviarCorreo', [AdminController::class, 'enviarCorreoConPdf'])->middleware('role:SuperAdmin|ControlEscolar')->name('admin.enviarCorreo');
+    Route::post('/admin/enviarCorreoATodos/{nivel}', [AdminController::class, 'enviarCorreoATodos'])->middleware('role:SuperAdmin|ControlEscolar')->name('admin.enviarCorreoATodos');
 
     // Mover grupos
-    Route::get('/admin/mover-grupos', [AdminController::class, 'mostrarFormularioMoverGrupos'])->name('admin.grupos.form');
-    Route::get('/admin/cierre-escolar', [AdminController::class, 'cierreEscolar'])->name('admin.cierre-escolar');
-    Route::post('/admin/obtener-grados-niveles', [AdminController::class, 'obtenerGradosYNiveles'])->name('admin.obtenerGradosYNiveles');
+    Route::get('/admin/mover-grupos', [AdminController::class, 'mostrarFormularioMoverGrupos'])->middleware('role:SuperAdmin|ControlEscolar')->name('admin.grupos.form');
+    Route::get('/admin/cierre-escolar', [AdminController::class, 'cierreEscolar'])->middleware('role:SuperAdmin|ControlEscolar')->name('admin.cierre-escolar');
+    Route::post('/admin/obtener-grados-niveles', [AdminController::class, 'obtenerGradosYNiveles'])->middleware('role:SuperAdmin|ControlEscolar')->name('admin.obtenerGradosYNiveles');
 
     // Niveles
     Route::get('/admin/niveles', [AdminController::class, 'nivelesIndex'])->name('admin.niveles');
@@ -139,7 +141,7 @@ Route::middleware(['auth', 'account.active', 'school.verified', 'role:SuperAdmin
     Route::get('/admin/bitacora-familias', [AdminController::class, 'bitacoraFamilias'])->name('admin.bitacoraFamilias');
 
     // Promociones y filtros
-    Route::post('/admin/alumnos/promover', [AdminController::class, 'promover'])->name('admin.promover');
+    Route::post('/admin/alumnos/promover', [AdminController::class, 'promover'])->middleware('role:SuperAdmin|ControlEscolar')->name('admin.promover');
     Route::get('/admin/alumnos/filtrar', [AdminController::class, 'filtrarAlumnos'])->name('alumnos.filtrar');
 
     // Calificaciones permanece deshabilitado hasta terminar su rediseño, permisos y reglas por nivel.

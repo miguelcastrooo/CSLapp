@@ -32,15 +32,12 @@ test('una coordinacion solo consulta alumnos de su nivel', function () {
     $alumnoSecundaria = crearAlumnoDePrueba($secundaria, 'PERM-SEC-001');
     $coordinadora = User::factory()->create(['activo' => true]);
     $coordinadora->assignRole('CoordinacionPreescolar');
-    $token = $coordinadora->createToken('prueba', ['calificaciones:read'])->plainTextToken;
+    $this->actingAs($coordinadora)
+        ->get("/alumnos/{$alumnoPreescolar->id}/edit")
+        ->assertOk();
 
-    $this->withToken($token)
-        ->getJson("/api/v1/calificaciones?alumno_id={$alumnoPreescolar->id}")
-        ->assertOk()
-        ->assertJson([]);
-
-    $this->withToken($token)
-        ->getJson("/api/v1/calificaciones?alumno_id={$alumnoSecundaria->id}")
+    $this->actingAs($coordinadora)
+        ->get("/alumnos/{$alumnoSecundaria->id}/edit")
         ->assertForbidden();
 });
 
@@ -51,10 +48,31 @@ test('una coordinacion no puede cargar grados de otro nivel', function () {
     $gradoSecundaria = Grado::create(['nombre' => 'Secundaria 1', 'nivel_educativo_id' => $secundaria->id]);
     $coordinadora = User::factory()->create(['activo' => true]);
     $coordinadora->assignRole('CoordinacionPreescolar');
-    $token = $coordinadora->createToken('prueba', ['calificaciones:read'])->plainTextToken;
+    $this->actingAs($coordinadora)
+        ->getJson("/grados/{$gradoSecundaria->nivel_educativo_id}")
+        ->assertForbidden();
+});
 
-    $this->withToken($token)
-        ->getJson("/api/v1/niveles/{$gradoSecundaria->nivel_educativo_id}/grados")
+test('una coordinacion no puede usar las rutas administrativas heredadas', function () {
+    $preescolar = NivelEducativo::create(['nombre' => 'Preescolar']);
+    $alumno = crearAlumnoDePrueba($preescolar, 'PERM-PRE-ADMIN');
+    $coordinadora = User::factory()->create(['activo' => true]);
+    $coordinadora->assignRole('CoordinacionPreescolar');
+
+    $this->actingAs($coordinadora)
+        ->get("/admin/{$alumno->id}/edit")
+        ->assertForbidden();
+
+    $this->actingAs($coordinadora)
+        ->put("/admin/alumnos/{$alumno->id}", [])
+        ->assertForbidden();
+
+    $this->actingAs($coordinadora)
+        ->get('/admin/mover-grupos')
+        ->assertForbidden();
+
+    $this->actingAs($coordinadora)
+        ->post('/admin/alumnos/promover', ['alumnos_ids' => [$alumno->id]])
         ->assertForbidden();
 });
 

@@ -38,16 +38,14 @@ Si se requieren datos ficticios, define `DEMO_SEED_PASSWORD` sólo en tu `.env` 
 
 ## Módulos deshabilitados temporalmente
 
-Calificaciones permanece fuera de las rutas hasta completar sus permisos por nivel y su flujo académico.
+Calificaciones y la API experimental de Angular permanecen cerradas hasta completar sus permisos por nivel, reglas académicas y pruebas. El código se conserva, pero las rutas API no se publican por defecto. Sólo se habilitan de forma deliberada con `API_PORTAL_ENABLED=true` en el entorno correspondiente.
 
 ## API para Angular
 
-La API se encuentra en `/api/v1` y usa tokens de Laravel Sanctum. Para desarrollo Angular se permite únicamente `http://localhost:4200`; cambia `CORS_ALLOWED_ORIGINS` al dominio HTTPS real antes de publicar.
+La API se conserva como base para una fase futura de Angular y usa tokens de Laravel Sanctum. Permanece cerrada por defecto. Para desarrollo controlado, habilita `API_PORTAL_ENABLED=true` y permite únicamente el origen necesario en `CORS_ALLOWED_ORIGINS`.
 
-- `POST /api/v1/auth/login`: obtiene un token de sesión para Angular.
-- `GET /api/v1/niveles`, `GET /api/v1/niveles/{id}/grados` y `GET /api/v1/grados/{id}/secciones`: catálogos filtrados por el rol.
-- `GET /api/v1/alumnos`: alumnos autorizados por nivel, grado y sección.
-- `GET` y `POST /api/v1/calificaciones`: consulta y captura de calificaciones por periodo.
+- Al habilitarla de forma controlada, `POST /api/v1/auth/login` obtiene un token de sesión para Angular.
+- También se habilitan catálogos, alumnos autorizados por nivel y las rutas de calificaciones; antes de activarlas para uso real deben completarse sus pruebas y reglas académicas.
 
 La API valida el acceso al nivel del alumno y no entrega contraseñas de plataformas.
 
