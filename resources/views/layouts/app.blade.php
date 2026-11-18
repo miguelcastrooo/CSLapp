@@ -12,6 +12,8 @@
         window.schoolNotifications = {
             userId: {{ auth()->id() }},
             indexUrl: @json(route('avisos.index')),
+            // Funciona desde localhost, la IP local o una instalación en subcarpeta.
+            broadcastAuthPath: @json(rtrim(request()->getBaseUrl(), '/').'/broadcasting/auth'),
         };
         // If the browser restores this protected page from its back/forward cache,
         // request it again so Laravel can verify that the session still exists.
